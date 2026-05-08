@@ -17,6 +17,16 @@ A test's variable names are documentation. If a reader can't tell what a value r
 2. Build a mental list of every identifier: `const`/`let`/`var` declarations, function parameters, callback arguments, destructured names.
 3. Note what each one actually holds — not just its declared type, but its domain meaning in context.
 
+## Phase 1b — Identify the Domain
+
+Before scoring any name, establish the domain vocabulary the codebase uses. Do this by:
+
+1. Reading the `describe`/`it` strings, imported module names, and function names in the source under test.
+2. Extracting the recurring nouns and verbs — these are the domain terms. Examples: a poker engine uses *hand*, *rank*, *pot*, *dealer*, *street*; an auth service uses *token*, *session*, *credential*, *principal*, *grant*.
+3. Writing down the domain term list. Every replacement name you choose in Phase 4 must be drawn from or composed of these terms. If a name you're considering isn't derivable from this vocabulary, it's the wrong name.
+
+If the domain is ambiguous (a utility file, a generic HTTP client), use the closest enclosing product concept visible in the file path or package name.
+
 ## Phase 2 — Score for Badness
 
 Label every candidate identifier with one of four severity levels:
@@ -33,21 +43,25 @@ Label every candidate identifier with one of four severity levels:
 
 **Skip entirely (do not label):** loop counters (`i`, `j`, `k`), universally understood abbreviations (`id`, `url`, `html`, `json`, `err`), and names that are genuinely clear in context.
 
-## Phase 3 — Threshold: HIGH and CRITICAL Only
+## Phase 3 — Threshold: MEDIUM, HIGH and CRITICAL Only
 
-**Rename every identifier labeled CRITICAL or HIGH. Skip everything labeled MEDIUM or LOW entirely.**
+**Rename every identifier labeled CRITICAL or HIGH or MEDIUM. Skip everything labeled LOW entirely.**
 
-Do not apply a count limit — if there are 20 CRITICAL identifiers, rename all 20. Do not rename a MEDIUM just because there are few CRITICAL/HIGH hits. The label is the filter, not file size or gut feeling.
+Do not apply a count limit — if there are 20 CRITICAL identifiers, rename all 20. Do not rename a LOW just because there are few CRITICAL/HIGH hits. The label is the filter, not file size or gut feeling.
 
 ## Phase 4 — Choose Good Replacements
 
+All replacements must use the domain vocabulary identified in Phase 1b. A name that is structurally correct but uses terms foreign to the domain is still a bad name.
+
 Good replacements follow these rules:
 
-- **Variables holding domain values:** use a noun that names the domain concept. `data` → `playerHands`, `result` → `rangeScore`, `res` → `apiResponse`.
-- **Boolean variables:** prefix with `is`, `has`, `should`, `can`. `valid` → `isValidRange`, `flag` → `hasDealtCards`.
-- **Callback parameters:** name what the callback receives. `.map(x => ...)` → `.map(card => ...)`, `.forEach(e => ...)` → `.forEach(player => ...)`.
-- **Test setup values:** name the role in the test. `data` holding a stubbed API response → `stubbedHandHistory`. `obj` holding a Redux store → `testStore`.
-- **"Expected" / "actual" pairs:** qualify with the domain concept. `expected` → `expectedWinRate`, `actual` → `actualWinRate`.
+- **Variables holding domain values:** use a noun from the domain term list. `data` → `playerHands`, `result` → `rangeScore`, `res` → `apiResponse`.
+- **Boolean variables:** prefix with `is`, `has`, `should`, `can`, then a domain term. `valid` → `isValidRange`, `flag` → `hasDealtCards`.
+- **Callback parameters:** name what the callback receives using a domain noun. `.map(x => ...)` → `.map(card => ...)`, `.forEach(e => ...)` → `.forEach(player => ...)`.
+- **Test setup values:** name the role in the test with a domain term. `data` holding a stubbed API response → `stubbedHandHistory`. `obj` holding a Redux store → `testStore`.
+- **"Expected" / "actual" pairs:** qualify with a domain concept. `expected` → `expectedWinRate`, `actual` → `actualWinRate`.
+
+**Domain-consistency check:** before finalising a replacement, ask — "Would a developer who knows this domain immediately understand what this variable holds?" If the answer requires knowing the test internals rather than just the domain, the name is still wrong.
 
 ## Phase 5 — Execute
 
