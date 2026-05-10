@@ -9,20 +9,112 @@ Hunt down the worst-named identifiers across test and production code and rename
 
 ## Core Principle
 
-An identifier's name is its contract. If a reader must trace the value through multiple call sites to understand what it holds, the name is wrong — whether it lives in a test or in production.
+An identifier's name is its contract. Every bad name fails for exactly one reason — and that reason determines the fix. Classify first, then apply the fix rule for that category.
+
+## Naming Failure Taxonomy
+
+Six disjoint categories, evaluated in priority order (LIE → CHIMERA → CIPHER → SERIES → FRAGMENT → VOID):
+
+| Category | Severity | Root cause | Fix rule |
+|----------|----------|------------|----------|
+| **VOID** | CRITICAL | No information | Name what it actually holds |
+| **LIE** | CRITICAL | False information | Name the true type, cardinality, and domain role |
+| **CHIMERA** | HIGH | Incoherent term combination | Find the single real concept from the implementation |
+| **CIPHER** | HIGH | Abbreviation with a recoverable expansion | Spell it out |
+| **FRAGMENT** | MEDIUM | Structural role without domain qualification | Qualify with a domain noun |
+| **SERIES** | MEDIUM | Ordinal position instead of concept | Name each item's distinct role |
+
+---
 
 ## Phases
 
-Execute the phases in order. Load each reference file before starting that phase.
+Execute the phases in order.
 
-| Phase | Reference file | What it covers |
-|-------|----------------|----------------|
-| 1 | [references/phase-1-scope-and-read.md](references/phase-1-scope-and-read.md) | Identify scope and read all files in range |
-| 1b | [references/phase-1b-identify-domain.md](references/phase-1b-identify-domain.md) | Extract the domain vocabulary |
-| 2 | [references/phase-2-score-for-badness.md](references/phase-2-score-for-badness.md) | Label every identifier by severity |
-| 3 | [references/phase-3-threshold.md](references/phase-3-threshold.md) | Decide what gets renamed |
-| 4 | [references/phase-4-choose-replacements.md](references/phase-4-choose-replacements.md) | Pick domain-consistent replacement names |
-| 5 | [references/phase-5-execute.md](references/phase-5-execute.md) | Apply all renames across every file |
-| 6 | [references/phase-6-report.md](references/phase-6-report.md) | Produce the grouped summary |
+## Phase 1 — Scope and Read
 
-Before executing, also load [references/constraints.md](references/constraints.md) for hard rules on what must never be done.
+1. Identify the target scope: a single file, a module directory, or the full codebase. If the user doesn't specify, default to the full codebase.
+2. Read every file in scope: source files, test files, type definition files, and index/barrel files.
+3. Build a list of every identifier: `const`/`let`/`var` declarations, function parameters, callback arguments, destructured names, class fields, and exported names.
+4. Note what each one actually holds — not just its declared type, but its domain meaning in context.
+
+---
+
+## Phase 1b — Identify the Domain
+
+Before classifying any name, establish the domain vocabulary the codebase uses. Do this by:
+
+1. Reading `describe`/`it` strings in test files, external API names, README/docs, and file path segments — these are written for humans and tend to use real domain language.
+2. Reading method *implementations* (what they compute and return) rather than their names — the code tells the truth even when the name lies.
+3. Extracting the recurring nouns and verbs — these are the domain terms. Examples: a billing system uses *invoice*, *ledger*, *charge*, *refund*, *payment*; a poker app uses *startingHand*, *holeCards*, *range*, *suit*, *rank*.
+4. Writing down the domain term list. Every replacement name must be drawn from or composed of these terms.
+
+**Existing identifiers are suspects, not authorities.** A class named `CardHandSuit` does not establish that "CardHandSuit" is a domain concept — read the implementation to determine what concept the class actually models.
+
+**Behavior-derived terms.** For each non-trivial function or method, ask: *what does this compute or produce, independent of what it is called?* A function that divides one number by another and multiplies by 100 produces a *rate* or *percentage* regardless of its variable name. Record the inferred concept, not the observed label.
+
+If the domain is ambiguous (a utility module, a generic adapter), use the closest enclosing product concept visible in the file path or package name.
+
+---
+
+## Phase 2 — Classify Each Identifier
+
+See `references/phase-2-score-for-badness.md` for full detection rules and examples.
+
+Assign every candidate the first matching category in priority order: **LIE → CHIMERA → CIPHER → SERIES → FRAGMENT → VOID**.
+
+Score every identifier in scope: variables, parameters, callback arguments, class names, method names, and module names. Class and function names are not exempt.
+
+**Skip entirely:** loop counters (`i`, `j`, `k`), universally understood abbreviations (`id`, `url`, `html`, `json`, `err`), and names that are genuinely unambiguous in context.
+
+---
+
+## Phase 3 — Threshold
+
+See `references/phase-3-threshold.md`.
+
+Rename every identifier that received a category. No count limit. Production code gets stricter scrutiny than tests.
+
+---
+
+## Phase 4 — Choose Good Replacements
+
+See `references/phase-4-choose-replacements.md`.
+
+Apply the fix rule for the assigned category. All replacements must use domain vocabulary from Phase 1b. A structurally correct name that uses terms foreign to the domain is still a bad name.
+
+---
+
+## Phase 5 — Execute
+
+See `references/phase-5-execute.md`.
+
+For each rename:
+
+1. **Grep across the entire codebase** for all occurrences before editing — source files, test files, type files, and barrel/index files. Partial renames are worse than none.
+2. Rename in every file where it appears.
+3. Use `Edit` with `replace_all: true` for identifiers that appear multiple times in a file.
+4. Rename one identifier at a time.
+5. Use word-boundary grep patterns (`\bidentifier\b`) to avoid spurious hits.
+6. After all renames, re-read changed sections to confirm no occurrence was missed and no accidental collision was introduced.
+7. Check that renamed exports still match their import sites.
+8. **If a class or module is renamed, rename its file too.** Grep for the old filename stem to find all import consumers.
+
+---
+
+## Phase 6 — Report
+
+See `references/phase-6-report.md`.
+
+Summary grouped by category (CRITICAL first, then HIGH, then MEDIUM). One line per rename. No prose.
+
+---
+
+## Constraints — What NOT to Do
+
+- **Don't rename everything.** Only rename identifiers that received a category label. Skip unlabeled names.
+- **Don't change logic.** Rename only. No restructuring, no extracting, no "while I'm here" fixes.
+- **Don't rename a production export without updating every consumer.** A broken import is worse than a bad name.
+- **Don't rename a class/module without renaming the file.**
+- **Don't apply rules robotically.** `err` in `.catch(err => ...)` is fine. `e` in `.catch(e => ...)` is VOID.
+- **Don't rename test `describe`/`it` strings.** Those are documentation strings, not identifiers.
+- **Don't let test and production names diverge.** If a value is the same concept in both contexts, its name must be consistent across both.
