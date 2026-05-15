@@ -1,6 +1,29 @@
 # Phase 4 — Choose Good Replacements
 
-The fix rule for each category is deterministic. Apply the rule for the category assigned in Phase 2. All replacements must draw from the domain vocabulary identified in Phase 1b.
+## How to Find the Right Name
+
+The fix rules below tell you *what to do*. This process tells you *how to think* when doing it.
+
+JB Rainsberger describes name improvement as three steps that must be taken in order:
+
+1. **Discover structure** — read the implementation without prejudice. Ignore the existing name entirely. What does this code actually hold, compute, or produce? What values flow in and out? What invariants does it maintain?
+
+2. **Understand structure** — make sense of what you observed. What concept is being modeled? What relationships and patterns does it participate in?
+
+3. **Realise purpose** — name the *purpose*, not the mechanism. A function that divides one number by another and multiplies by 100 doesn't "divide and multiply" — its purpose is to compute a *rate*. The name belongs at this level.
+
+**Which steps each category requires:**
+
+| Category | Steps needed | Why |
+|----------|-------------|-----|
+| CIPHER, INVERSE | 3 only | The correct concept is already present in the name — just encoded or inverted |
+| LIE, SERIES | 2–3 | You know the type or position; determine purpose and name it |
+| FRAGMENT, MIRAGE | 2–3 | Understand which domain concept the structural word belongs to, then qualify |
+| VOID, CHIMERA, MIMIC, ECHO | 1–2–3 | The existing name gives no reliable starting point; you must read the implementation to discover and understand before you can name |
+
+When a fix feels uncertain, the answer is almost always that you stopped too early — at structure, not purpose.
+
+All replacements must draw from the domain vocabulary identified in Phase 1b.
 
 ---
 

@@ -7,22 +7,36 @@ description: Rename poorly named variables, parameters, or identifiers across bo
 
 Hunt down the worst-named identifiers across test and production code and rename them everywhere they appear.
 
+## Flags
+
+`--min-severity=<level>` — restrict the report to findings at or above the specified severity. Valid values: `CRITICAL`, `HIGH`, `MEDIUM` (default: `MEDIUM`, meaning all findings are surfaced).
+
+`--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output), `annotations` (one line per finding, `file:line:` prefixed, machine-parseable). Use `annotations` in CI pipelines so output can be consumed by build scripts or posted as PR review comments.
+
+Example CI invocation: `/rename-identifiers --min-severity=HIGH --format=annotations`
+
+---
+
 ## Core Principle
 
 An identifier's name is its contract. Every bad name fails for exactly one reason — and that reason determines the fix. Classify first, then apply the fix rule for that category.
 
 ## Naming Failure Taxonomy
 
-Six disjoint categories, evaluated in priority order (LIE → CHIMERA → CIPHER → SERIES → FRAGMENT → VOID):
+Ten disjoint categories, evaluated in priority order (LIE → INVERSE → CHIMERA → MIMIC → CIPHER → SERIES → FRAGMENT → MIRAGE → ECHO → VOID):
 
 | Category | Severity | Root cause | Fix rule |
 |----------|----------|------------|----------|
-| **VOID** | CRITICAL | No information | Name what it actually holds |
 | **LIE** | CRITICAL | False information | Name the true type, cardinality, and domain role |
+| **VOID** | CRITICAL | No information | Name what it actually holds |
+| **INVERSE** | HIGH | Inverted boolean polarity | Invert both the value and the name together |
 | **CHIMERA** | HIGH | Incoherent term combination | Find the single real concept from the implementation |
+| **MIMIC** | HIGH | Implementation exposed instead of concept | Replace with the domain concept name |
 | **CIPHER** | HIGH | Abbreviation with a recoverable expansion | Spell it out |
 | **FRAGMENT** | MEDIUM | Structural role without domain qualification | Qualify with a domain noun |
 | **SERIES** | MEDIUM | Ordinal position instead of concept | Name each item's distinct role |
+| **MIRAGE** | MEDIUM | Wrong scope generality | Match the name's implied reach to its actual reach |
+| **ECHO** | MEDIUM | Ambiguous domain term | Qualify to pin to one concept |
 
 ---
 
@@ -60,7 +74,7 @@ If the domain is ambiguous (a utility module, a generic adapter), use the closes
 
 See `references/phase-2-score-for-badness.md` for full detection rules and examples.
 
-Assign every candidate the first matching category in priority order: **LIE → CHIMERA → CIPHER → SERIES → FRAGMENT → VOID**.
+Assign every candidate the first matching category in priority order: **LIE → INVERSE → CHIMERA → MIMIC → CIPHER → SERIES → FRAGMENT → MIRAGE → ECHO → VOID**.
 
 Score every identifier in scope: variables, parameters, callback arguments, class names, method names, and module names. Class and function names are not exempt.
 
@@ -84,37 +98,19 @@ Apply the fix rule for the assigned category. All replacements must use domain v
 
 ---
 
-## Phase 5 — Execute
+## Phase 5 — Report
 
-See `references/phase-5-execute.md`.
+See `references/phase-5-shared.md` first, then the format-specific file:
 
-For each rename:
-
-1. **Grep across the entire codebase** for all occurrences before editing — source files, test files, type files, and barrel/index files. Partial renames are worse than none.
-2. Rename in every file where it appears.
-3. Use `Edit` with `replace_all: true` for identifiers that appear multiple times in a file.
-4. Rename one identifier at a time.
-5. Use word-boundary grep patterns (`\bidentifier\b`) to avoid spurious hits.
-6. After all renames, re-read changed sections to confirm no occurrence was missed and no accidental collision was introduced.
-7. Check that renamed exports still match their import sites.
-8. **If a class or module is renamed, rename its file too.** Grep for the old filename stem to find all import consumers.
-
----
-
-## Phase 6 — Report
-
-See `references/phase-6-report.md`.
-
-Summary grouped by category (CRITICAL first, then HIGH, then MEDIUM). One line per rename. No prose.
+- `--format=report` (default) → `references/phase-5-report.md`
+- `--format=annotations` → `references/phase-5-annotations.md`
 
 ---
 
 ## Constraints — What NOT to Do
 
-- **Don't rename everything.** Only rename identifiers that received a category label. Skip unlabeled names.
-- **Don't change logic.** Rename only. No restructuring, no extracting, no "while I'm here" fixes.
-- **Don't rename a production export without updating every consumer.** A broken import is worse than a bad name.
-- **Don't rename a class/module without renaming the file.**
+- **Don't propose renaming everything.** Only flag identifiers that received a category label. Skip unlabeled names.
+- **Don't propose logic changes.** Renames only. No restructuring, no extracting, no "while I'm here" fixes.
 - **Don't apply rules robotically.** `err` in `.catch(err => ...)` is fine. `e` in `.catch(e => ...)` is VOID.
-- **Don't rename test `describe`/`it` strings.** Those are documentation strings, not identifiers.
-- **Don't let test and production names diverge.** If a value is the same concept in both contexts, its name must be consistent across both.
+- **Don't flag test `describe`/`it` strings.** Those are documentation strings, not identifiers.
+- **Don't propose names that diverge between test and production.** If a value is the same concept in both contexts, the proposed name must be consistent across both.
