@@ -1,0 +1,81 @@
+---
+name: possible-null-access
+description: Detect possible null or undefined dereferences in code or pull request diffs. Use when asked to "check for null bugs", "find null dereferences", "review for null safety", or as a focused null-access pass during PR review. Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+---
+
+# Possible Null Access Reviewer
+
+Find places where code dereferences a value that may be `null` or `undefined`, and produce a high-signal review comment. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+
+## When to use
+
+- Reviewing a PR or diff and the user asks specifically about null safety
+- Running a focused null-access pass as part of a broader code review
+- The user mentions "TypeError", "undefined is not an object", "cannot read property of undefined", or similar runtime errors
+
+## Workflow
+
+1. **Get the diff.** If reviewing a PR, run `git diff <base>...HEAD` and focus only on changed lines.
+2. **Walk the changed code** looking for the patterns in [`references/detection-patterns.md`](references/detection-patterns.md).
+3. **For each candidate**, collect evidence (see Evidence Required below). If you cannot collect at least two pieces of evidence, suppress.
+4. **Apply suppression rules** in [`references/suppression-rules.md`](references/suppression-rules.md). When in doubt, suppress.
+5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
+6. **Generate review comments** only for `high` confidence or strong `medium` findings, using the format in [`references/comment-format.md`](references/comment-format.md).
+7. **Calibrate against fixtures** in `fixtures/`. Every example in `should-flag/` must produce a finding; every example in `should-not-flag/` must not.
+
+## Evidence required
+
+Before reporting a finding, gather **at least two** of:
+
+1. **Type evidence** — the type allows `null` or `undefined` (optional property, return type with `| undefined`, no narrowing in scope).
+2. **Source evidence** — the value comes from an operation known to return missing data: `.find(...)`, `Map.get(...)`, `Record[key]` lookup, cache/database/API lookup.
+3. **Guard placement** — no guard exists, or the guard appears *after* the dereference.
+4. **Convention evidence** — nearby code in the same file already treats this value as nullable.
+
+One piece of evidence alone is too weak. For example, "this came from `.find(...)`" is not enough if the function is provably called with a value known to exist.
+
+## Finding schema
+
+```json
+{
+  "skill": "possible_null_access",
+  "file": "src/users.ts",
+  "line": 42,
+  "expression": "user.name",
+  "claim": "user.name may throw because users.find(...) can return undefined",
+  "evidence": [
+    "users.find(...) returns User | undefined",
+    "no guard between assignment at line 41 and dereference at line 42",
+    "an unreachable guard exists at line 47"
+  ],
+  "confidence": "high",
+  "severity": "blocking",
+  "suggested_fix": "Guard `user` before reading `name`, throw a domain error, or use `?? defaultUser`."
+}
+```
+
+## Confidence calibration
+
+| Confidence | Criteria | Action |
+|---|---|---|
+| `high` | All four evidence types present, or type system explicitly says nullable + no guard. | Comment as `Blocking:` or `Suggested:`. |
+| `medium` | Two evidence types present, plausible failure path. | Comment as `Suggested:` phrased as a question. |
+| `low` | One evidence type, speculative. | **Suppress.** Do not comment. |
+
+## Comment budget
+
+Per review pass, post at most:
+- **3** blocking comments from this skill
+- **5** total comments from this skill
+
+If you have more candidates than the budget, keep the highest-confidence ones and drop the rest. Do not add a "see also" list of suppressed candidates — it defeats the budget.
+
+## Output format
+
+After analysis, output:
+
+1. A JSON array of findings (always, even if empty).
+2. A list of human-readable review comments derived from `high` and strong `medium` findings.
+3. A one-line summary: `Found N possible null-access issues (M reportable after suppression).`
+
+If no findings, output exactly: `No possible null-access issues detected in the changed code.`
