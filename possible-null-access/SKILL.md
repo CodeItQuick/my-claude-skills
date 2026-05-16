@@ -7,6 +7,14 @@ description: Detect possible null or undefined dereferences in code or pull requ
 
 Find places where code dereferences a value that may be `null` or `undefined`, and produce a high-signal review comment. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
+## Flags
+
+`--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (one line per finding, `file:line:` prefixed, machine-parseable for CI pipelines or PR review comment automation).
+
+Example CI invocation: `/possible-null-access --format=annotations`
+
+---
+
 ## When to use
 
 - Reviewing a PR or diff and the user asks specifically about null safety
@@ -72,10 +80,38 @@ If you have more candidates than the budget, keep the highest-confidence ones an
 
 ## Output format
 
-After analysis, output:
+### `--format=report` (default)
 
-1. A JSON array of findings (always, even if empty).
-2. A list of human-readable review comments derived from `high` and strong `medium` findings.
-3. A one-line summary: `Found N possible null-access issues (M reportable after suppression).`
+For CLI use. Human-readable output — no JSON. Output two sections in order:
+
+1. **Review comments** — derived from `high` and strong `medium` findings, using the format in [`references/comment-format.md`](references/comment-format.md).
+2. **Summary line** — `Found N possible null-access issues (M reportable after suppression).`
 
 If no findings, output exactly: `No possible null-access issues detected in the changed code.`
+
+### `--format=annotations`
+
+For CI pipelines and PR review comment automation. Emit a JSON array of findings — always, even if empty — using the finding schema above. No prose, no summary line.
+
+Example:
+
+```json
+[
+  {
+    "skill": "possible_null_access",
+    "file": "src/users.ts",
+    "line": 42,
+    "expression": "user.name",
+    "claim": "user.name may throw because users.find(...) can return undefined",
+    "evidence": [
+      "users.find(...) returns User | undefined",
+      "no guard between assignment at line 41 and dereference at line 42"
+    ],
+    "confidence": "high",
+    "severity": "blocking",
+    "suggested_fix": "Guard `user` before reading `name`, throw a domain error, or use `?? defaultUser`."
+  }
+]
+```
+
+Suppress `low` confidence findings entirely — they do not appear in annotation output. Respect the comment budget: emit at most 3 `blocking` entries and 5 total entries. If candidates exceed the budget, keep the highest-confidence ones.

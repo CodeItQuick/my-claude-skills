@@ -7,6 +7,16 @@ description: Use when asked to rename poorly named variables, parameters, or ide
 
 Hunt down the worst-named identifiers in a test file and rename them to something that communicates intent clearly.
 
+## Flags
+
+`--min-severity=<level>` — restrict the report to findings at or above the specified severity. Valid values: `CRITICAL`, `HIGH`, `MEDIUM` (default: `MEDIUM`, meaning all findings are surfaced).
+
+`--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output), `annotations` (one line per finding, `file:line:` prefixed, machine-parseable). Use `annotations` in CI pipelines so output can be consumed by build scripts or posted as PR review comments.
+
+Example CI invocation: `/rename-test-variables --min-severity=HIGH --format=annotations`
+
+---
+
 ## Core Principle
 
 A test's variable names are documentation. If a reader can't tell what a value represents without reading the body that produces it, the name is wrong.
