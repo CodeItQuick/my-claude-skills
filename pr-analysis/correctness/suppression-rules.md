@@ -1,28 +1,8 @@
-# Suppression Rules
+# Suppression Rules — Correctness Passes
 
-A noisy reviewer is worse than a quiet one. **When in doubt, suppress.** Apply shared suppressions first, then the pass-specific rules for the active pass.
+Pass-specific suppressions for: `null-access`, `swallowed-exceptions`, `suspicious-conditional`, `mutation-of-input`, `implicit-boolean-coercion`, `implicit-test-ordering`.
 
----
-
-## Shared suppressions (apply to all passes)
-
-### S-ALL-1. The candidate is in unchanged code
-
-If the line in question is not part of the diff, do not report it. This skill reviews *what changed*. Pre-existing issues are out of scope unless the user explicitly asks.
-
-### S-ALL-2. Test code intentionally exercising a failure path
-
-```ts
-it("throws when user is missing", () => { ... });
-await expect(fn()).rejects.toThrow();
-expect(() => user.name).toThrow();
-```
-
-Tests that deliberately trigger failure are not bugs — they are assertions on failure behavior.
-
-### S-ALL-3. The pattern is documented as intentional
-
-An adjacent comment that states *why* the code is safe or intentional — not merely "intentional" — is sufficient to suppress. The comment must give the reason, not just assert intent.
+Apply [`shared/suppression-rules.md`](../shared/suppression-rules.md) first, then the relevant section below.
 
 ---
 
@@ -314,3 +294,123 @@ if (userId === userId) { ... }
 ```
 
 The NaN-check idiom applies only to values that can actually be `NaN`.
+
+---
+
+## `mutation-of-input` suppressions
+
+### S-MOI-1. Function name signals mutation
+
+`sort`, `mutate`, `update`, `fill`, `assign`, `set`, `modify`, `append`, `remove`, `clear`, `reset` in the function name. Callers are warned by the name that mutation is the contract.
+
+### S-MOI-2. Parameter type is a builder or accumulator
+
+`Buffer`, `WritableStream`, `StringBuilder`, `Set`, `Map`, or any type whose documented contract is to be mutated in place. These types exist to be written to.
+
+### S-MOI-3. Return type is `void` and name is imperative
+
+A `void` function with an imperative name (`populate`, `fill`, `initialize`) signals that mutation is the intended API surface.
+
+### S-MOI-4. Object is created immediately before the call with no prior reference
+
+```ts
+const arr = [];
+populateWithDefaults(arr);
+```
+
+The caller holds no prior reference to the object, so the mutation is not observable by any other holder.
+
+### S-MOI-D1. Ambiguous function name (soft — downgrade)
+
+`process(item)`, `handle(item)` — name neither signals nor rules out mutation. Downgrade to `medium` and ask the author to clarify the contract.
+
+### S-MOI-A1. In-place array method used on a parameter when function name implies a copy (do NOT suppress)
+
+`sort`, `reverse`, `splice`, `push` directly on a parameter when the function is named `transform`, `filter`, `map`, or similar. The name implies a pure transformation; the implementation mutates.
+
+### S-MOI-A2. Return value is the same reference as the input (do NOT suppress)
+
+```ts
+function addItem(cart: Cart, item: Item): Cart {
+  cart.items.push(item);
+  return cart;   // same reference
+}
+```
+
+Returning the mutated input while the signature suggests a pure transformation is the highest-confidence form of this pattern.
+
+---
+
+## `implicit-boolean-coercion` suppressions
+
+### S-IBC-1. Value typed as `string | null | undefined` and empty string should be treated as absent
+
+```ts
+if (name) { ... }  // name: string | null | undefined
+```
+
+When the intent is "does this string exist and have content", the truthiness check is idiomatic and correct. Only flag when empty string is a plausible valid value in the domain.
+
+### S-IBC-2. `||` for a boolean default where the left side is always boolean
+
+`const enabled = flag || false` — `false` is the only falsy value in boolean space; the default correctly replaces it.
+
+### S-IBC-3. `&&` in JSX where the condition is a boolean expression
+
+`{isVisible && <Component />}` — `false && ...` renders nothing. Risk only exists when the left side is a non-boolean type.
+
+### S-IBC-4. `.filter(Boolean)` on an array typed as `(T | null | undefined)[]`
+
+Objects and class instances are always truthy; `.filter(Boolean)` removes only `null` and `undefined`. Correct when the element type cannot include `0`, `""`, or `false`.
+
+### S-IBC-5. `??` already used in place of `||`
+
+The author is already handling the nullish-vs-falsy distinction correctly.
+
+### S-IBC-D1. Truthiness on `boolean | undefined` where the `false`/`undefined` distinction may matter (soft — downgrade)
+
+Downgrade and ask whether the caller ever needs to distinguish "explicitly disabled" (`false`) from "not configured" (`undefined`).
+
+### S-IBC-A1. `||` default where `0` or `""` is a plausible valid domain value (do NOT suppress)
+
+`const count = options.count || 10` where `0` means "no items." Flag and suggest `??`.
+
+### S-IBC-A2. JSX `{count && ...}` where `count` is typed as `number` (do NOT suppress)
+
+Renders `"0"` as a text node when `count` is zero. Flag.
+
+### S-IBC-A3. `.filter(Boolean)` on an array that may contain `0`, `""`, or `false` as valid members (do NOT suppress)
+
+Silently drops valid values. Flag.
+
+---
+
+## `implicit-test-ordering` suppressions
+
+### S-ITO-1. `beforeEach` recreates all state referenced by the test
+
+Every variable read by the test is freshly initialized in `beforeEach`. The test is fully self-contained regardless of execution order.
+
+### S-ITO-2. Test framework enforces sequence declaratively
+
+`jest-sequential`, `--runInBand` with explicit ordering configuration, or a framework with declared test dependencies. If the ordering is enforced, not assumed, suppress.
+
+### S-ITO-3. `beforeAll` seeds read-only reference data
+
+A `beforeAll` that creates lookup tables, seeds a schema, or spins up a server — and no test mutates the result. Suppress when the shared resource is treated as read-only.
+
+### S-ITO-4. Scenario test explicitly documented as sequential
+
+A `describe` block with a comment stating the tests are a declared lifecycle sequence. Suppress and leave a note about the tradeoff of not using `beforeEach`.
+
+### S-ITO-D1. Sequential test names but tests are independently self-contained (soft — downgrade)
+
+Names use numbers but each test has its own arrange step. Downgrade and suggest removing the numbering to avoid implying an order.
+
+### S-ITO-A1. `beforeAll` creates a mutable shared object that tests write to (do NOT suppress)
+
+Any mutation of the shared resource makes execution order matter.
+
+### S-ITO-A2. Test has an obvious data requirement with no arrange step (do NOT suppress)
+
+A test that uses a record ID it never creates. Even if a prior test happens to produce it, the ordering dependency is real.
