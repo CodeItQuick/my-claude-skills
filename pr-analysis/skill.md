@@ -25,13 +25,13 @@ Run thirteen targeted passes over changed code across correctness, overengineeri
 | comprehension | `overly-clever-one-liner` | Expressions compressed to the point where two or three named lines would be immediately clearer | [`comprehension/overly-clever-one-liner.md`](comprehension/overly-clever-one-liner.md) |
 | comprehension | `inconsistent-abstraction-in-name` | Names that mix vocabulary from incompatible abstraction levels — business terms alongside infrastructure terms, or implementation detail encoded in a name where intent belongs | [`comprehension/inconsistent-abstraction-in-name.md`](comprehension/inconsistent-abstraction-in-name.md) |
 
-To run a single pass, specify it: `/pr-analysis null-access`
-
 ## Flags
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
 `--category=<category>` — run all passes in one category instead of all thirteen. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the six correctness passes only.
+
+`--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
 ---
 
@@ -41,12 +41,12 @@ To run a single pass, specify it: `/pr-analysis null-access`
 - The user mentions a runtime error, silent failure, logic bug, overengineering, hard-to-read code, or naming problems
 - Running all passes: `/pr-analysis`
 - Focusing on one category: `/pr-analysis --category=correctness`, `--category=overengineering`, `--category=maintainability`, `--category=comprehension`
-- Running a single pass: `/pr-analysis null-access`
+- Running a single pass: `/pr-analysis --pass=null-access`
 
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--category` is specified, run only the passes in that category. If a single pass is named, run only that pass. Otherwise run all thirteen in order. For each pass, walk the changed code looking for the patterns in the corresponding detection-patterns file.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all thirteen in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
@@ -169,7 +169,7 @@ Gather **at least two** of the evidence types for the active pass before reporti
 | Confidence | Criteria | Action |
 |---|---|---|
 | `high` | Two or more evidence types present, failure path is concrete and demonstrable. | Comment as `Blocking:` or `Suggested:`. |
-| `medium` | Two evidence types present, plausible failure path, but alternative interpretations exist. | Comment as `Suggested:` phrased as a question. |
+| `medium` | Two evidence types present, plausible failure path, but alternative interpretations exist. | **Suppress.** Do not comment. |
 | `low` | One evidence type, speculative, or the pattern is clearly defensive/intentional. | **Suppress.** Do not comment. |
 
 ## Output format
@@ -178,7 +178,7 @@ Gather **at least two** of the evidence types for the active pass before reporti
 
 For CLI use. Human-readable output — no JSON. Group findings by pass, then output:
 
-1. **Review comments** — derived from `high` and strong `medium` findings, using the format in [`shared/comment-format.md`](shared/comment-format.md).
+1. **Review comments** — derived from `high` confidence findings only, using the format in [`shared/comment-format.md`](shared/comment-format.md).
 2. **Summary line** — `Found N issues across M passes (P reportable after suppression).`
 
 If no findings across all passes, output exactly: `No issues detected in the changed code.`

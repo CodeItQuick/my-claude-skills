@@ -12,9 +12,9 @@ A noisy reviewer is worse than a quiet one. **When in doubt, suppress.** Apply t
 
 ## Shared suppressions (apply to all passes)
 
-### S-ALL-1. The candidate is in unchanged code
+### S-ALL-1. The candidate is not visible in the diff
 
-If the line in question is not part of the diff, do not report it. This skill reviews *what changed*. Pre-existing issues are out of scope unless the user explicitly asks.
+If the line in question is not visible anywhere in the diff — neither as a changed line nor as context — do not report it. Code that is visible in the diff (including unchanged context lines surrounding a change) is in scope and may be analysed.
 
 ### S-ALL-2. Test code intentionally exercising a failure path
 
