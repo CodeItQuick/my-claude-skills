@@ -1,11 +1,11 @@
 ---
 name: pr-analysis
-description: Run thirteen focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering), overengineering (boolean flag splitting, passthrough wrappers), maintainability (primitive obsession, feature envy, mixed abstraction levels), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run seventeen focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
 
-Run thirteen targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run seventeen targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
@@ -19,6 +19,10 @@ Run thirteen targeted passes over changed code across correctness, overengineeri
 | correctness | `implicit-test-ordering` | Tests that silently depend on state created by other tests, making the suite order-sensitive | [`correctness/implicit-test-ordering.md`](correctness/implicit-test-ordering.md) |
 | overengineering | `boolean-flag-splitter` | Boolean parameters that divide a function so fundamentally it should be two functions | [`overengineering/boolean-flag-splitter.md`](overengineering/boolean-flag-splitter.md) |
 | overengineering | `passthrough-wrapper` | Functions, methods, or classes that only delegate to something else with no added behavior | [`overengineering/passthrough-wrapper.md`](overengineering/passthrough-wrapper.md) |
+| maintainability | `copy-paste-variation` | Two or more blocks with identical structure varying only in a value or field name, creating change coupling where a logic fix must be applied to every copy | [`maintainability/copy-paste-variation.md`](maintainability/copy-paste-variation.md) |
+| maintainability | `boolean-state-machine` | Multiple coordinated booleans tracking a lifecycle where invalid combinations are possible and a typed enum would make valid states explicit | [`maintainability/boolean-state-machine.md`](maintainability/boolean-state-machine.md) |
+| maintainability | `deep-nesting` | Control flow indented four or more levels deep where early returns, extraction, or guard clauses would flatten the structure | [`maintainability/deep-nesting.md`](maintainability/deep-nesting.md) |
+| maintainability | `long-parameter-list` | Functions with five or more positional parameters where an options object would prevent transpositions and reduce call-site burden | [`maintainability/long-parameter-list.md`](maintainability/long-parameter-list.md) |
 | maintainability | `primitive-obsession` | Raw strings or numbers used where a small domain type would add safety and prevent misuse | [`maintainability/primitive-obsession.md`](maintainability/primitive-obsession.md) |
 | maintainability | `feature-envy` | Functions or methods more interested in another module's data than their own, suggesting they belong elsewhere | [`maintainability/feature-envy.md`](maintainability/feature-envy.md) |
 | maintainability | `mixed-abstraction-levels` | Functions that mix high-level business intent with low-level mechanics in the same body | [`maintainability/mixed-abstraction-levels.md`](maintainability/mixed-abstraction-levels.md) |
@@ -29,7 +33,7 @@ Run thirteen targeted passes over changed code across correctness, overengineeri
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
-`--category=<category>` — run all passes in one category instead of all thirteen. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the six correctness passes only.
+`--category=<category>` — run all passes in one category instead of all seventeen. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the six correctness passes only.
 
 `--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
@@ -109,6 +113,30 @@ Gather **at least two** of the evidence types for the active pass before reporti
 4. **Substitutability evidence** — callers could import and call the wrapped target directly without any change to their logic, types, or error handling.
 
 ### Maintainability
+
+#### `copy-paste-variation`
+1. **Structural identity evidence** — two or more blocks share the same control flow, operations, and return shape; the blocks are recognisably the same code with values swapped out.
+2. **Variation evidence** — the difference between the blocks is confined to one or two values, field names, or string literals that could become parameters with no change to the surrounding logic.
+3. **Locality evidence** — the duplicate blocks appear in the same function, class, or file, making the duplication visible and unambiguous rather than a coincidental resemblance across distant modules.
+4. **Change-coupling evidence** — a modification to the shared logic (the accumulator, the error push, the two-step body) would need to be applied identically to every copy, with nothing to prompt the author that other copies exist.
+
+#### `boolean-state-machine`
+1. **Multiplicity evidence** — two or more boolean fields or variables whose values are coordinated: set together, checked together, or reset together in at least one place.
+2. **Invalid combination evidence** — at least one combination of the boolean values represents an impossible or meaningless state (e.g., `isLoading: true` and `isLoaded: true` simultaneously), confirming the booleans are not independent.
+3. **Tandem-set evidence** — the booleans are assigned in groups at two or more sites (`isLoading = false; isLoaded = true`), meaning every transition requires keeping multiple writes in sync.
+4. **Discriminant evidence** — the code checks combinations of booleans to determine behavior (`if (!isLoading && !hasFailed)`) rather than reading a single named state value.
+
+#### `deep-nesting`
+1. **Depth evidence** — the function contains four or more levels of indentation from control flow constructs (`if`/`else`, `for`/`while`/`forEach`, `try`/`catch`, `switch`).
+2. **Inversion evidence** — the outermost condition or one of the intermediate conditions could be inverted to an early return, collapsing one or more nesting levels with no change to behavior.
+3. **Extractability evidence** — a contiguous nested block could be extracted to a named function, reducing the depth at the call site and making the extracted logic independently readable.
+4. **Happy-path burial evidence** — the main success path is the deepest branch, forcing a reader to trace through all enclosing conditions before reaching the code that runs in the common case.
+
+#### `long-parameter-list`
+1. **Count evidence** — the function has five or more positional parameters.
+2. **Transposition evidence** — two or more adjacent parameters share the same type, making silent argument transposition possible with no compile error.
+3. **Grouping evidence** — two or more parameters belong to a single logical domain concept (e.g., `firstName`, `lastName`, `email` → user) that could be an options object.
+4. **Call-site evidence** — at least one visible call site passes positional literals in sequence, making it impossible to determine which value maps to which parameter without looking up the signature.
 
 #### `primitive-obsession`
 1. **Interchangeability evidence** — two or more distinct domain concepts share the same primitive type, making it possible to pass one where the other is expected with no compile-time error (e.g., `userId: string` and `orderId: string` are interchangeable to the type system).

@@ -164,6 +164,83 @@ Keep each comment to 2–4 sentences. If you find yourself writing a paragraph, 
 
 ---
 
+### `copy-paste-variation`
+
+**Good:**
+
+> **Suggested:** `getTotalPrice` and `getTotalCost` at lines 12 and 18 are identical except for `item.price` vs `item.cost`. If the reduce logic ever needs to change — rounding, currency conversion, filtering zero-quantity items — it would need to be updated in both places. Could these share a `sumBy(items, key: 'price' | 'cost')` helper?
+
+> **Suggested:** The three event-type blocks at lines 24–36 follow the same two-step pattern (`logger.info` + `metrics.increment`) with only the type string varying. A fourth event type would require a fourth copy. Could `trackEvent(type, event)` replace all three?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Three or more copies of the same block | Assert: "This pattern appears N times with only X varying — a future logic change must be applied to all N copies." |
+| Two copies where variation is a single field name | Ask: "Could `getTotalPrice` and `getTotalCost` share a `sumBy(items, key)` helper so the reduce logic lives once?" |
+| Two event handlers differing only in field key | Ask: "Could `makeFieldHandler(field)` produce both handlers so the clear-error and set-value logic is defined once?" |
+| Duplicated validation with different field names | Ask: "Could these three length checks become `validateMinLength(field, label, min)` calls so the rule is defined once?" |
+
+---
+
+### `boolean-state-machine`
+
+**Good:**
+
+> **Suggested:** `Request` at line 8 tracks its lifecycle with four booleans — `isLoading`, `isLoaded`, `hasFailed`, `isRetrying`. Combinations like `isLoading && isLoaded` are structurally possible but meaningless, and every transition requires resetting multiple flags in sync. Could these collapse to a single `state: 'idle' | 'loading' | 'retrying' | 'loaded' | 'failed'` field?
+
+> **Suggested:** `startFetch`, `onSuccess`, and `onError` at lines 14, 22, and 31 each set `isLoading`, `isLoaded`, and `hasFailed` in tandem. If any transition omits a reset, the object lands in an invalid combination with no type-level protection. Would a single `this.status` assignment make each transition atomic?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Three or more booleans reset together in a method | Assert: "`reset()` zeros four booleans in sync — a single `state = 'idle'` assignment would be atomic and exhaustive." |
+| Compound boolean check to determine current state | Ask: "Could `if (!isLoading && !hasFailed && data)` become `if (state === 'loaded')`?" |
+| Mutually exclusive booleans (only one true at a time) | Ask: "Could `isAdmin`, `isModerator`, and `isGuest` become `role: 'admin' \| 'moderator' \| 'guest'` to make the mutual exclusion enforced rather than assumed?" |
+| Two booleans with one impossible combination | Ask: "Is `isSaving && isSaved` ever possible? If not, a three-state enum would make that unrepresentable." |
+
+---
+
+### `deep-nesting`
+
+**Good:**
+
+> **Suggested:** `processOrder` at line 8 has four levels of nested `if` checks before reaching `charge(order)`. Each guard wraps everything below it rather than returning early. Could we invert each condition to a guard clause (`if (!order) return`, `if (!order.items.length) return`, ...) to bring the main path to the top level?
+
+> **Suggested:** The inner body of the triple-nested loop at line 22 — `for department → for team → for member` — is four levels deep. Could `collectActiveMembers(teams)` extract the inner logic so the outer loop stays at one level and the transformation can be tested in isolation?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Positive condition wraps entire function body | Assert: "The entire body is inside `if (x)` — inverting to `if (!x) return` would eliminate all nesting." |
+| Pyramid of successive guards | Ask: "Could each guard return early so the common path isn't buried four levels in?" |
+| Nested loops with extractable inner body | Ask: "Could the inner loop body extract to `processTeamMember(member)` to reduce depth and enable unit testing?" |
+| Callback pyramid | Ask: "Could this be rewritten with `async/await` to flatten the three nested callbacks?" |
+| Nested try/catch | Ask: "Could each operation move to its own function with its own `try/catch` so the happy path stays at one level?" |
+
+---
+
+### `long-parameter-list`
+
+**Good:**
+
+> **Suggested:** `createInvoice` at line 12 takes five positional parameters — `userId`, `orderId`, `amount`, `currency`, and `dueDate`. `userId` and `orderId` are both `string`, so they can be silently transposed with no compile error. Could these become a `CreateInvoiceRequest` options object so call sites are self-documenting?
+
+> **Suggested:** `fetchReport(userId, startDate, endDate, undefined, undefined, "UTC")` at line 44 passes three `undefined` placeholders to reach the `timezone` parameter. An options object would let callers name only the parameters they care about. Would `fetchReport({ userId, startDate, endDate, timezone: "UTC" })` be worth the refactor?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Two or more adjacent same-type params | Assert: "`userId` and `orderId` are both `string` — callers can transpose them silently." |
+| Five or more params with a clear grouping | Ask: "Could `firstName`, `lastName`, and `email` group into a `UserDetails` options object?" |
+| Call site passes positional literals | Ask: "At line N, `true, false` are hard to read without the signature — would named fields help?" |
+| Boolean flags in a long list | Ask: "Could `includeHeaders` and `compress` move into an options object so call sites don't need positional booleans?" |
+
+---
+
 ### `primitive-obsession`
 
 **Good:**
