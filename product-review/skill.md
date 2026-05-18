@@ -1,88 +1,80 @@
 ---
 name: product-review
-description: Run a panel of role-based reviewers over a pull request or diff, each examining the change through a distinct professional lens. Use when asked "is this working?", "will this break anything?", "is this safe to ship?", "are customers happy?", "can we sell this?", "where are we going?", "is this on the roadmap?", or "get some eyes on this". Supports four panels - Is It Working? (QA/SDET, Security, Engineering/Tech Lead); Are Customers Happy? (Customer Success, Support, Designer/UX); Can We Sell It? (Sales, Marketing, CEO/Founder); Where Are We Going? (CTO, Product Manager, Platform/DevEx).
+description: Assemble a panel of role-based reviewers for any question about a pull request or diff. Given a question, select 2–4 roles from role-profiles/ whose vantage points and time horizons cover the question without overlapping, then produce a focused findings table.
 ---
 
 # Product Review
 
-Run a panel of professional reviewers over changed code, each asking the questions their role demands. Where `pr-analysis` finds code-level patterns, `product-review` asks whether the change is ready to ship from the perspectives of the people who will live with the consequences.
-
-## Panels
-
-### Is It Working?
-
-The reliability panel. Three reviewers who each have a different definition of "broken".
-
-| Role | What they ask | Review guide |
-|---|---|---|
-| QA / SDET | Are the failure modes covered? Will this break silently? What edge cases were missed? | [`role-profiles/qa-sdet.md`](role-profiles/qa-sdet.md) |
-| Security | Does this introduce an exploitable surface? Is user input trusted anywhere it shouldn't be? | [`role-profiles/security.md`](role-profiles/security.md) |
-| Engineering / Tech Lead | Is this the right approach? Will it hold up? Will we regret this in six months? | [`role-profiles/engineering-tech-lead.md`](role-profiles/engineering-tech-lead.md) |
-
-### Are Customers Happy?
-
-The customer experience panel. Three reviewers who each hear from customers differently — and know what a change looks like from the outside.
-
-| Role | What they ask | Review guide |
-|---|---|---|
-| Customer Success | Will existing customers still be able to do what they came here to do? Will anyone lose something they depend on? | [`role-profiles/customer-success.md`](role-profiles/customer-success.md) |
-| Support | Will I get tickets about this? Will I be able to help the person who sends them? | [`role-profiles/support.md`](role-profiles/support.md) |
-| Designer / UX | Would someone who has never seen this know what to do? Would they feel confident they did it right? | [`role-profiles/designer-ux.md`](role-profiles/designer-ux.md) |
-
-### Can We Sell It?
-
-The commercial readiness panel. Three reviewers who think about the product from the outside in — through the lens of deals, messaging, and strategy.
-
-| Role | What they ask | Review guide |
-|---|---|---|
-| Sales | Does this help me win deals? Does it break anything I'm using to close them? | [`role-profiles/sales.md`](role-profiles/sales.md) |
-| Marketing | Does this make the product easier or harder to talk about? Does it affect what we can credibly claim? | [`role-profiles/marketing.md`](role-profiles/marketing.md) |
-| CEO / Founder | Is this who we are? Is this where we're going? Is this the highest-leverage use of the team? | [`role-profiles/ceo-founder.md`](role-profiles/ceo-founder.md) |
-
-### Where Are We Going?
-
-The direction panel. Three reviewers who think about whether this change belongs in the product the company is building toward.
-
-| Role | What they ask | Review guide |
-|---|---|---|
-| CTO | Are we building the right foundation? Will we regret the decisions in this diff in three years? | [`role-profiles/cto.md`](role-profiles/cto.md) |
-| Product Manager | Is this the right thing to build right now? Does it solve the problem we said it would? | [`role-profiles/product-manager.md`](role-profiles/product-manager.md) |
-| Platform / DevEx | Does this make the platform better or harder to maintain? Are we setting the right precedent? | [`role-profiles/platform-devex.md`](role-profiles/platform-devex.md) |
-
-## Flags
-
-`--panel=<panel>` — run a specific panel. Valid values: `is-it-working`, `are-customers-happy`, `can-we-sell-it`, `where-are-we-going`. Default: `is-it-working`.
-
-`--role=<role>` — run a single role only. Valid values: `qa`, `security`, `tech-lead`, `customer-success`, `support`, `designer`, `sales`, `marketing`, `ceo`, `cto`, `pm`, `platform`. Takes precedence over `--panel`.
-
-`--format=<format>` — control output format. Valid values: `report` (default, grouped by role), `annotations` (JSON array of findings, one per finding, for CI pipelines).
+Select a panel of professional reviewers for a question about a change. Each role is defined in `role-profiles/` — their perspective, what they look for, and what they suppress. Where `pr-analysis` finds code-level patterns, `product-review` asks whether the change is ready to ship from the perspectives of the people who will live with the consequences.
 
 ---
 
-## When to use
+## Panel selection
 
-- Someone asks "is this working?", "will this break?", "is this safe to merge?", or "does this hold up?" → use `--panel=is-it-working`
-- A PR touches security-sensitive code (auth, input handling, data access) and needs a dedicated security pass → use `--role=security`
-- A change introduces a new pattern or architectural decision that needs a tech lead perspective → use `--role=tech-lead`
-- Someone asks "are customers happy?", "will users understand this?", or "will this generate tickets?" → use `--panel=are-customers-happy`
-- A PR changes user-facing flows, copy, or error messages → use `--role=designer` or `--role=support`
-- A PR removes or changes behaviour existing customers depend on → use `--role=customer-success`
-- Someone asks "can we sell this?", "is this on strategy?", or "does this help us close deals?" → use `--panel=can-we-sell-it`
-- A change affects a competitive differentiator, a positioning claim, or a flagship feature → use `--role=marketing` or `--role=ceo`
-- A change adds or removes something that will come up in a sales demo or trial → use `--role=sales`
-- Someone asks "where are we going?", "is this on the roadmap?", or "is this the right foundation?" → use `--panel=where-are-we-going`
-- A change makes an implicit platform bet or architectural commitment → use `--role=cto`
-- A change ships a feature without instrumentation or drifts from the agreed scope → use `--role=pm`
-- A change introduces a new pattern or touches shared infrastructure → use `--role=platform`
+A panel is a set of roles whose questions do not overlap but all bear on the user's concern. The goal is coverage, not volume — three roles with genuinely different vantage points produce better findings than six that look at the same thing from similar angles.
+
+### Two axes
+
+**Vantage point** — where does the role sit relative to the product?
+
+- **Internal / build** — roles that see the code and architecture (QA, Security, Tech Lead, CTO, Platform)
+- **External / use** — roles that see the product from the outside (Customer Success, Support, Designer, Sales, Marketing)
+- **Strategic** — roles that evaluate whether the product is the right product (CEO, PM, CTO)
+
+**Time horizon** — when does the risk materialise?
+
+- **Now** — does this work correctly when it ships? (QA, Security, Support)
+- **Soon** — will users succeed with it? Will it create operational burden? (Designer, Customer Success, Tech Lead, Platform)
+- **Later** — are we building the right foundation? I this the right direction? (CTO, PM, CEO, Marketing)
+
+### How to pick
+
+1. Identify what the question is really asking: is it a correctness question, a user experience question, a business question, or a strategic question?
+2. Pick roles that sit at different points on the two axes relative to that question. Avoid picking two roles that share both a vantage point and a time horizon — they will find the same things.
+3. Aim for 2–4 roles. Fewer is better if the question is narrow.
+
+### Available roles
+
+| Role | Key question | Time horizon | Vantage | Profile |
+|---|---|---|---|---|
+| QA / SDET | Are the failure modes covered? | Now | Internal | [`role-profiles/qa-sdet.md`](role-profiles/qa-sdet.md) |
+| Security | Does this introduce an exploitable surface? | Now | Internal | [`role-profiles/security.md`](role-profiles/security.md) |
+| Engineering / Tech Lead | Is this the right approach? | Soon | Internal | [`role-profiles/engineering-tech-lead.md`](role-profiles/engineering-tech-lead.md) |
+| Customer Success | Will existing customers still be able to do what they came here to do? | Soon | External | [`role-profiles/customer-success.md`](role-profiles/customer-success.md) |
+| Support | Will I get tickets about this? | Now | External | [`role-profiles/support.md`](role-profiles/support.md) |
+| Designer / UX | Would someone who has never seen this know what to do? | Soon | External | [`role-profiles/designer-ux.md`](role-profiles/designer-ux.md) |
+| Sales | Does this help me win deals? | Soon | External | [`role-profiles/sales.md`](role-profiles/sales.md) |
+| Marketing | Does this make the product easier or harder to talk about? | Later | External | [`role-profiles/marketing.md`](role-profiles/marketing.md) |
+| CEO / Founder | Is this who we are? Is this the right investment? | Later | Strategic | [`role-profiles/ceo-founder.md`](role-profiles/ceo-founder.md) |
+| CTO | Are we building the right foundation? | Later | Internal + Strategic | [`role-profiles/cto.md`](role-profiles/cto.md) |
+| Product Manager | Is this the right thing to build right now? | Later | Strategic | [`role-profiles/product-manager.md`](role-profiles/product-manager.md) |
+| Platform / DevEx | Does this make the platform better or harder to maintain? | Soon | Internal | [`role-profiles/platform-devex.md`](role-profiles/platform-devex.md) |
+| Site Reliability Engineer | When this breaks, will we know, and can we stop it? | Now | Internal | [`role-profiles/site-reliability-engineer.md`](role-profiles/site-reliability-engineer.md) |
+| Technical Writer | Will a user who reads the docs be able to do what the code now allows? | Soon | External | [`role-profiles/technical-writer.md`](role-profiles/technical-writer.md) |
+| Developer Advocate | Would an external developer succeed with this, and would they recommend it? | Soon | External | [`role-profiles/developer-advocate.md`](role-profiles/developer-advocate.md) |
+| Finance / CFO | What does this cost to run, and does it affect revenue correctly? | Soon + Later | Strategic | [`role-profiles/finance-cfo.md`](role-profiles/finance-cfo.md) |
+| Integration Partner | Will my existing integration still work after this ships? | Now | External | [`role-profiles/integration-partner.md`](role-profiles/integration-partner.md) |
+| API-first Customer | Will the code I wrote against this API still produce correct results? | Now | External | [`role-profiles/api-first-customer.md`](role-profiles/api-first-customer.md) |
+| Trial User | Can I get to value before I run out of patience? | Now | External | [`role-profiles/trial-user.md`](role-profiles/trial-user.md) |
+| Power User | Did anything change about how I actually use this every day? | Now | External | [`role-profiles/power-user.md`](role-profiles/power-user.md) |
+
+---
+
+## Flags
+
+`--role=<role>` — run a single role. Valid values: `qa`, `security`, `tech-lead`, `customer-success`, `support`, `designer`, `sales`, `marketing`, `ceo`, `cto`, `pm`, `platform`, `sre`, `technical-writer`, `devrel`, `cfo`, `integration-partner`, `api-customer`, `trial-user`, `power-user`.
+
+`--format=<format>` — `report` (default, markdown table) or `annotations` (JSON array for CI pipelines).
+
+---
 
 ## Workflow
 
-1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on code visible in the diff.
-2. **Determine which roles to run.** If `--role` is specified, run only that role. If `--panel` is specified, run all roles in that panel. Default: run the full Is It Working? panel.
-3. **Run each role in sequence.** For each role, read their review guide and examine the diff through that lens. Each role is independent — findings from one role do not influence another.
+1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on code visible in the diff. If no diff is available, ask the user to provide the code or diff to review.
+2. **Select roles.** If `--role` is specified, load only that role's profile. Otherwise, read the user's question, apply the panel selection criteria above, and choose 2–4 roles whose vantage points and time horizons cover the question without overlapping.
+3. **Run each role independently.** For each role, read their profile in `role-profiles/` and examine the diff through that lens. One role's findings do not influence another.
 4. **For each candidate finding**, require at least two pieces of supporting evidence before reporting. When in doubt, suppress.
-5. **Emit findings grouped by role.** Each role's section lists their concerns with severity labels.
-6. **Produce a summary** of total findings per role and an overall ship/hold recommendation.
+5. **Emit the findings table.**
 
 ## Evidence requirement
 
@@ -96,36 +88,29 @@ Each finding requires at least two of:
 
 | Confidence | Action |
 |---|---|
-| `high` | Report as `Blocking:` or `Suggested:` |
-| `medium` | Suppress. Do not comment. |
-| `low` | Suppress. Do not comment. |
+| `high` | Report as `Blocking` or `Suggested` |
+| `medium` | Suppress. Do not report. |
+| `low` | Suppress. Do not report. |
 
 ## Output format
 
 ### `--format=report` (default)
 
-Group findings by role. For each role:
+A single markdown table. Title is the panel name. Columns: **Criticality**, **Role**, **Observation**, **Reasoning**. One row per finding, sorted Blocking → Suggested. Each cell is one concise sentence.
 
-```
-## QA / SDET
-[findings or "No concerns."]
+| Criticality | Role | Observation | Reasoning |
+|---|---|---|---|
+| Blocking | Security | `createUser` at line 34 passes raw `req.body.email` directly into the SQL query string | No parameterisation means a malicious value can alter the query structure |
+| Blocking | QA | The error path in `processPayment` has no test coverage | A failed charge silently returns `undefined`; no test would catch this regression |
+| Suggested | Tech Lead | `OrderService` now imports directly from `db/connection.ts`, bypassing the repository layer | This couples the service layer to persistence and will block future database migration |
 
-## Security
-[findings or "No concerns."]
+If no findings: `| — | — | No concerns raised. | — |`
 
-## Engineering / Tech Lead
-[findings or "No concerns."]
-
----
-Recommendation: SHIP | HOLD | SHIP WITH NOTES
-[one sentence rationale]
-```
-
-If no role has findings: `No concerns raised by the [panel name] panel.`
+Do not output prose, role sections, summaries, or recommendations. The table is the entire output. The user will ask follow-up questions for detail on any row.
 
 ### `--format=annotations`
 
-Emit a single JSON array. Each finding object:
+A single JSON array. Each finding:
 
 ```json
 {
