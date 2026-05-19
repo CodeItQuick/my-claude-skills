@@ -52,6 +52,11 @@ A panel is a set of roles whose disciplines are relevant to the change and do no
 3. **Run each role independently.** For each role, read their profile in `role-profiles/` and examine the diff through that lens. One role's findings do not influence another.
 4. **For each candidate finding**, require at least two pieces of supporting evidence before reporting. When in doubt, suppress.
 5. **Emit the findings table.**
+6. **Log the run.** Append an entry to `logs/YYYY-MM-DD.md` (create the file if it does not exist). Each entry contains:
+   - Timestamp (HH:MM)
+   - Domains touched and roles selected
+   - Full findings table (copied verbatim)
+   - Count of Blocking and Suggested findings
 
 ## Evidence requirement
 

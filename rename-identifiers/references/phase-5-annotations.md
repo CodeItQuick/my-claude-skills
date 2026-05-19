@@ -4,7 +4,7 @@ Emit a single JSON object. Order `findings` by file path alphabetically, then by
 
 ```json
 {
-  "summary": "6 renaming findings: 1 CRITICAL, 3 HIGH, 2 MEDIUM",
+  "summary": "6 renaming findings: 2 CRITICAL, 2 HIGH, 2 MEDIUM",
   "findings": [
     {
       "file": "src/auth.ts",
@@ -68,7 +68,7 @@ Emit a single JSON object. Order `findings` by file path alphabetically, then by
 - `summary` — one sentence for the PR-level comment: total count + breakdown by severity
 - `findings[].file` — relative file path
 - `findings[].line` — declaration line number (not a usage site)
-- `findings[].category` — taxonomy category (VOID, LIE, CIPHER, SERIES, FRAGMENT, CHIMERA)
+- `findings[].category` — taxonomy category (LIE, VOID, INVERSE, CHIMERA, MIMIC, CIPHER, FRAGMENT, SERIES, MIRAGE, ECHO)
 - `findings[].severity` — CRITICAL, HIGH, or MEDIUM
 - `findings[].oldName` — current identifier
 - `findings[].proposedName` — recommended replacement

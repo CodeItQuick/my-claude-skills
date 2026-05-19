@@ -1,6 +1,6 @@
 # Phase 3 — Threshold
 
-**Rename every identifier assigned a category in Phase 2** (VOID, LIE, CHIMERA, CIPHER, FRAGMENT, or SERIES).
+**Rename every identifier assigned a category in Phase 2** (LIE, VOID, INVERSE, CHIMERA, MIMIC, CIPHER, FRAGMENT, SERIES, MIRAGE, or ECHO).
 
 Do not apply a count limit — if there are 20 VOID identifiers, rename all 20. The category assignment is the filter, not file size or gut feeling.
 

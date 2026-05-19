@@ -1,6 +1,6 @@
 # Phase 1b — Identify the Domain
 
-Before scoring any name, establish the domain vocabulary the codebase uses. Do this by:
+Before classifying any name, establish the domain vocabulary the codebase uses. Do this by:
 
 1. Reading `describe`/`it` strings in test files, external API names, README/docs, and file path segments — these are written for humans and tend to use real domain language.
 2. Reading method *implementations* (what they compute and return) rather than their names — the code tells the truth even when the name lies.

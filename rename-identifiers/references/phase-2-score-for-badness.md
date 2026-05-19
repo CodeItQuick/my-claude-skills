@@ -1,6 +1,6 @@
 # Phase 2 — Classify Each Identifier
 
-Apply the taxonomy below to every candidate identifier. Each category has a single root cause and a single fix rule — classification and fix strategy are inseparable. Assign the **first** category whose detection rule matches, evaluated in priority order: LIE → INVERSE → CHIMERA → MIMIC → CIPHER → SERIES → FRAGMENT → MIRAGE → ECHO → VOID.
+Apply the taxonomy below to every candidate identifier. Each category has a single root cause and a single fix rule — classification and fix strategy are inseparable. Assign the **first** category whose detection rule matches, evaluated in priority order: LIE → VOID → INVERSE → CHIMERA → MIMIC → CIPHER → FRAGMENT → SERIES → MIRAGE → ECHO.
 
 **Scope:** every `const`/`let`/`var` declaration, function parameter, callback argument, destructured name, class field, class name, method name, and exported name. Existing class and function names are not exempt — they are often the worst offenders.
 

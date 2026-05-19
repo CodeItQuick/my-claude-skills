@@ -60,6 +60,26 @@ All replacements must draw from the domain vocabulary identified in Phase 1b.
 - `result1` / `result2` (first is charge attempt, second is refund confirmation) → `chargeAttemptResult` / `refundConfirmation`
 - `action1` / `action2` (first dispatches, second resets) → `dispatchAction` / `resetAction`
 
+**INVERSE** — Invert both the boolean value and the name together. Never flip just the name.
+- `isNotReady` → `isPending`
+- `disabled` → `enabled`
+- `hidden` → `visible`
+
+**MIMIC** — Replace with the domain concept name; discard the implementation word entirely.
+- `sqlRow` → `invoice`
+- `mapOfIds` → `attendeeIndex`
+- `arrayOfStrings` → `tags`
+
+**MIRAGE** — For a name that overstates its reach (local variable named like a global), strip the false scope qualifier. For a name that understates its reach (module-level variable named like a call-specific value), qualify with the owning scope.
+- `appConfig` (local, only used in retry logic) → `retryConfig`
+- `globalSettings` (function-local timeout only) → `timeoutSettings`
+- `currentUser` (module-level, not call-specific) → `authenticatedUser`
+
+**ECHO** — Prepend or append a domain qualifier that resolves the ambiguity to exactly one concept.
+- `account` (could be user or billing) → `billingAccount` or `userAccount`
+- `record` (could be DB row or audit entry) → `auditEntry`
+- `period` (could be billing or time) → `billingPeriod`
+
 ---
 
 ## Universal Constraints

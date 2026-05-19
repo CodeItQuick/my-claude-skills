@@ -53,8 +53,10 @@ SERIES [MEDIUM]
 **Severity filtering:** when findings are suppressed by `--min-severity`, append a summary line after the last block:
 
 ```
-(N MEDIUM findings suppressed — run without --min-severity to see all)
+(N HIGH + M MEDIUM findings suppressed — run without --min-severity to see all)
 ```
+
+Omit a severity from the line if none of its findings were suppressed (e.g., if only MEDIUM was suppressed, write `(N MEDIUM findings suppressed …)`).
 
 **Skipped suspects:** if you considered a name and rejected it, append a Skipped section at the end:
 

@@ -35,28 +35,28 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 
 ### Available roles
 
-| Role | Key question | Time horizon | Vantage | Profile |
-|---|---|---|---|---|
-| QA / SDET | Are the failure modes covered? | Now | Internal | [`role-profiles/qa-sdet.md`](role-profiles/qa-sdet.md) |
-| Security | Does this introduce an exploitable surface? | Now | Internal | [`role-profiles/security.md`](role-profiles/security.md) |
-| Engineering / Tech Lead | Is this the right approach? | Soon | Internal | [`role-profiles/engineering-tech-lead.md`](role-profiles/engineering-tech-lead.md) |
-| Customer Success | Will existing customers still be able to do what they came here to do? | Soon | External | [`role-profiles/customer-success.md`](role-profiles/customer-success.md) |
-| Support | Will I get tickets about this? | Now | External | [`role-profiles/support.md`](role-profiles/support.md) |
-| Designer / UX | Would someone who has never seen this know what to do? | Soon | External | [`role-profiles/designer-ux.md`](role-profiles/designer-ux.md) |
-| Sales | Does this help me win deals? | Soon | External | [`role-profiles/sales.md`](role-profiles/sales.md) |
-| Marketing | Does this make the product easier or harder to talk about? | Later | External | [`role-profiles/marketing.md`](role-profiles/marketing.md) |
-| CEO / Founder | Is this who we are? Is this the right investment? | Later | Strategic | [`role-profiles/ceo-founder.md`](role-profiles/ceo-founder.md) |
-| CTO | Are we building the right foundation? | Later | Internal + Strategic | [`role-profiles/cto.md`](role-profiles/cto.md) |
-| Product Manager | Is this the right thing to build right now? | Later | Strategic | [`role-profiles/product-manager.md`](role-profiles/product-manager.md) |
-| Platform / DevEx | Does this make the platform better or harder to maintain? | Soon | Internal | [`role-profiles/platform-devex.md`](role-profiles/platform-devex.md) |
-| Site Reliability Engineer | When this breaks, will we know, and can we stop it? | Now | Internal | [`role-profiles/site-reliability-engineer.md`](role-profiles/site-reliability-engineer.md) |
-| Technical Writer | Will a user who reads the docs be able to do what the code now allows? | Soon | External | [`role-profiles/technical-writer.md`](role-profiles/technical-writer.md) |
-| Developer Advocate | Would an external developer succeed with this, and would they recommend it? | Soon | External | [`role-profiles/developer-advocate.md`](role-profiles/developer-advocate.md) |
-| Finance / CFO | What does this cost to run, and does it affect revenue correctly? | Soon + Later | Strategic | [`role-profiles/finance-cfo.md`](role-profiles/finance-cfo.md) |
-| Integration Partner | Will my existing integration still work after this ships? | Now | External | [`role-profiles/integration-partner.md`](role-profiles/integration-partner.md) |
-| API-first Customer | Will the code I wrote against this API still produce correct results? | Now | External | [`role-profiles/api-first-customer.md`](role-profiles/api-first-customer.md) |
-| Trial User | Can I get to value before I run out of patience? | Now | External | [`role-profiles/trial-user.md`](role-profiles/trial-user.md) |
-| Power User | Did anything change about how I actually use this every day? | Now | External | [`role-profiles/power-user.md`](role-profiles/power-user.md) |
+| Role | Key question                                                                  | Time horizon | Vantage | Profile |
+|---|-------------------------------------------------------------------------------|---|---|---|
+| QA / SDET | Are the failure modes covered?                                                | Now | Internal | [`role-profiles/qa-sdet.md`](role-profiles/qa-sdet.md) |
+| Security | Does this introduce an exploitable surface?                                   | Now | Internal | [`role-profiles/security.md`](role-profiles/security.md) |
+| Engineering / Tech Lead | Is this the right approach?                                                   | Soon | Internal | [`role-profiles/engineering-tech-lead.md`](role-profiles/engineering-tech-lead.md) |
+| Customer Success | Will existing customers still be able to do what they came here to do?        | Soon | External | [`role-profiles/customer-success.md`](role-profiles/customer-success.md) |
+| Support | Will I get tickets about this?                                                | Now | External | [`role-profiles/support.md`](role-profiles/support.md) |
+| Designer / UX | Would someone who has never seen this know what to do?                        | Soon | External | [`role-profiles/designer-ux.md`](role-profiles/designer-ux.md) |
+| Sales | Does this help me win deals?                                                  | Soon | External | [`role-profiles/sales.md`](role-profiles/sales.md) |
+| Marketing | Does this make the product easier or harder to talk about?                    | Later | External | [`role-profiles/marketing.md`](role-profiles/marketing.md) |
+| CEO / Founder | Is this who we are? Is this the right investment?                             | Later | Strategic | [`role-profiles/ceo-founder.md`](role-profiles/ceo-founder.md) |
+| CTO | Are we building the right foundation?                                         | Later | Internal + Strategic | [`role-profiles/cto.md`](role-profiles/cto.md) |
+| Product Manager | Is this the right thing to build right now?                                   | Later | Strategic | [`role-profiles/product-manager.md`](role-profiles/product-manager.md) |
+| Platform / DevEx | Does this make the platform better or harder to maintain?                     | Soon | Internal | [`role-profiles/platform-devex.md`](role-profiles/platform-devex.md) |
+| Site Reliability Engineer | When this breaks, will we know, and can we stop it?                           | Now | Internal | [`role-profiles/site-reliability-engineer.md`](role-profiles/site-reliability-engineer.md) |
+| Technical Writer | Will a user who reads the docs be able to do what the code now allows?        | Soon | External | [`role-profiles/technical-writer.md`](role-profiles/technical-writer.md) |
+| Developer Advocate | W  ould an external developer succeed with this, and would they recommend it? | Soon | External | [`role-profiles/developer-advocate.md`](role-profiles/developer-advocate.md) |
+| Finance / CFO | What does this cost to run, and does it affect revenue correctly?             | Soon + Later | Strategic | [`role-profiles/finance-cfo.md`](role-profiles/finance-cfo.md) |
+| Integration Partner | Will my existing integration still work after this ships?                     | Now | External | [`role-profiles/integration-partner.md`](role-profiles/integration-partner.md) |
+| API-first Customer | Will the code I wrote against this API still produce correct results?         | Now | External | [`role-profiles/api-first-customer.md`](role-profiles/api-first-customer.md) |
+| Trial User | Can I get to value before I run out of patience?                              | Now | External | [`role-profiles/trial-user.md`](role-profiles/trial-user.md) |
+| Power User | Did anything change about how I actually use this every day?                  | Now | External | [`role-profiles/power-user.md`](role-profiles/power-user.md) |
 
 ---
 
@@ -75,6 +75,12 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 3. **Run each role independently.** For each role, read their profile in `role-profiles/` and examine the diff through that lens. One role's findings do not influence another.
 4. **For each candidate finding**, require at least two pieces of supporting evidence before reporting. When in doubt, suppress.
 5. **Emit the findings table.**
+6. **Log the run.** Append an entry to `logs/YYYY-MM-DD.md` (create the file if it does not exist). Each entry contains:
+   - Timestamp (HH:MM)
+   - Question asked
+   - Roles selected and the one-sentence reason each was chosen
+   - Full findings table (copied verbatim)
+   - Count of Blocking and Suggested findings
 
 ## Evidence requirement
 
