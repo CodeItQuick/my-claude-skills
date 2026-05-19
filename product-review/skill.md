@@ -51,7 +51,7 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 | Platform / DevEx | Does this make the platform better or harder to maintain?                     | Soon | Internal | [`role-profiles/platform-devex.md`](role-profiles/platform-devex.md) |
 | Site Reliability Engineer | When this breaks, will we know, and can we stop it?                           | Now | Internal | [`role-profiles/site-reliability-engineer.md`](role-profiles/site-reliability-engineer.md) |
 | Technical Writer | Will a user who reads the docs be able to do what the code now allows?        | Soon | External | [`role-profiles/technical-writer.md`](role-profiles/technical-writer.md) |
-| Developer Advocate | W  ould an external developer succeed with this, and would they recommend it? | Soon | External | [`role-profiles/developer-advocate.md`](role-profiles/developer-advocate.md) |
+| Developer Advocate | Would an external developer succeed with this, and would they recommend it? | Soon | External | [`role-profiles/developer-advocate.md`](role-profiles/developer-advocate.md) |
 | Finance / CFO | What does this cost to run, and does it affect revenue correctly?             | Soon + Later | Strategic | [`role-profiles/finance-cfo.md`](role-profiles/finance-cfo.md) |
 | Integration Partner | Will my existing integration still work after this ships?                     | Now | External | [`role-profiles/integration-partner.md`](role-profiles/integration-partner.md) |
 | API-first Customer | Will the code I wrote against this API still produce correct results?         | Now | External | [`role-profiles/api-first-customer.md`](role-profiles/api-first-customer.md) |
@@ -62,7 +62,30 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 
 ## Flags
 
-`--role=<role>` — run a single role. Valid values: `qa`, `security`, `tech-lead`, `customer-success`, `support`, `designer`, `sales`, `marketing`, `ceo`, `cto`, `pm`, `platform`, `sre`, `technical-writer`, `devrel`, `cfo`, `integration-partner`, `api-customer`, `trial-user`, `power-user`.
+`--role=<role>` — run a single role. Flag value to profile file mapping:
+
+| Flag value | Profile file |
+|---|---|
+| `qa` | `role-profiles/qa-sdet.md` |
+| `security` | `role-profiles/security.md` |
+| `tech-lead` | `role-profiles/engineering-tech-lead.md` |
+| `customer-success` | `role-profiles/customer-success.md` |
+| `support` | `role-profiles/support.md` |
+| `designer` | `role-profiles/designer-ux.md` |
+| `sales` | `role-profiles/sales.md` |
+| `marketing` | `role-profiles/marketing.md` |
+| `ceo` | `role-profiles/ceo-founder.md` |
+| `cto` | `role-profiles/cto.md` |
+| `pm` | `role-profiles/product-manager.md` |
+| `platform` | `role-profiles/platform-devex.md` |
+| `sre` | `role-profiles/site-reliability-engineer.md` |
+| `technical-writer` | `role-profiles/technical-writer.md` |
+| `devrel` | `role-profiles/developer-advocate.md` |
+| `cfo` | `role-profiles/finance-cfo.md` |
+| `integration-partner` | `role-profiles/integration-partner.md` |
+| `api-customer` | `role-profiles/api-first-customer.md` |
+| `trial-user` | `role-profiles/trial-user.md` |
+| `power-user` | `role-profiles/power-user.md` |
 
 `--format=<format>` — `report` (default, markdown table) or `annotations` (JSON array for CI pipelines).
 
@@ -75,12 +98,17 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 3. **Run each role independently.** For each role, read their profile in `role-profiles/` and examine the diff through that lens. One role's findings do not influence another.
 4. **For each candidate finding**, require at least two pieces of supporting evidence before reporting. When in doubt, suppress.
 5. **Emit the findings table.**
-6. **Log the run.** Append an entry to `logs/YYYY-MM-DD.md` (create the file if it does not exist). Each entry contains:
-   - Timestamp (HH:MM)
-   - Question asked
-   - Roles selected and the one-sentence reason each was chosen
-   - Full findings table (copied verbatim)
-   - Count of Blocking and Suggested findings
+6. **Log the run.** Pipe a JSON object to `log.sh`. Use the base directory shown at the top of this skill (`Base directory for this skill: …`) as `<base-dir>`:
+
+   ```bash
+   echo '{
+     "question": "...",
+     "roles": [{"role": "...", "reason": "..."}],
+     "findings": [{"criticality": "...", "role": "...", "observation": "...", "reasoning": "..."}]
+   }' | bash "<base-dir>/log.sh"
+   ```
+
+   The script appends a timestamped entry (including computed Blocking/Suggested counts) to `logs/YYYY-MM-DD.json`, creating the file if it does not exist.
 
 ## Evidence requirement
 
@@ -121,7 +149,6 @@ A single JSON array. Each finding:
 ```json
 {
   "skill": "product_review",
-  "panel": "is-it-working",
   "role": "qa",
   "file": "src/orders.ts",
   "line": 42,
@@ -132,3 +159,26 @@ A single JSON array. Each finding:
   "suggested_fix": "..."
 }
 ```
+
+---
+
+## Example — end to end
+
+**Invocation:** `/product-review Is the new checkout flow ready to ship?`
+
+**Step 1 — Get the diff:** `git diff main...HEAD`
+
+**Step 2 — Select roles:** The question is a correctness + user-experience question. Pick QA (Now/Internal), Designer (Soon/External), Customer Success (Soon/External) — three non-overlapping vantage points.
+
+**Step 3 — Run each role independently**, reading their profile from `role-profiles/`.
+
+**Step 4 — Apply evidence requirement.** Suppress any finding without two supporting evidence types.
+
+**Step 5 — Emit findings table:**
+
+| Criticality | Role | Observation | Reasoning |
+|---|---|---|---|
+| Blocking | QA | `placeOrder` at line 88 swallows the payment gateway timeout error and returns `null` | A timed-out charge silently appears successful to the user; no test covers this path |
+| Suggested | Designer | The order confirmation screen has no empty state for zero-item orders | A user who empties their cart mid-checkout reaches a blank screen with no explanation or recovery path |
+
+**Step 6 — Log the run** via `log.sh`.
