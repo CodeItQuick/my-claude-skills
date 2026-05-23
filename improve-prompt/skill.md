@@ -15,9 +15,11 @@ The prompt to improve is provided as the argument to this skill. If no prompt is
 
 `--goal=<description>` — describe what the prompt is trying to achieve if it isn't clear from the prompt itself. Helps Phase 1 classification when the prompt is ambiguous.
 
-`--model=<name>` — the model the prompt will be used with. Default: assume a capable frontier model.
+`--model=<name>` — the model the prompt will be used with. Default: assume a capable frontier model. Affects technique priorities in Phase 2.
 
 `--expand` — include Medium-priority suggestions in the rewritten prompt in addition to High-priority ones.
+
+`--format=<format>` — control output format. Valid values: `report` (default, human-readable sections) or `annotations` (JSON object for CI pipelines or tool consumption).
 
 ---
 
@@ -66,6 +68,10 @@ Load only the files relevant to this prompt — do not read files that don't app
 | Transformation | `example-techniques/index.md` + `structure-techniques/index.md` |
 | Conversational | `structure-techniques/index.md` |
 
+If the prompt spans multiple task types, load the union of files from all matching rows. `structure-techniques/index.md` appears in every row — load it once regardless of how many types match.
+
+**Model-aware priority adjustments (apply after initial scoring):** If `--model` names a non-frontier model (e.g., a smaller or older model), elevate Chain-of-thought and Constraint specification to at least Medium — these techniques have outsized impact on weaker models. Downgrade Tree of Thoughts and Self-consistency to Low — they require strong instruction-following to execute correctly.
+
 For each loaded technique, assign a priority:
 - **High** — the prompt has a clear weakness this technique directly addresses
 - **Medium** — would improve consistency or quality but the prompt works without it
@@ -92,7 +98,42 @@ One row per suggestion, High priority first. Include only High or Medium — sup
 | Medium | Constraint specification | Length and audience are implicit | Add explicit word count and audience statement |
 
 #### Section 3 — Rewritten prompt
-Incorporate all High-priority suggestions. If `--expand` was passed, also incorporate Medium. If there are no High or Medium suggestions, emit: *No suggestions — the prompt is already well-formed for its task type.* Do not produce a rewrite.
+Incorporate all High-priority suggestions. If `--expand` was passed, also incorporate Medium. Mark every addition to the original prompt in **bold** so the user can see exactly what changed. If there are no High or Medium suggestions, emit: *No suggestions — the prompt is already well-formed for its task type.* Do not produce a rewrite.
+
+---
+
+### Phase 4 — Log
+
+Pipe a JSON object to `log.sh`. Use the skill's base directory as `<base-dir>`:
+
+```bash
+echo '{
+  "task_type": "...",
+  "model": "...",
+  "techniques_suggested": [{"priority": "...", "technique": "..."}],
+  "rewritten": true
+}' | bash "<base-dir>/log.sh"
+```
+
+The script appends a timestamped entry to `logs/YYYY-MM-DD.json`, creating the file if it does not exist. The log is gated by `config.json` — if the file is absent or `logging` is false, the script exits silently.
+
+---
+
+### `--format=annotations` output
+
+When `--format=annotations` is passed, emit a single JSON object instead of the default sections:
+
+```json
+{
+  "current_state": "one or two sentences describing what the prompt does well and its main gap",
+  "suggestions": [
+    {"priority": "High", "technique": "...", "gap": "...", "how_to_apply": "..."}
+  ],
+  "rewritten_prompt": "full rewritten prompt text, or null if no suggestions"
+}
+```
+
+Omit prose. The JSON object is the entire output.
 
 ---
 
