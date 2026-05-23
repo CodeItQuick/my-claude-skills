@@ -54,17 +54,17 @@ Identify:
 
 Load only the files relevant to this prompt — do not read files that don't apply.
 
-**If context-constrained:** read `references/context-window-techniques.md` first, then load the task-type files below.
-**If not context-constrained:** skip `references/context-window-techniques.md` entirely.
+**If context-constrained:** read `context-window-techniques/index.md` first, then load the task-type files below.
+**If not context-constrained:** skip `context-window-techniques/index.md` entirely.
 
 | Task type | Files to load |
 |---|---|
-| Reasoning / analysis | `references/techniques-reasoning.md` + `references/techniques-structure.md` |
-| Generation | `references/techniques-examples.md` + `references/techniques-structure.md` |
-| Extraction | `references/techniques-structure.md` + `references/techniques-examples.md` |
-| Classification | `references/techniques-reasoning.md` + `references/techniques-structure.md` |
-| Transformation | `references/techniques-examples.md` + `references/techniques-structure.md` |
-| Conversational | `references/techniques-structure.md` |
+| Reasoning / analysis | `reasoning-techniques/index.md` + `structure-techniques/index.md` |
+| Generation | `example-techniques/index.md` + `structure-techniques/index.md` |
+| Extraction | `structure-techniques/index.md` + `example-techniques/index.md` |
+| Classification | `reasoning-techniques/index.md` + `structure-techniques/index.md` |
+| Transformation | `example-techniques/index.md` + `structure-techniques/index.md` |
+| Conversational | `structure-techniques/index.md` |
 
 For each loaded technique, assign a priority:
 - **High** — the prompt has a clear weakness this technique directly addresses
@@ -98,7 +98,7 @@ Incorporate all High-priority suggestions. If `--expand` was passed, also incorp
 
 ## Examples
 
-For worked examples by task type, see `references/examples/`:
-- Transformation task → `references/examples/example-transformation.md`
-- Reasoning task → `references/examples/example-reasoning.md`
-- Context-constrained prompt → `references/examples/example-context-constrained.md`
+For worked examples by task type, see `examples/`:
+- Transformation task → `examples/example-transformation.md`
+- Reasoning task → `examples/example-reasoning.md`
+- Context-constrained prompt → `examples/example-context-constrained.md`

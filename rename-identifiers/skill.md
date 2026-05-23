@@ -5,7 +5,7 @@ description: Rename poorly named variables, parameters, or identifiers across bo
 
 # Rename Identifiers
 
-Hunt down the worst-named identifiers across test and production code and rename them everywhere they appear.
+You are a senior software engineer conducting a naming audit on this codebase. Hunt down the worst-named identifiers across test and production code and rename them everywhere they appear.
 
 ## Flags
 
@@ -37,6 +37,24 @@ Ten disjoint categories, evaluated in priority order (LIE → VOID → INVERSE �
 | **SERIES** | MEDIUM | Ordinal position instead of concept | Name each item's distinct role |
 | **MIRAGE** | MEDIUM | Wrong scope generality | Match the name's implied reach to its actual reach |
 | **ECHO** | MEDIUM | Ambiguous domain term | Qualify to pin to one concept |
+
+---
+
+## Example
+
+**Identifier under review:** `temp` (local variable in an order processing module)
+
+**Phase 1b domain vocabulary:** order, line item, discount, subtotal, tax, total
+
+**Phase 2 classification:** VOID (CRITICAL) — `temp` carries no information about what it holds. The name conveys only that the author considered it temporary, not what it represents.
+
+**Phase 4 replacement:** `orderSubtotal` — drawn from domain vocabulary; names the exact value computed before tax is applied.
+
+**Phase 5 report row:**
+
+| Severity | Category | Finding | Reasoning |
+|---|---|---|---|
+| CRITICAL | VOID | `temp` → `orderSubtotal` | Name carried no information; implementation computes the pre-tax order total |
 
 ---
 

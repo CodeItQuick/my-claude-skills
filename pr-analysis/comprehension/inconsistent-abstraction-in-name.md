@@ -2,6 +2,19 @@
 
 Patterns where a name (function, variable, class, parameter) implies one level of abstraction but the surrounding context operates at a different level, or where sibling names in the same scope mix vocabulary from incompatible levels. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
+**Before flagging any pattern:** confirm at least two evidence types are present (code, path, convention, or impact), and check the suppression list below. Reason through both before concluding.
+
+## Patterns to **not** flag
+
+- **Established idioms** like `getOrCreate`, `findOrCreate` that are well-known patterns in ORMs and persistence libraries — the name is conventional, not surprising.
+- **Intentionally low-level modules** — a query builder, ORM, or serializer is expected to have names like `buildWhereClause` or `serializeRow`. Flag this pattern only when a higher-level module uses those names unexpectedly.
+- **Framework-imposed naming** — controllers, resolvers, and middleware often use technical names because the framework requires it (e.g., `handleRequest`, `resolveQuery`).
+- **Transitional or adapter layers** — a module explicitly bridging two levels (e.g., a repository) may legitimately use names from both layers to make the translation explicit.
+- **Single isolated inconsistency with no sibling functions** — a naming inconsistency is weak evidence without sibling names to compare against. Suppress unless at least two names in the same scope confirm the pattern.
+- **Abbreviations and shorthand** that are conventional in the domain (`req`, `res`, `ctx`, `dto`) — these are not abstraction violations, they are accepted shorthands.
+
+---
+
 ## 1. Sibling functions in the same module use incompatible vocabulary levels
 
 ```ts
@@ -89,7 +102,7 @@ function getOrCreateUser(email: string): Promise<User> { ... }
 
 function findAndDeleteExpiredTokens(): Promise<number> { ... }
 
-function isNewUser(userId: string): Promise<boolean> {
+async function isNewUser(userId: string): Promise<boolean> {
   // also logs the check to audit trail
   await auditLog.record("user_check", userId);
   return userRepo.isNew(userId);
@@ -98,13 +111,3 @@ function isNewUser(userId: string): Promise<boolean> {
 
 `getOrCreateUser` reads as a pure query but mutates state. `findAndDeleteExpiredTokens` presents deletion as a secondary effect of finding. `isNewUser` looks like a predicate but writes to an audit log. Callers who treat these as safe read-only operations will be surprised by the mutations. Names that start with `get`, `find`, `is`, `has`, or `check` create a strong expectation of purity.
 
----
-
-## Patterns to **not** flag
-
-- **Established idioms** like `getOrCreate`, `findOrCreate` that are well-known patterns in ORMs and persistence libraries — the name is conventional, not surprising.
-- **Intentionally low-level modules** — a query builder, ORM, or serializer is expected to have names like `buildWhereClause` or `serializeRow`. Flag this pattern only when a higher-level module uses those names unexpectedly.
-- **Framework-imposed naming** — controllers, resolvers, and middleware often use technical names because the framework requires it (e.g., `handleRequest`, `resolveQuery`).
-- **Transitional or adapter layers** — a module explicitly bridging two levels (e.g., a repository) may legitimately use names from both layers to make the translation explicit.
-- **Single isolated inconsistency with no sibling functions** — a naming inconsistency is weak evidence without sibling names to compare against. Suppress unless at least two names in the same scope confirm the pattern.
-- **Abbreviations and shorthand** that are conventional in the domain (`req`, `res`, `ctx`, `dto`) — these are not abstraction violations, they are accepted shorthands.
