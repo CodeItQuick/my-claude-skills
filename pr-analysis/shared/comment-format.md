@@ -109,6 +109,44 @@ Keep each comment to 2–4 sentences. If you find yourself writing a paragraph, 
 
 ---
 
+### `speculative-generality`
+
+**Good:**
+
+> **Suggested:** `Repository<T>` at line 8 is only ever instantiated as `new Repository<User>()` — no other type binding exists anywhere in the codebase. The generic parameter adds complexity to the type signatures and error messages without providing any polymorphism. Could this be a concrete `UserRepository` until a second entity type is needed?
+
+> **Suggested:** `registerHook` at line 34 adds a callback to `this.hooks`, but `registerHook` is never called in the codebase. The hook system adds API surface, documentation burden, and maintenance cost for an extension mechanism that has no current consumer. Could this be added when the first consumer exists?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Generic type parameter, only one concrete binding at all call sites | Ask: "Is `T` ever bound to anything other than `User` here? If not, could this be a concrete type until a second is needed?" |
+| Abstract class with one subclass, no second in development | Ask: "Is a second implementor planned? If not, could `EmailNotifier` drop the abstract base until one is needed?" |
+| Interface never used as a mock or swap point | Ask: "Is `PaymentGateway` ever injected with an alternative — in tests or elsewhere? If not, could `StripeGateway` be used directly for now?" |
+| Hook/plugin slot with zero registered consumers | Ask: "Is `registerHook` called anywhere? If not, could the extension mechanism wait until the first consumer is being written?" |
+
+---
+
+### `unnecessary-code-growth`
+
+**Good:**
+
+> **Suggested:** `order.currency` is typed as `"USD" | "EUR" | "GBP"`, but the `else` branch at line 44 calls `scheduleForBatch` for a case the type system says cannot occur. TypeScript would flag this branch as unreachable. Could it be removed, or is it anticipating a future currency type that should be added to the union first?
+
+> **Suggested:** `options.experimental_animations` is passed as `false` at every call site in the codebase. The branch at line 18 for `experimental_animations: true` has never run. Could the property be removed until the feature is ready, or is there a ticket tracking when it will be enabled?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Branch the type system makes structurally unreachable | Assert: "The `else` branch at line N is unreachable — `currency` is typed as `'USD' \| 'EUR' \| 'GBP'` and all three are handled above." |
+| Option property always the same value across all call sites | Ask: "Is `experimental_animations` ever set to `true` anywhere? If not, could the property and its branch be removed until the feature ships?" |
+| Exported function with zero internal callers | Ask: "Is `buildBatchPayload` used anywhere outside this codebase? It has no internal callers — if it's not part of a public API, could it be removed?" |
+| Error handler for an impossible condition after a proven guard | Ask: "Can `result` be non-finite here? `b` is checked for zero on line N — if the check covers all infinite cases, could this handler be removed?" |
+
+---
+
 ### `boolean-flag-splitter`
 
 **Good:**

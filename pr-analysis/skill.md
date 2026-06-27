@@ -1,11 +1,11 @@
 ---
 name: pr-analysis
-description: Run twenty-nine focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run thirty-one focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers, speculative generality, unnecessary code growth), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
 
-Run twenty-nine targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run thirty-one targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
@@ -19,6 +19,8 @@ Run twenty-nine targeted passes over changed code across correctness, overengine
 | correctness | `implicit-test-ordering` | Tests that silently depend on state created by other tests, making the suite order-sensitive | [`correctness/implicit-test-ordering.md`](correctness/implicit-test-ordering.md) |
 | overengineering | `boolean-flag-splitter` | Boolean parameters that divide a function so fundamentally it should be two functions | [`overengineering/boolean-flag-splitter.md`](overengineering/boolean-flag-splitter.md) |
 | overengineering | `passthrough-wrapper` | Functions, methods, or classes that only delegate to something else with no added behavior | [`overengineering/passthrough-wrapper.md`](overengineering/passthrough-wrapper.md) |
+| overengineering | `speculative-generality` | Structure added for future requirements that do not yet exist — unused type parameters, single-subclass abstractions, extension points with no consumers, optional parameters never varied from their default | [`overengineering/speculative-generality.md`](overengineering/speculative-generality.md) |
+| overengineering | `unnecessary-code-growth` | Reachable but never-exercised code — branches for conditions current inputs cannot satisfy, options always at their default, exported functions with zero consumers, error handlers for errors that cannot occur | [`overengineering/unnecessary-code-growth.md`](overengineering/unnecessary-code-growth.md) |
 | maintainability | `copy-paste-variation` | Two or more blocks with identical structure varying only in a value or field name, creating change coupling where a logic fix must be applied to every copy | [`maintainability/copy-paste-variation.md`](maintainability/copy-paste-variation.md) |
 | maintainability | `boolean-state-machine` | Multiple coordinated booleans tracking a lifecycle where invalid combinations are possible and a typed enum would make valid states explicit | [`maintainability/boolean-state-machine.md`](maintainability/boolean-state-machine.md) |
 | maintainability | `deep-nesting` | Control flow indented four or more levels deep where early returns, extraction, or guard clauses would flatten the structure | [`maintainability/deep-nesting.md`](maintainability/deep-nesting.md) |
@@ -45,7 +47,7 @@ Run twenty-nine targeted passes over changed code across correctness, overengine
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
-`--category=<category>` — run all passes in one category instead of all twenty-nine. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
+`--category=<category>` — run all passes in one category instead of all thirty-one. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
 
 `--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
@@ -62,7 +64,7 @@ Run twenty-nine targeted passes over changed code across correctness, overengine
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all twenty-nine in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all thirty-one in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
@@ -153,6 +155,18 @@ Gather **at least two** of the evidence types for the active pass before reporti
 2. **Signature evidence** — the wrapper's parameters map 1:1 to the callee's parameters with no reordering, merging, splitting, defaulting, or validation.
 3. **Behavior evidence** — no logging, metrics, error translation, access control, or other cross-cutting concern is added; the wrapper is invisible at runtime.
 4. **Substitutability evidence** — callers could import and call the wrapped target directly without any change to their logic, types, or error handling.
+
+#### `speculative-generality`
+1. **Presence-without-consumer evidence** — the structure exists (type parameter, abstract class, interface, hook slot, optional parameter) but nothing in the visible codebase exercises the flexibility it provides: no second type binding, no second subclass, no registered consumer, no call site that varies the parameter.
+2. **Single-use evidence** — the generic, abstract, or extensible construct is only ever used in one concrete way across all visible call sites and implementations.
+3. **Complexity cost evidence** — the speculative structure adds real overhead: type parameter noise in signatures and error messages, an extra layer of indirection through the abstract class, maintenance burden for a hook system that serves no consumer.
+4. **No planned-use evidence** — no adjacent comment, ticket reference, or PR description explains what future requirement the structure anticipates; the generality appears to be preemptive rather than deliberate.
+
+#### `unnecessary-code-growth`
+1. **Presence evidence** — code is structurally present and syntactically reachable: a branch, an option property, an exported function, an error handler.
+2. **Never-exercised evidence** — the code cannot be reached given current inputs: the type system makes the branch condition structurally impossible, the option is always its default, the export has no internal callers and no documented external consumers, the error condition cannot occur after the preceding guard.
+3. **Requirement absence evidence** — no ticket, comment, or PR description identifies a current or imminent requirement the code serves; it appears to have been added for a case that does not yet exist.
+4. **Maintenance cost evidence** — the unused code is not free: it adds cognitive load to every reader, creates test surface that cannot be covered, and will accumulate alongside future changes as dead scaffolding.
 
 ### Maintainability
 
