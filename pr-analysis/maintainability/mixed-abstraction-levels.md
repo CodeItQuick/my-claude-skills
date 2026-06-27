@@ -1,6 +1,6 @@
 # Detection Patterns — Mixed Abstraction Levels
 
-Patterns where a single function body mixes high-level business intent with low-level implementation mechanics, forcing the reader to context-switch between two different levels of detail simultaneously. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a single function body mixes high-level business intent with low-level implementation mechanics, forcing the reader to context-switch between two different levels of detail simultaneously. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Business logic interleaved with I/O or protocol details
 
@@ -139,6 +139,17 @@ function calculateShipping(weight: number, zone: string): number {
 ```
 
 A pure computation function (`calculateShipping`) should have no side effects. The logging and metrics calls are cross-cutting concerns that change the function's testability and make its signature misleading. Observability belongs in the caller or in a decorator/middleware layer.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Vocabulary shift evidence** — within a single function body, identifiers shift from business terms (`validateOrder`, `chargeCustomer`) to implementation terms (`Buffer`, `statusCode`, `23505`, `Content-Type`), requiring the reader to switch mental models mid-function.
+2. **Extractability evidence** — a contiguous block of lines inside the function could be extracted into a well-named helper with no change to callers, and that helper's name would be more specific than the parent function's name.
+3. **Granularity mismatch evidence** — some steps in the function are single named calls (`await notifyCustomer(order)`) while others are multi-line inline implementations of a comparable step, making the function uneven to read.
+4. **Layer violation evidence** — a function in the business/service layer directly references persistence details (SQL, ORM internals, raw error codes) or protocol details (HTTP headers, status codes, serialization formats) that belong in a lower layer.
 
 ---
 

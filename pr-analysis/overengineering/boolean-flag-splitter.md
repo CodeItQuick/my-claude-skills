@@ -1,6 +1,6 @@
 # Detection Patterns — Boolean Flag Splitter
 
-Patterns where a boolean parameter so fundamentally divides a function's behavior that the function is really two functions sharing a body. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a boolean parameter so fundamentally divides a function's behavior that the function is really two functions sharing a body. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Boolean branch covers the entire function body
 
@@ -113,6 +113,17 @@ compile(src, true);
 ```
 
 The default communicates the common case, but every caller overrides it. The default and the caller expectation are inverted — the default is wrong, or the cases should be named functions.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Branch evidence** — the boolean parameter controls an `if`/`else` whose two branches differ in return type, side effects, or core logic — not just a minor variation in output.
+2. **Caller evidence** — every call site passes a literal `true` or `false` (never a variable), meaning callers have made a static decision and the flag is standing in for two distinct function names.
+3. **Divergence evidence** — the two branches share little code: different I/O, different return shapes, or side effects present in one branch but absent in the other.
+4. **Threading evidence** — the boolean is passed through one or more intermediate functions that do not use it directly, indicating the split is not local to a single decision point.
 
 ---
 

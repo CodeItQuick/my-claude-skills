@@ -1,6 +1,6 @@
 # Detection Patterns — Primitive Obsession
 
-Patterns where raw primitives are used in place of small domain types, erasing invariants, enabling accidental misuse, and scattering validation logic across the codebase. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where raw primitives are used in place of small domain types, erasing invariants, enabling accidental misuse, and scattering validation logic across the codebase. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Two distinct domain identifiers share the same primitive type
 
@@ -113,6 +113,17 @@ charge(0.1 + 0.2, "USD");  // 0.30000000000000004 — floating-point error
 ```
 
 Currency amounts require integer representation (cents, pence, smallest denomination), a unit, and protection against floating-point arithmetic. A `Money` type with currency-aware operations prevents the silent precision errors that accumulate in financial calculations.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Interchangeability evidence** — two or more distinct domain concepts share the same primitive type, making it possible to pass one where the other is expected with no compile-time error (e.g., `userId: string` and `orderId: string` are interchangeable to the type system).
+2. **Validation scatter evidence** — the same format check, range guard, or parsing logic for the primitive value is duplicated at multiple call sites rather than encapsulated once in a type.
+3. **Semantic loss evidence** — the primitive's valid range or invariants are invisible to callers: a `number` that must be positive, a `string` that must be a valid email, an `id` that must match a specific format.
+4. **Convention evidence** — nearby domain types in the same codebase use wrapper types or branded types for similar values, making the raw primitive an inconsistency.
 
 ---
 

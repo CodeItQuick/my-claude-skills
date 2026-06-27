@@ -1,6 +1,6 @@
 # Detection Patterns — Interface Contract Violation
 
-Patterns where code interacts with an external interface in a way that violates the interface's documented contract, producing incorrect behavior that is invisible to the type checker. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the interface-contract-violation suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where code interacts with an external interface in a way that violates the interface's documented contract, producing incorrect behavior that is invisible to the type checker. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the interface-contract-violation suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Arguments passed in the wrong order to a well-known API
 
@@ -82,6 +82,17 @@ const cipher = crypto.createCipher("aes-256-cbc", password);
 ```
 
 Deprecated APIs are often replaced by ones with subtly different semantics, not just a renamed interface. Using the deprecated form produces behavior that is explicitly rejected by the platform's security guidance, even if it compiles and runs without errors.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Contract evidence** — the API's documented signature (argument order, callback convention, return value semantics, async contract) is established: from the standard library, a popular third-party library, or visible in the diff.
+2. **Violation evidence** — the call in the diff deviates: arguments are transposed, the async return value is not awaited, the callback parameters are in the wrong order, or a deprecated API is used where the replacement has different semantics.
+3. **Type silence evidence** — the type checker accepts the call without error because the argument types are compatible (both `string`, both `number`), hiding the violation at compile time.
+4. **Impact evidence** — the concrete incorrect behavior: operation runs backwards, rejection goes unhandled, callback receives the error as its value, or a security-relevant invariant is violated.
 
 ---
 

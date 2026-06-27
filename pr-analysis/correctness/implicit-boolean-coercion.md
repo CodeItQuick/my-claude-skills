@@ -1,6 +1,6 @@
 # Detection Patterns — Implicit Boolean Coercion
 
-Patterns where JS truthiness is relied upon in a context where the actual value type has surprising falsy members, silently excluding valid inputs or producing wrong branches. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where JS truthiness is relied upon in a context where the actual value type has surprising falsy members, silently excluding valid inputs or producing wrong branches. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Numeric value guarded with a bare truthiness check
 
@@ -120,6 +120,17 @@ function process(status: string | number) {
 ```
 
 When a discriminant might be a number or a string representation of that number, `switch` uses strict equality (`===`), so `0` and `"0"` are different cases. The bug is not in the switch itself but in the assumption about the type of the discriminant upstream.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Type evidence** — the value being coerced to boolean has a type that includes a falsy-but-valid member: `number` (zero is falsy), `string` (empty string is falsy), an array or object (always truthy — check is meaningless), or a union that includes `false` where `undefined` was the intended exclusion.
+2. **Semantic evidence** — the falsy member the guard would exclude (`0`, `""`, `false`) is a plausible and valid value in the domain: zero quantity, empty search query, explicit false toggle, zero-based index.
+3. **Operator evidence** — `||` is used for a default where `??` would be correct, or `.filter(Boolean)` is used on an array whose element type includes `0`, `""`, or `false`, or JSX uses `{count && ...}` where `count` is typed as `number`.
+4. **Convention evidence** — nearby code uses explicit null checks (`!= null`, `!== undefined`, `=== null`) for similar values, making the bare truthiness check an inconsistency.
 
 ---
 

@@ -1,6 +1,6 @@
 # Detection Patterns — Long Method
 
-Patterns where a function or method has grown to the point where no single reader can hold its full purpose in working memory — functions that handle multiple distinct concerns inline, where named extraction would make each concern independently readable and testable. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the long-method suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a function or method has grown to the point where no single reader can hold its full purpose in working memory — functions that handle multiple distinct concerns inline, where named extraction would make each concern independently readable and testable. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the long-method suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Function that validates, transforms, persists, and notifies — all inline
 
@@ -107,6 +107,17 @@ it("processes orders", async () => {
 ```
 
 A single test that covers multiple independent scenarios cannot be run in isolation. When it fails, the failure does not identify which scenario broke. Each scenario is a separate test with a separate name and a separate failure message.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Phase evidence** — the function body contains two or more distinct phases — validate, transform, persist, notify, fetch, enrich, aggregate — each of which is a named concept in the domain and a natural test boundary.
+2. **Independence evidence** — the phases share little intermediate state; each phase could be extracted to a function that accepts a clear input and returns a clear output with no implicit dependency on the other phases.
+3. **Length evidence** — the function is long enough that no single reader can hold its full purpose in working memory without scrolling: more than 30–40 lines as a rough guide, but phase count is the primary signal.
+4. **Testability evidence** — the inline logic cannot be tested in isolation without exercising the full function; extraction would create independently testable units.
 
 ---
 

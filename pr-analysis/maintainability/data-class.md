@@ -1,6 +1,6 @@
 # Detection Patterns — Data Class
 
-Patterns where a `class` holds data but implements no behavior — leaving operations that belong to the class scattered across external functions that are repeatedly envious of its fields. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the data-class suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a `class` holds data but implements no behavior — leaving operations that belong to the class scattered across external functions that are repeatedly envious of its fields. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the data-class suppression rules in `../shared/suppression-rules.md` before reporting.
 
 This pass targets `class` declarations specifically. TypeScript `interface`, `type`, and plain object literals used as records or DTOs are intentionally data-only and are not candidates.
 
@@ -79,6 +79,17 @@ Getters and setters that do no validation or computation are private fields with
 ## 4. Class that is the target of repeated feature envy
 
 When multiple external functions each read three or more fields from the same class, the class is a data-class symptom even if the symptoms appear as `feature-envy` findings. The data-class pattern is confirmed when the envious functions cluster around one class and perform operations that belong inside it.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Class evidence** — a `class` declaration (not an `interface`, `type`, or plain object literal) has fields and a constructor but no methods beyond trivial getters and setters.
+2. **Displacement evidence** — two or more external functions each read three or more fields from the class and perform operations that would naturally live as methods of the class.
+3. **Feature envy evidence** — the external functions are entirely derived from the class's data, with no contribution from their own module's state, making the class the natural home for the logic.
+4. **Scatter evidence** — the displaced behavior is spread across multiple files or utilities, meaning a change to the class's fields requires finding and updating all the external functions that depend on them.
 
 ---
 

@@ -1,6 +1,6 @@
 # Detection Patterns — Misleading Name
 
-Patterns where a name's implicit contract — what the identifier promises about behavior, value, or units — is violated by the actual implementation. This is distinct from `inconsistent-abstraction-in-name`, which targets vocabulary *level* mismatches; this pass targets *accuracy* mismatches where the name is at the right level but says the wrong thing. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the misleading-name suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a name's implicit contract — what the identifier promises about behavior, value, or units — is violated by the actual implementation. This is distinct from `inconsistent-abstraction-in-name`, which targets vocabulary *level* mismatches; this pass targets *accuracy* mismatches where the name is at the right level but says the wrong thing. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the misleading-name suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Query-named function that mutates or deletes
 
@@ -98,6 +98,17 @@ EMPTY_ARRAY.push("x");            // mutates the exported "empty" array
 ```
 
 `SCREAMING_SNAKE_CASE` and names like `DEFAULT_*`, `EMPTY_*`, `INITIAL_*` create a strong expectation that the value will not change. Exporting a mutable reference under such a name allows consumers to corrupt the shared state.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Contract evidence** — the name establishes an implicit promise: a `get*`/`find*`/`is*` prefix promises purity; `SCREAMING_SNAKE_CASE` promises immutability; a singular noun promises a single value; omitting a unit promises the unit is irrelevant or universally agreed.
+2. **Violation evidence** — the implementation breaks the promise: the function deletes or writes, the exported constant is mutated, the function returns a collection, or the identifier's unit determines correctness and differs from what callers assume.
+3. **Caller harm evidence** — a caller relying on the name's implicit contract would produce incorrect behavior: a test calling a `get*` function in a setup phase that unexpectedly deletes data, an arithmetic operation on a unitless value producing a silent magnitude error, a consumer mutating a shared `DEFAULT_*` object and corrupting other callers.
+4. **Absence of documentation** — no adjacent comment, type annotation, or module-level convention explains the deviation, so the caller has no way to discover the contract violation without reading the implementation.
 
 ---
 

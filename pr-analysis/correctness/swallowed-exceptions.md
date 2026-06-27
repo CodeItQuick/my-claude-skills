@@ -1,6 +1,6 @@
 # Detection Patterns — Swallowed Exceptions
 
-Patterns that frequently introduce swallowed exceptions. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the swallowed-exception suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns that frequently introduce swallowed exceptions. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the swallowed-exception suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Empty catch block
 
@@ -119,6 +119,17 @@ async function processOrder(order) {
 ```
 
 A blanket catch that maps all errors to the same return value prevents callers from distinguishing transient failures (retry-able) from permanent ones (don't retry). Flag when the returned type gives no failure detail.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Catch evidence** — a `catch` block or `.catch(...)` that does not re-throw, propagate, or take a meaningful recovery action.
+2. **Scope evidence** — the caught exception is discarded: binding unused, named `_`, or only passed to `console.log`/`logger.debug` with no re-throw.
+3. **Caller evidence** — the calling code has no other way to learn the operation failed.
+4. **Context evidence** — silent failure would cause user-visible data loss, incorrect state, or a downstream crash harder to diagnose than the original error.
 
 ---
 

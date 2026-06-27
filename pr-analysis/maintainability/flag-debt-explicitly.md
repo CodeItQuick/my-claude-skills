@@ -1,6 +1,6 @@
 # Detection Patterns — Flag Debt Explicitly
 
-Patterns where technical debt is introduced or left in place without being made trackable — TODO and FIXME markers with no owner or resolution condition, temporary workarounds with no ticket, and disabled tests with no explanation. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the flag-debt-explicitly suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where technical debt is introduced or left in place without being made trackable — TODO and FIXME markers with no owner or resolution condition, temporary workarounds with no ticket, and disabled tests with no explanation. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the flag-debt-explicitly suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. TODO with no ticket reference or stated resolution condition
 
@@ -80,6 +80,17 @@ container.register(ServiceImpl);
 ```
 
 Type suppression directives silence the compiler without explaining what error is being suppressed or why suppression is the right solution. A comment explaining the underlying type system limitation or the library version that causes the error makes the suppression reviewable and removable when the root cause is resolved.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Marker evidence** — a `TODO`, `FIXME`, `HACK`, `XXX`, `@ts-ignore`, `@ts-expect-error`, `it.skip`, `xit`, or hardcoded value with an inline comment marking it as temporary is present in the diff.
+2. **Missing resolution path evidence** — the marker has no ticket number, no owner, and no stated condition under which the debt can be resolved.
+3. **Trackability evidence** — the debt cannot be surfaced by a project management system because it is not linked to any tracked work item.
+4. **Permanence risk evidence** — without a resolution path, the debt is structurally indistinguishable from debt that is intended to remain indefinitely.
 
 ---
 

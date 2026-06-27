@@ -1,6 +1,6 @@
 # Detection Patterns — Unnecessary Code Growth
 
-Patterns where structurally present, reachable code serves no current requirement — branches for conditions that current inputs cannot satisfy, option slots always left at their default, exported extension points with zero callers, and support scaffolding for cases that do not exist. Unlike `remove-clutter`, which targets provably *unreachable* code (after a `return`, commented out, unused imports), this pass targets code that *can* run but never does given present requirements. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the unnecessary-code-growth suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where structurally present, reachable code serves no current requirement — branches for conditions that current inputs cannot satisfy, option slots always left at their default, exported extension points with zero callers, and support scaffolding for cases that do not exist. Unlike `remove-clutter`, which targets provably *unreachable* code (after a `return`, commented out, unused imports), this pass targets code that *can* run but never does given present requirements. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the unnecessary-code-growth suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Branch for a condition that current inputs cannot satisfy
 
@@ -101,6 +101,17 @@ function computePageSize(envValue: string | undefined, mode: "paginated" | "infi
 ```
 
 A parameter whose value is always the same literal at every call site provides no runtime variation. The branches for other values add complexity that is never exercised. If the function is not exported for external use, the parameter and its associated branches are unnecessary growth.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Presence evidence** — code is structurally present and syntactically reachable: a branch, an option property, an exported function, an error handler.
+2. **Never-exercised evidence** — the code cannot be reached given current inputs: the type system makes the branch condition structurally impossible, the option is always its default, the export has no internal callers and no documented external consumers, the error condition cannot occur after the preceding guard.
+3. **Requirement absence evidence** — no ticket, comment, or PR description identifies a current or imminent requirement the code serves; it appears to have been added for a case that does not yet exist.
+4. **Maintenance cost evidence** — the unused code is not free: it adds cognitive load to every reader, creates test surface that cannot be covered, and will accumulate alongside future changes as dead scaffolding.
 
 ---
 

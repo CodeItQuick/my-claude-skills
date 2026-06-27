@@ -1,6 +1,6 @@
 # Detection Patterns — Input Validation
 
-Patterns where inputs from external sources — user input, API responses, environment variables, parsed data — are used without adequate validation. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the input-validation suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where inputs from external sources — user input, API responses, environment variables, parsed data — are used without adequate validation. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the input-validation suppression rules in `../shared/suppression-rules.md` before reporting.
 
 This pass is distinct from `null-access`, which covers nullable dereferences specifically. This pass covers inputs that are non-null but still unsafe: out-of-range numbers, unsanitized strings, malformed parsed values, and coerced types with surprising results.
 
@@ -73,6 +73,17 @@ if (date.getFullYear() < 1900) throw new Error("Invalid year");
 ```
 
 `new Date("not-a-date")` produces an `Invalid Date` object — not an exception. `Invalid Date.getFullYear()` returns `NaN`, which fails the `< 1900` check and passes silently. The downstream consumer receives an invalid `Date` instance.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Source evidence** — the value originates from an external boundary: `req.body`, `req.query`, `req.params`, `process.env`, `JSON.parse`, a file read, or a third-party API response.
+2. **Usage evidence** — the unvalidated value is used directly in a sensitive operation: arithmetic, array indexing, path construction, database query, or type assertion.
+3. **Missing check evidence** — no bounds check, `isNaN`, `Number.isFinite`, format check, or schema validation appears between the source and the usage.
+4. **Impact evidence** — a concrete description of what goes wrong: negative offset, path traversal, NaN propagation, SQL injection surface, or invalid value persisted to storage.
 
 ---
 

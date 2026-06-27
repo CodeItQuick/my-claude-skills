@@ -2,7 +2,18 @@
 
 You are a senior software engineer identifying expressions that require significant mental effort to parse, where two or three named lines would be immediately clear.
 
-Patterns where code is compressed into a single expression that requires significant mental effort to parse, and where two or three named lines would be immediately clear. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where code is compressed into a single expression that requires significant mental effort to parse, and where two or three named lines would be immediately clear. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Parsing effort evidence** — the expression requires more than one pass to understand: the reader must trace operator precedence, short-circuit evaluation, or destructuring mechanics before they can determine what the expression produces.
+2. **Decomposability evidence** — the expression can be split into two or three named intermediate variables with no change to behavior, and those names would make each step's purpose self-evident.
+3. **Idiom absence evidence** — the construct is not a widely-recognised JS/TS idiom (e.g., nested ternaries, comma operator, `~indexOf`, bit shifts for non-bit purposes) — a reader unfamiliar with the specific trick would be blocked.
+4. **Debuggability evidence** — the expression cannot be inspected mid-computation in a debugger without rewriting it, because all intermediate values are anonymous and ephemeral.
+
+---
 
 **Before flagging any pattern:** confirm at least two evidence types are present (code, path, convention, or impact), check the suppression list below, and reason through both before concluding.
 

@@ -1,6 +1,6 @@
 # Detection Patterns — Concurrency and Timing
 
-Patterns where shared mutable state, asynchronous callbacks, or concurrent operations interact in ways the author did not account for. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the concurrency-and-timing suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where shared mutable state, asynchronous callbacks, or concurrent operations interact in ways the author did not account for. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the concurrency-and-timing suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Read-modify-write across an `await` boundary on shared mutable state
 
@@ -89,6 +89,17 @@ async function deactivate(userId: string) {
 ```
 
 Between the read and the write, another concurrent `deactivate` call may have already set `status` to `"inactive"`. The check-then-act window allows a double-deactivation or a deactivation of already-inactive users. The fix is an atomic conditional update (`UPDATE … WHERE status = 'active'`).
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Shared state evidence** — a variable, cache, or external resource is read or written by code that may execute concurrently: module-level mutable state, a shared object across `await` calls, or a resource accessed from multiple async call paths.
+2. **Async boundary evidence** — an `await`, `setTimeout`, `setInterval`, or event callback creates a gap where interleaving can occur between a read and a subsequent write of the same state.
+3. **Interleaving evidence** — a concrete scenario where a second concurrent execution changes the shared state between the read and the write of the first, producing an incorrect result.
+4. **Impact evidence** — the race is observable: counter drift, stale cache served, double-execution of a side effect, partial-success left unrecoverable, or unhandled promise rejection.
 
 ---
 

@@ -1,6 +1,17 @@
 # Detection Patterns — Inconsistent Abstraction in Name
 
-Patterns where a name (function, variable, class, parameter) implies one level of abstraction but the surrounding context operates at a different level, or where sibling names in the same scope mix vocabulary from incompatible levels. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a name (function, variable, class, parameter) implies one level of abstraction but the surrounding context operates at a different level, or where sibling names in the same scope mix vocabulary from incompatible levels. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Vocabulary mismatch evidence** — the name uses terms from a different layer than the surrounding context: infrastructure terms (`httpResponse`, `sqlRow`, `dbRecord`) in business logic, or business terms (`createOrder`) next to persistence terms (`deleteFromOrdersTable`) in the same module.
+2. **Sibling contrast evidence** — two or more names in the same scope (module, class, or function signature) use incompatible vocabulary levels, making one name an outlier: one function is `createOrder`, the next is `executeInsertQuery`.
+3. **Implementation encoding evidence** — the name encodes a mechanism or transport that callers should not need to know: `fetchUserFromDatabaseByPrimaryKey`, `sendHttpPostRequest`, `serializeToJsonAndPersist`.
+4. **Expectation violation evidence** — the name implies a query (`get`, `find`, `is`, `has`) but the function has side effects, or the name implies a single concern but contains multiple sequential verbs (`getAndCache`, `loadAndValidateAndSave`).
+
+---
 
 **Before flagging any pattern:** confirm at least two evidence types are present (code, path, convention, or impact), and check the suppression list below. Reason through both before concluding.
 

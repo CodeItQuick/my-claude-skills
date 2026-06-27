@@ -1,6 +1,6 @@
 # Detection Patterns — Null Access
 
-Patterns that frequently introduce null/undefined dereferences. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the null-access suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns that frequently introduce null/undefined dereferences. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the null-access suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. `.find(...)` result dereferenced
 
@@ -100,6 +100,17 @@ return result.id;        // result may be undefined
 ```
 
 If no item matches the predicate, `result` is never assigned.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Type evidence** — the type allows `null` or `undefined` (optional property, return type with `| undefined`, no narrowing in scope).
+2. **Source evidence** — the value comes from `.find(...)`, `Map.get(...)`, index lookup, cache/database/API.
+3. **Guard placement** — no guard exists, or the guard appears *after* the dereference.
+4. **Convention evidence** — nearby code already treats this value as nullable.
 
 ---
 

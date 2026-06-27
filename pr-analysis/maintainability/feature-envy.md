@@ -1,6 +1,6 @@
 # Detection Patterns — Feature Envy
 
-Patterns where a function or method is more interested in the data of another module or class than its own, suggesting it belongs elsewhere. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a function or method is more interested in the data of another module or class than its own, suggesting it belongs elsewhere. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Function accesses many fields of a single foreign object
 
@@ -100,6 +100,17 @@ function processCheckout(cart: Cart, user: User, paymentMethod: PaymentMethod) {
 ```
 
 `processCheckout` touches `user.address.state` and `user.email` — two fields from deep inside `User` — but adds no logic of its own beyond connecting calls. The scattered field accesses suggest either `User` should expose higher-level methods (`user.taxState()`, `user.billingEmail()`), or the function belongs in a module that already has both `Cart` and `User` in scope as first-class concepts.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Access count evidence** — the function reads three or more distinct fields or methods from a single foreign object, while referencing its own class's data (`this`) zero or one times.
+2. **Derivation evidence** — the function's return value or side effect is computed entirely from one foreign object's data, with no contribution from the function's own module or state.
+3. **Displacement evidence** — moving the function to the foreign object would require passing fewer arguments and would remove the need to expose internal fields through a public interface.
+4. **Deep navigation evidence** — the function traverses two or more levels into a foreign object's structure (`order.customer.contactInfo.email`), coupling it to implementation details the foreign object should encapsulate.
 
 ---
 

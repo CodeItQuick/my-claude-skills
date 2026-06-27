@@ -1,6 +1,6 @@
 # Detection Patterns — Implicit Test Ordering
 
-Patterns where a test silently depends on state created or mutated by another test, making the suite order-sensitive without expressing that dependency. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a test silently depends on state created or mutated by another test, making the suite order-sensitive without expressing that dependency. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Test reads a variable only written by a sibling test
 
@@ -133,6 +133,17 @@ describe("order lifecycle", () => {
 ```
 
 Even within a `describe` block, test runners can run tests in parallel, randomized order, or selectively (e.g., `--testNamePattern`). An omitted arrange that relies on a sibling having run is an invisible ordering dependency.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Shared state evidence** — a variable, object, database record, cache entry, or singleton is written by one test and read by another with no intervening reset or recreation.
+2. **Missing arrange evidence** — a test has no setup for data or state it clearly requires, meaning that state must have been produced by a prior test.
+3. **Mutation evidence** — a `beforeAll` or module-level object is mutated by one or more tests rather than recreated fresh per test, making each test's starting conditions depend on execution order.
+4. **Ordering signal evidence** — test names use sequential numbering, step language, or lifecycle terms ("step 1", "then", "after") implying a required order that the test runner does not enforce.
 
 ---
 

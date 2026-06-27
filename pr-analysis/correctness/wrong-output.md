@@ -1,6 +1,6 @@
 # Detection Patterns — Wrong Output
 
-Patterns where the return value or thrown exception does not match what callers expect based on the function's name, signature, or documented contract. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the wrong-output suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where the return value or thrown exception does not match what callers expect based on the function's name, signature, or documented contract. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the wrong-output suppression rules in `../shared/suppression-rules.md` before reporting.
 
 This pass is distinct from `swallowed-exceptions`, which covers caught exceptions that are not propagated. This pass covers output that is propagated but wrong: a `true` when the operation failed, a generic `Error` when the contract promises a typed domain error, or `undefined` slipping out of a non-optional return type.
 
@@ -100,6 +100,17 @@ async function publish(event: Event): Promise<void> {
 ```
 
 The caller `await`s `publish(event)` expecting the event to be in the queue when the promise resolves. But the inner `queue.publish` is not awaited, so the function resolves immediately. If the queue operation fails, the error is unhandled and the caller has no indication. This is distinct from the `interface-contract-violation` unawaited-promise pattern because the function's own return value is wrong, not just the internal call.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Contract evidence** — the function's name, return type annotation, or documented behavior promises a specific output: a non-optional value, a typed domain error, a reliable boolean indicator, or an immutable snapshot.
+2. **Violation evidence** — the implementation produces a different output on at least one reachable path: implicit `undefined`, `true` returned from a `catch`, a generic `Error` thrown where a typed error is expected, or the internal mutable reference returned directly.
+3. **Path evidence** — the violating path is reachable in normal operation, not only under contrived conditions.
+4. **Impact evidence** — the caller is concretely harmed: arithmetic on `NaN`, a typed error catch that never matches, a failure displayed as success, or private state mutated by an external caller.
 
 ---
 

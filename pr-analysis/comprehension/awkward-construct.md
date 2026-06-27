@@ -1,6 +1,6 @@
 # Detection Patterns — Awkward Construct
 
-Patterns where code uses a verbose or indirect approach when a more direct idiom communicates the same intent more clearly. This is the complement to `overly-clever-one-liner`: where that pass targets expressions too *compressed* to read, this pass targets patterns too *roundabout* when a cleaner construct exists. The signal is not cleverness — it is indirection: the reader must mentally translate a verbose pattern into its modern equivalent before they can follow the intent. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the awkward-construct suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where code uses a verbose or indirect approach when a more direct idiom communicates the same intent more clearly. This is the complement to `overly-clever-one-liner`: where that pass targets expressions too *compressed* to read, this pass targets patterns too *roundabout* when a cleaner construct exists. The signal is not cleverness — it is indirection: the reader must mentally translate a verbose pattern into its modern equivalent before they can follow the intent. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the awkward-construct suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. `.then()` promise chain where `async/await` would flatten the structure
 
@@ -100,6 +100,17 @@ fs.readFile(configPath, "utf8", (err, data) => {
 ```
 
 The Node.js `fs.promises` API (`fs.promises.readFile`, `fs.promises.writeFile`) has been available since Node.js 10. When callback-style file I/O appears in a codebase that uses `async/await` elsewhere, the inconsistency forces the reader to switch between two async mental models in the same file. The promise-based equivalent allows `await`, uniform error handling, and the same flat structure used in the surrounding code.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Modern-idiom evidence** — a more direct construct exists in the language or standard library that expresses the same intent: `async/await` for promise chains, `.map()`/`.filter()` for accumulation loops, optional chaining for `&&` navigation, `Object.entries()` for key-value iteration, template literals for string interpolation.
+2. **Translation cost evidence** — the reader must mentally convert the verbose pattern into its modern equivalent before the intent becomes clear; the roundabout form adds a decoding step that the direct idiom eliminates.
+3. **Codebase-consistency evidence** — the modern idiom is already used elsewhere in the same file or module, making the older pattern an inconsistency rather than a deliberate style choice.
+4. **Mechanical substitutability evidence** — the replacement is a straightforward rewrite with identical semantics: no change to control flow, error handling, or observable behavior is required to make the substitution.
 
 ---
 

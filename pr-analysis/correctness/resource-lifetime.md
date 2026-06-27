@@ -1,6 +1,6 @@
 # Detection Patterns — Resource Lifetime
 
-Patterns where a resource's close/release/destroy is missing, reachable only on the happy path, or called in a way that does not cover all exit points. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the resource-lifetime suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a resource's close/release/destroy is missing, reachable only on the happy path, or called in a way that does not cover all exit points. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the resource-lifetime suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Resource opened in `try`, closed only in happy-path body
 
@@ -85,6 +85,17 @@ await handle.close();   // only closes the last handle; earlier ones leak
 ```
 
 The `close()` is outside the loop and references the last binding of `handle`. All prior file handles are never closed.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Acquisition evidence** — a resource is opened or acquired: `fs.open`, `pool.connect`, `createReadStream`, `setInterval`, `emitter.on`, or any operation that returns a handle requiring explicit release.
+2. **Release evidence** — the corresponding release (`close`, `release`, `destroy`, `clearInterval`, `removeListener`) is absent, or is only reachable on the happy path (not in a `finally` block).
+3. **Error path evidence** — a `throw`, `return`, or `await` in the same scope can exit the function before the release is reached.
+4. **Impact evidence** — the leak is observable: connection pool exhaustion, open file descriptor accumulating, timer firing on a dead object, or listener accumulating across multiple instances.
 
 ---
 

@@ -1,6 +1,6 @@
 # Detection Patterns — Copy-Paste Variation
 
-Patterns where two or more blocks are structurally identical except for one or two varying values, field names, or expressions. The risk is not the duplication itself but the change coupling it creates: a future fix to the shared logic must be applied to every copy, and there is nothing to remind the author that other copies exist. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
+Patterns where two or more blocks are structurally identical except for one or two varying values, field names, or expressions. The risk is not the duplication itself but the change coupling it creates: a future fix to the shared logic must be applied to every copy, and there is nothing to remind the author that other copies exist. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
 
 ## 1. Two functions with identical bodies differing only in a field name
 
@@ -123,6 +123,17 @@ if (!input.bio || input.bio.length < 2) {
 ```
 
 The same minimum-length check, duplicated three times with different field names and labels. A `validateMinLength(field, label, min)` helper or a declarative rules array would centralise the logic and make adding a new field a one-line change.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Structural identity evidence** — two or more blocks share the same control flow, operations, and return shape; the blocks are recognisably the same code with values swapped out.
+2. **Variation evidence** — the difference between the blocks is confined to one or two values, field names, or string literals that could become parameters with no change to the surrounding logic.
+3. **Locality evidence** — the duplicate blocks appear in the same function, class, or file, making the duplication visible and unambiguous rather than a coincidental resemblance across distant modules.
+4. **Change-coupling evidence** — a modification to the shared logic (the accumulator, the error push, the two-step body) would need to be applied identically to every copy, with nothing to prompt the author that other copies exist.
 
 ---
 

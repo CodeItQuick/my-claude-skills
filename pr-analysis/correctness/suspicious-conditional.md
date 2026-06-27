@@ -1,6 +1,6 @@
 # Detection Patterns — Suspicious Conditional
 
-Patterns that frequently produce broken or meaningless conditionals. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the suspicious-conditional suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns that frequently produce broken or meaningless conditionals. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the suspicious-conditional suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Off-by-one boundary operator (`>` vs `>=`, `<` vs `<=`)
 
@@ -112,6 +112,17 @@ const result = null && process(data);  // always `null`; right side is dead code
 ```
 
 When the left operand is a literal that short-circuits unconditionally, the right operand is dead code. Flag when the left operand is a literal (not a variable).
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Logic evidence** — the condition is provably tautological, contradictory, or identical to another branch given the types and values in scope.
+2. **Type evidence** — the type makes the comparison degenerate (non-nullable compared to `null`, `boolean` compared to `"true"`, wrong boundary for the stated invariant).
+3. **Behavioral evidence** — the branch body is empty, unreachable, or identical to the else branch, confirming the condition has no effect.
+4. **Convention evidence** — nearby code uses the correct operator or boundary, making the candidate an inconsistency.
 
 ---
 

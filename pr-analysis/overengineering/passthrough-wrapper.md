@@ -1,6 +1,6 @@
 # Detection Patterns — Passthrough Wrapper
 
-Patterns where a function, method, or class exists solely to call something else with the same arguments and return the result unchanged. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a function, method, or class exists solely to call something else with the same arguments and return the result unchanged. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Function body is a single delegating call
 
@@ -132,6 +132,17 @@ class UserService implements UserServiceInterface { ... }
 ```
 
 An interface that exists solely to name the type of its one implementation, and is never used for substitution, mocking, or multiple implementations, is a passthrough type. The concrete class could be used directly.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Delegation evidence** — the function, method, or class body contains only a call to another function/method and returns its result without modification.
+2. **Signature evidence** — the wrapper's parameters map 1:1 to the callee's parameters with no reordering, merging, splitting, defaulting, or validation.
+3. **Behavior evidence** — no logging, metrics, error translation, access control, or other cross-cutting concern is added; the wrapper is invisible at runtime.
+4. **Substitutability evidence** — callers could import and call the wrapped target directly without any change to their logic, types, or error handling.
 
 ---
 

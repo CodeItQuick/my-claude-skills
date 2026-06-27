@@ -1,6 +1,6 @@
 s# Detection Patterns — Remove Clutter
 
-Patterns where code or comments add noise without adding information — dead code, commented-out blocks, unused declarations, and comments that restate what the code already clearly says. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the remove-clutter suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where code or comments add noise without adding information — dead code, commented-out blocks, unused declarations, and comments that restate what the code already clearly says. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the remove-clutter suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Dead code after an unconditional `return`, `throw`, or `continue`
 
@@ -101,6 +101,17 @@ function processOrder(order: Order) { ... }
 ```
 
 Two adjacent comments saying the same thing in different words. One will be updated when the code changes; the other will drift. The duplicate comment creates maintenance burden and eventual inconsistency without providing additional information.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Unreachability evidence** — a statement, block, or declaration is provably never executed or never referenced: after an unconditional `return`/`throw`, an unused import or variable, or a branch that is structurally impossible.
+2. **No-information evidence** — a comment, empty block, or duplicate declaration adds no information that the code does not already express: a comment restating the operation, an empty `else` with a placeholder comment, or a duplicate adjacent comment.
+3. **Maintenance burden evidence** — the clutter is not neutral: it creates a false impression of active alternatives (commented-out code), forces readers to confirm nothing is there (empty blocks), or will drift out of sync with the code it describes (restatement comments).
+4. **No suppression applies** — the clutter is not a framework requirement, an intentional no-op, a type-only import, or a tracked placeholder.
 
 ---
 

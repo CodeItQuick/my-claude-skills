@@ -1,6 +1,6 @@
 # Detection Patterns — Deep Nesting
 
-Patterns where control flow is indented four or more levels deep, making it hard to track which conditions apply at the deepest point and which branch handles the common case. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
+Patterns where control flow is indented four or more levels deep, making it hard to track which conditions apply at the deepest point and which branch handles the common case. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
 
 ## 1. Pyramid of doom — successive if checks wrapping the whole body
 
@@ -123,6 +123,17 @@ function render(user: User) {
 ```
 
 The function's entire positive path is wrapped in two nested conditionals. Inverting to guard clauses (`if (!user.isActive) return null`) brings the main path to level zero.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Depth evidence** — the function contains four or more levels of indentation from control flow constructs (`if`/`else`, `for`/`while`/`forEach`, `try`/`catch`, `switch`).
+2. **Inversion evidence** — the outermost condition or one of the intermediate conditions could be inverted to an early return, collapsing one or more nesting levels with no change to behavior.
+3. **Extractability evidence** — a contiguous nested block could be extracted to a named function, reducing the depth at the call site and making the extracted logic independently readable.
+4. **Happy-path burial evidence** — the main success path is the deepest branch, forcing a reader to trace through all enclosing conditions before reaching the code that runs in the common case.
 
 ---
 

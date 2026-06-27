@@ -1,6 +1,6 @@
 # Detection Patterns — Speculative Generality
 
-Patterns where structure is added in anticipation of future requirements that do not yet exist — type parameters with no second type, abstract base classes with one subclass, extension points with no consumers, and optional parameters never varied from their default. The defining signal is **presence without a current consumer**: the structure is there, but nothing in the codebase uses the flexibility it provides. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the speculative-generality suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where structure is added in anticipation of future requirements that do not yet exist — type parameters with no second type, abstract base classes with one subclass, extension points with no consumers, and optional parameters never varied from their default. The defining signal is **presence without a current consumer**: the structure is there, but nothing in the codebase uses the flexibility it provides. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the speculative-generality suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Generic type parameter with only one concrete usage
 
@@ -118,6 +118,17 @@ class ItemList {
 ```
 
 The Strategy pattern earns its complexity when the strategy genuinely varies at runtime or when multiple concrete strategies exist. When only one strategy is instantiated anywhere in the codebase, the pattern is carrying the weight of a polymorphism that does not exist.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Presence-without-consumer evidence** — the structure exists (type parameter, abstract class, interface, hook slot, optional parameter) but nothing in the visible codebase exercises the flexibility it provides: no second type binding, no second subclass, no registered consumer, no call site that varies the parameter.
+2. **Single-use evidence** — the generic, abstract, or extensible construct is only ever used in one concrete way across all visible call sites and implementations.
+3. **Complexity cost evidence** — the speculative structure adds real overhead: type parameter noise in signatures and error messages, an extra layer of indirection through the abstract class, maintenance burden for a hook system that serves no consumer.
+4. **No planned-use evidence** — no adjacent comment, ticket reference, or PR description explains what future requirement the structure anticipates; the generality appears to be preemptive rather than deliberate.
 
 ---
 

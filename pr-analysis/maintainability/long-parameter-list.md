@@ -1,6 +1,6 @@
 # Detection Patterns — Long Parameter List
 
-Patterns where a function accepts so many positional parameters that call sites become hard to read, parameters are easy to transpose, and adding new parameters breaks all callers. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
+Patterns where a function accepts so many positional parameters that call sites become hard to read, parameters are easy to transpose, and adding new parameters breaks all callers. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
 
 ## 1. Five or more positional parameters
 
@@ -89,6 +89,17 @@ function buildQuery(
 ```
 
 Defaults scattered through a long list mean callers who want only the last default must pass all preceding arguments explicitly. This is the strongest signal that an options object is the right shape.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Count evidence** — the function has five or more positional parameters.
+2. **Transposition evidence** — two or more adjacent parameters share the same type, making silent argument transposition possible with no compile error.
+3. **Grouping evidence** — two or more parameters belong to a single logical domain concept (e.g., `firstName`, `lastName`, `email` → user) that could be an options object.
+4. **Call-site evidence** — at least one visible call site passes positional literals in sequence, making it impossible to determine which value maps to which parameter without looking up the signature.
 
 ---
 

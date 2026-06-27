@@ -1,6 +1,6 @@
 # Detection Patterns — Mutation of Input
 
-Patterns where a function mutates its arguments instead of returning new values, violating caller expectations and producing action-at-a-distance bugs. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a function mutates its arguments instead of returning new values, violating caller expectations and producing action-at-a-distance bugs. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Direct property assignment on a parameter
 
@@ -103,6 +103,17 @@ function transform(data: Data, inPlace = false) {
 ```
 
 Not a bug in itself, but flag when `inPlace = true` is the default, when the parameter name is not visible at the call site, or when the caller passes `true` without appearing to intend mutation.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Mutation evidence** — a mutating operation (`=` on a property, `sort`/`reverse`/`splice`/`push` on an array, `delete` on a property) is applied directly to a parameter or a shallow copy of one.
+2. **Caller evidence** — the caller has no indication mutation will occur: the function name implies a pure transformation, the parameter type is not a builder/accumulator, and the return value is the same reference passed in.
+3. **Alias evidence** — the caller retains a reference to the passed value and uses it after the call, meaning the mutation is observable.
+4. **Convention evidence** — sibling functions handling the same type return new values, making this function an inconsistency.
 
 ---
 

@@ -1,6 +1,6 @@
 # Detection Patterns — Document Intent
 
-Patterns where code requires a reader to look up, re-derive, or guess information that the author already knew — magic values, undocumented side effects, non-obvious algorithms, and workarounds with no stated rationale. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the document-intent suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where code requires a reader to look up, re-derive, or guess information that the author already knew — magic values, undocumented side effects, non-obvious algorithms, and workarounds with no stated rationale. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the document-intent suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Magic numeric literal with no explanation
 
@@ -79,6 +79,17 @@ const flags = (user.role << 4) | user.permissions;
 ```
 
 A regex or bitwise expression that a reader cannot verify at a glance. The question is not whether it is correct but whether a future maintainer can confirm it is still correct after a requirement changes. A named constant for the regex and a comment for the bit manipulation remove the ambiguity.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Opacity evidence** — a literal value, identifier, or expression requires knowledge outside the code to interpret: a bare numeric literal with domain meaning, an abbreviated string key, a bit operation, or a complex regex.
+2. **Derivation cost evidence** — a reader must perform arithmetic, look up a specification, or recall an idiom to confirm the value is correct; the derivation cost is not zero.
+3. **Surprise risk evidence** — the code is correct but non-obvious enough that a future maintainer would plausibly "fix" it incorrectly: a workaround, a counterintuitive ordering, or a value whose unit is invisible.
+4. **Absence evidence** — no adjacent comment, no named constant, and no surrounding context explains the non-obvious element.
 
 ---
 

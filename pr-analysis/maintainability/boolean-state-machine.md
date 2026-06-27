@@ -1,6 +1,6 @@
 # Detection Patterns — Boolean State Machine
 
-Patterns where multiple boolean fields or variables are used together to track a lifecycle or state that has a fixed set of valid phases. The core problem is that N booleans produce 2^N combinations, but only a few are meaningful — invalid combinations become possible and nothing in the type system prevents them. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
+Patterns where multiple boolean fields or variables are used together to track a lifecycle or state that has a fixed set of valid phases. The core problem is that N booleans produce 2^N combinations, but only a few are meaningful — invalid combinations become possible and nothing in the type system prevents them. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the suppression rules in `../maintainability/suppression-rules.md` before reporting.
 
 ## 1. Lifecycle booleans with impossible combinations
 
@@ -103,6 +103,17 @@ try {
 ```
 
 Three booleans tracking a single operation's lifecycle. `'pending' | 'running' | 'completed' | 'failed'` would carry the same information with no invalid combinations.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Multiplicity evidence** — two or more boolean fields or variables whose values are coordinated: set together, checked together, or reset together in at least one place.
+2. **Invalid combination evidence** — at least one combination of the boolean values represents an impossible or meaningless state (e.g., `isLoading: true` and `isLoaded: true` simultaneously), confirming the booleans are not independent.
+3. **Tandem-set evidence** — the booleans are assigned in groups at two or more sites (`isLoading = false; isLoaded = true`), meaning every transition requires keeping multiple writes in sync.
+4. **Discriminant evidence** — the code checks combinations of booleans to determine behavior (`if (!isLoading && !hasFailed)`) rather than reading a single named state value.
 
 ---
 

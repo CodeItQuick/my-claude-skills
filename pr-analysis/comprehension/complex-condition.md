@@ -1,6 +1,6 @@
 # Detection Patterns — Complex Condition
 
-Patterns where a boolean expression requires significant mental effort to evaluate — not because it is compressed into a one-liner (that is `overly-clever-one-liner`), but because the logic itself is hard to reason about: double negatives, four-or-more-clause predicates, De Morgan violations, and flag variables whose purpose the name does not communicate. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the complex-condition suppression rules in `../shared/suppression-rules.md` before reporting.
+Patterns where a boolean expression requires significant mental effort to evaluate — not because it is compressed into a one-liner (that is `overly-clever-one-liner`), but because the logic itself is hard to reason about: double negatives, four-or-more-clause predicates, De Morgan violations, and flag variables whose purpose the name does not communicate. Each pattern is a *candidate*, not a finding — apply the evidence rules below and the complex-condition suppression rules in `../shared/suppression-rules.md` before reporting.
 
 ## 1. Double negative
 
@@ -98,6 +98,17 @@ if (a && b || c && d) { ... }
 ```
 
 `&&` binds tighter than `||`, but most readers do not hold operator precedence rules in working memory when reading conditions. A condition mixing both operators without parentheses requires a precedence lookup to confirm the intended grouping. Explicit parentheses document the grouping at no cost.
+
+---
+
+## Evidence required
+
+Gather **at least two** before reporting:
+
+1. **Structure evidence** — the condition contains a double negative (negation applied to a name encoding a negative concept), four or more boolean terms, mixed `&&`/`||` operators without parentheses clarifying precedence, or a negated compound expression (`!(a || b)`).
+2. **Resolution cost evidence** — a reader must perform a non-trivial mental transformation to evaluate the condition: cancelling two negations, applying De Morgan's law, or holding four independent terms simultaneously before the branch meaning becomes clear.
+3. **Extractability evidence** — the condition could be given a name (`isEligible`, `canProceed`, `hasNoIssues`) that would reduce the call site to a single boolean read, making the extraction both feasible and meaningful.
+4. **Absence of named predicate** — the compound logic is inline and unnamed; no existing function or variable captures the combined concept, meaning the reader must re-derive it at every call site.
 
 ---
 
