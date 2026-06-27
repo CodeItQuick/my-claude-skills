@@ -354,6 +354,101 @@ Keep each comment to 2–4 sentences. If you find yourself writing a paragraph, 
 
 ---
 
+### `input-validation`
+
+**Good:**
+
+> **Blocking:** `pageNumber * PAGE_SIZE` at line 12 uses `pageNumber` directly from `req.query` without a bounds check. A negative or non-integer value produces a negative offset passed to the database. Could we validate `pageNumber >= 1` and `Number.isInteger(pageNumber)` before the calculation?
+
+> **Suggested:** `parseInt(process.env.TIMEOUT_MS)` at line 8 is used directly as a delay. `parseInt` returns `NaN` when the environment variable is missing or non-numeric, and `delay(NaN)` has implementation-defined behavior. Could we add `Number.isFinite(timeout)` guard with a fallback default?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Raw request param used in path join | Assert: "`path.join(base, req.params.file)` is unguarded — a `..` segment traverses outside the base directory." |
+| `parseInt` result used without NaN check | Ask: "If `TIMEOUT_MS` is unset or non-numeric, `parseInt` returns `NaN` — should we default or throw here?" |
+| `as Type` cast on external data | Assert: "`req.body.status as Status` asserts a type without validating it — any string passes." |
+| Numeric index from user input | Ask: "Does `items[index]` need a bounds check? If `index` is out of range, the access returns `undefined` silently." |
+
+---
+
+### `resource-lifetime`
+
+**Good:**
+
+> **Blocking:** `conn = await pool.connect()` at line 14 is not released in a `finally` block. If `conn.query(sql)` throws, `conn.release()` at line 17 is never reached and the connection leaks. Could the release move into a `finally` block?
+
+> **Suggested:** The `readStream` at line 22 is not destroyed when `writeStream` emits an error. If the write fails, `readStream` stays open and holds the file handle. Could we call `readStream.destroy()` in the `writeStream` error handler alongside `writeStream.destroy()`?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Cleanup only in happy path, not `finally` | Assert: "`conn.release()` is only reached if `query()` succeeds — a `finally` block would cover the error path." |
+| Stream not destroyed on sibling error | Ask: "Does destroying `writeStream` on error also clean up `readStream`, or does `readStream` need its own `destroy()` call?" |
+| `setInterval` with no `clearInterval` | Ask: "Is there a `stop()` method or lifecycle hook that calls `clearInterval` on this timer?" |
+| Loop opens resource, cleanup is outside loop | Assert: "Only the last `handle` is closed — handles from earlier iterations are never released." |
+
+---
+
+### `concurrency-and-timing`
+
+**Good:**
+
+> **Blocking:** `requestCount++` at line 8 and `requestCount--` at line 12 bracket an `await`. Between those lines, concurrent calls to `handleRequest` can mutate `requestCount`, so the final decrement operates on a stale value and the counter drifts. Could this use an atomic or single-point counter?
+
+> **Suggested:** `Promise.all([db.orders.create(...), inventory.reserve(...), emailService.send(...)])` at line 34 has no rollback if one operation fails. The email may be sent for an order that fails to persist. Should these be wrapped in a transaction, or should the email be sent only after the other two succeed?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Read-modify-write on module-level state across `await` | Assert: "The `++` / `--` around `await` allows interleaving — concurrent calls will corrupt `requestCount`." |
+| `var` closed over in a loop timer | Assert: "By the time the `setTimeout` fires, `i` equals `items.length` — all callbacks process `undefined`." |
+| `Promise.all` with side-effecting operations | Ask: "If `inventory.reserve` fails after `orders.create` succeeds, is there a rollback mechanism?" |
+| Async event listener with no `try/catch` | Ask: "If the async handler throws, does the emitter catch it, or does the rejection go unhandled?" |
+
+---
+
+### `interface-contract-violation`
+
+**Good:**
+
+> **Blocking:** `fs.rename(newPath, oldPath, cb)` at line 19 has the arguments in the wrong order. `fs.rename` takes `(oldPath, newPath, callback)` — as written, the rename runs backwards, moving `newPath` to `oldPath`. Could we swap the first two arguments?
+
+> **Suggested:** `db.users.delete(id)` at line 31 is called without `await`. The function is `async` and returns a `Promise`. The deletion is fired and forgotten — if it rejects, the rejection is unhandled and the caller receives a response before the delete completes. Should this be `await db.users.delete(id)`?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Well-known API with arguments transposed | Assert: "`fs.rename(newPath, oldPath, cb)` — the first two arguments are swapped; the rename runs backwards." |
+| Node-style callback with `(result, err)` | Assert: "Node callbacks are `(err, result)` — `result` receives the error and `err` receives the value." |
+| Async function called without `await` | Ask: "Is `db.users.delete(id)` intentionally fire-and-forget, or should it be awaited so the caller knows when it completes?" |
+| Deprecated API used | Ask: "Is `crypto.createCipher` intentional here? It was deprecated in Node 10 and the replacement `createCipheriv` has different key-derivation semantics." |
+
+---
+
+### `wrong-output`
+
+**Good:**
+
+> **Blocking:** `findDiscountRate` at line 18 falls off the end when `promotions.get(code)` returns `undefined`, implicitly returning `undefined`. The return type is `number`, and callers multiply the result with `total` — producing `NaN` silently. Could we add an explicit `return 0` or throw `new UnknownPromoCodeError(code)`?
+
+> **Suggested:** `saveUser` at line 44 returns `true` in both the `try` and `catch` branches. Callers that branch on the return value (`if (!await saveUser(user)) showError()`) never see a failure. Should the `catch` branch return `false` or re-throw?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Implicit `undefined` returned on a branch typed as non-optional | Assert: "`findDiscountRate` returns `undefined` when no promo matches — the return type `number` doesn't permit this." |
+| `return true` / `return { success: true }` inside `catch` | Assert: "The `catch` branch returns `true` — callers cannot distinguish success from failure." |
+| Generic `Error` thrown where typed error expected | Ask: "Does the caller catch `UserNotFoundError` specifically? If so, throwing `Error` means that catch block is never reached." |
+| Internal reference returned from a getter | Ask: "Does `getSettings()` need to return a copy? Returning the internal object lets callers mutate `Config`'s private state." |
+
+---
+
 ## Examples — bad (all passes)
 
 > ❌ "This might be null." — vague, no location, no action.

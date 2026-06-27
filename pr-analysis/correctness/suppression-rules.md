@@ -1,6 +1,6 @@
 # Suppression Rules — Correctness Passes
 
-Pass-specific suppressions for: `null-access`, `swallowed-exceptions`, `suspicious-conditional`, `mutation-of-input`, `implicit-boolean-coercion`, `implicit-test-ordering`.
+Pass-specific suppressions for: `null-access`, `swallowed-exceptions`, `suspicious-conditional`, `mutation-of-input`, `implicit-boolean-coercion`, `implicit-test-ordering`, `input-validation`, `resource-lifetime`, `concurrency-and-timing`, `interface-contract-violation`, `wrong-output`.
 
 Apply [`shared/suppression-rules.md`](../shared/suppression-rules.md) first, then the relevant section below.
 
@@ -414,3 +414,178 @@ Any mutation of the shared resource makes execution order matter.
 ### S-ITO-A2. Test has an obvious data requirement with no arrange step (do NOT suppress)
 
 A test that uses a record ID it never creates. Even if a prior test happens to produce it, the ordering dependency is real.
+
+---
+
+## `input-validation` suppressions
+
+### S-IV-1. Validation performed by a schema parser before this point
+
+`zod.parse(...)`, `joi.validate(...)`, `class-validator`, or any schema validation that runs before this code path. Downstream use of an already-validated value does not need re-checking.
+
+### S-IV-2. Value sourced from a typed internal constant or enum
+
+A value that can only come from a controlled internal source (a TypeScript `enum`, a `const` array, a compile-time literal) cannot carry an unexpected runtime value.
+
+### S-IV-3. Bounds enforced by the database or storage layer
+
+If the database column has a `CHECK` constraint, a foreign key, or a NOT NULL constraint that enforces the invariant, a missing application-level check is redundant — not a bug. Only flag when the application must handle the invalid value before it reaches storage.
+
+### S-IV-4. `parseInt` result used only in a context that safely handles `NaN`
+
+`isNaN(parseInt(x))` or `Number.isFinite(parseInt(x))` immediately following the parse. The NaN case is handled.
+
+### S-IV-D1. Single entry point validates before branching (soft — downgrade)
+
+If validation runs at a single entry point and the current code is an internal handler that is only reachable through that entry point, downgrade and ask whether the entry-point validation covers this case.
+
+### S-IV-A1. Raw user input used in a path join, shell command, or SQL string without sanitization (do NOT suppress)
+
+Injection risk. Flag regardless of comments or apparent intent.
+
+### S-IV-A2. `as` cast used to assert a type from external data (do NOT suppress)
+
+`req.body.status as Status` does not validate at runtime. Flag.
+
+---
+
+## `resource-lifetime` suppressions
+
+### S-RL-1. `finally` block unconditionally closes the resource
+
+```ts
+const conn = await pool.connect();
+try {
+  return await conn.query(sql);
+} finally {
+  conn.release();
+}
+```
+
+All exit paths — normal and exceptional — go through `finally`. The resource is always released.
+
+### S-RL-2. `using` / `Symbol.dispose` / language-level cleanup
+
+The runtime guarantees cleanup when the block exits.
+
+### S-RL-3. Framework lifecycle manages the resource
+
+The resource is tied to a framework component (NestJS `onModuleDestroy`, React `useEffect` cleanup, Express middleware `on("finish")`). Trust the framework contract.
+
+### S-RL-4. Short-lived process — OS reclaims handles on exit
+
+A CLI or one-shot script where the process exits immediately after use. OS-level cleanup is sufficient.
+
+### S-RL-D1. `try/catch` with cleanup in the `catch` but not `finally` (soft — downgrade)
+
+```ts
+try { ... }
+catch { conn.release(); throw; }
+// no finally
+```
+
+The happy path leaks if the cleanup is only in `catch`. Downgrade from `high` to `medium` and ask whether `finally` would be safer.
+
+### S-RL-A1. Cleanup call on only one branch of an `if` (do NOT suppress)
+
+```ts
+if (success) conn.release();
+```
+
+The resource leaks on the `!success` path.
+
+### S-RL-A2. Loop that opens a resource per iteration with cleanup outside the loop (do NOT suppress)
+
+All but the last handle leak.
+
+---
+
+## `concurrency-and-timing` suppressions
+
+### S-CT-1. Purely synchronous code with no async boundary
+
+A read-modify-write sequence with no `await`, no callbacks, and no multi-threading. Single-threaded synchronous code cannot interleave.
+
+### S-CT-2. Immutable shared state
+
+`Object.freeze`, `as const`, or a clearly `readonly` reference. Shared immutable state has no race condition.
+
+### S-CT-3. Atomic platform operation
+
+`Atomics.*`, Redis `INCR`/`SETNX`, database `UPDATE … WHERE`, Postgres advisory locks. The platform guarantees atomicity.
+
+### S-CT-4. `Promise.all` over independent, non-interfering operations
+
+Operations that do not share state, do not write to the same resource, and whose partial-success is acceptable (e.g., parallel read-only fetches).
+
+### S-CT-D1. Shared counter with known single-caller context (soft — downgrade)
+
+If the shared variable is only ever mutated by one caller at a time in practice (e.g., a singleton with no concurrent callers in the current deployment), downgrade and ask whether the invariant is enforced or assumed.
+
+### S-CT-A1. Async event listener with no error handling (do NOT suppress)
+
+Node.js `EventEmitter` does not catch async listener rejections. Always flag.
+
+### S-CT-A2. Read-modify-write across an `await` on module-level mutable state (do NOT suppress)
+
+Module-level state is shared across all requests/calls. A single missed interleaving corrupts the shared value for all callers.
+
+---
+
+## `interface-contract-violation` suppressions
+
+### S-ICV-1. Argument order confirmed by a visible type mismatch caught at compile time
+
+If TypeScript would catch the transposition (distinct non-assignable types), the type checker already flags it. Only report when types are identical or loosely compatible and the transposition is silent.
+
+### S-ICV-2. API usage accompanied by a comment citing the deviation
+
+A comment explaining why the unusual order, deprecated API, or non-standard usage is correct. The deviation must be documented with a reason.
+
+### S-ICV-3. Internal function with a visible signature in the diff
+
+If the function being called is defined in the same diff or in a file visible as context, this is not an interface contract issue — use `wrong-output` or `mutation-of-input` instead.
+
+### S-ICV-D1. Deprecated API with no available replacement (soft — downgrade)
+
+If the platform does not yet provide an alternative, downgrade and note the deprecation.
+
+### S-ICV-A1. Node-style callback parameters swapped (do NOT suppress)
+
+`(error, result)` convention is universal in Node.js. Swapping them is always a bug.
+
+### S-ICV-A2. Unawaited async function call whose rejection would be unhandled (do NOT suppress)
+
+Flag even if the return value is unused intentionally — the unhandled rejection is the issue.
+
+---
+
+## `wrong-output` suppressions
+
+### S-WO-1. Return type explicitly includes `undefined` or `null`
+
+`function find(): User | undefined` — returning `undefined` is the contract.
+
+### S-WO-2. `Result` / `Either` / `Option` type used
+
+The error channel is encoded in the return type. A "failure" return is the intended API.
+
+### S-WO-3. `void` function with an early `return`
+
+`return;` in a `void` context is a control flow statement, not a missing value.
+
+### S-WO-4. Caller ignores the return value entirely
+
+If no call site in the diff uses the return value, a wrong value may not yet have an observable consequence. Downgrade to `medium` and note the risk if callers are added.
+
+### S-WO-D1. Generic `Error` thrown in low-level utility code (soft — downgrade)
+
+If the function has no domain context (a pure string utility, a math helper), a generic `Error` is appropriate. Downgrade when no typed error class exists at the current abstraction level.
+
+### S-WO-A1. `return true` / `return { success: true }` inside a `catch` block (do NOT suppress)
+
+Masking a failure as success is always a bug unless there is an explicit contract that the function is best-effort.
+
+### S-WO-A2. Implicit `undefined` returned from a function typed as returning a non-optional value (do NOT suppress)
+
+The TypeScript return type is wrong or the check is missing. Flag.

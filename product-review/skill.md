@@ -57,6 +57,7 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 | API-first Customer | Will the code I wrote against this API still produce correct results?         | Now | External | [`role-profiles/api-first-customer.md`](role-profiles/api-first-customer.md) |
 | Trial User | Can I get to value before I run out of patience?                              | Now | External | [`role-profiles/trial-user.md`](role-profiles/trial-user.md) |
 | Power User | Did anything change about how I actually use this every day?                  | Now | External | [`role-profiles/power-user.md`](role-profiles/power-user.md) |
+| AI Prompt Engineer | Is this prompt a reliable spec — or does it leave enough ambiguity that the model will guess inconsistently? | Now + Soon | Internal | [`role-profiles/ai-prompt-engineer.md`](role-profiles/ai-prompt-engineer.md) |
 
 ---
 
@@ -86,6 +87,7 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 | `api-customer` | `role-profiles/api-first-customer.md` |
 | `trial-user` | `role-profiles/trial-user.md` |
 | `power-user` | `role-profiles/power-user.md` |
+| `prompt-engineer` | `role-profiles/ai-prompt-engineer.md` |
 
 `--format=<format>` — `report` (default, markdown table) or `annotations` (JSON array for CI pipelines).
 

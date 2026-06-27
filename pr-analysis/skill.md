@@ -1,11 +1,11 @@
 ---
 name: pr-analysis
-description: Run seventeen focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run twenty-two focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
 
-Run seventeen targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run twenty-two targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
@@ -28,12 +28,17 @@ Run seventeen targeted passes over changed code across correctness, overengineer
 | maintainability | `mixed-abstraction-levels` | Functions that mix high-level business intent with low-level mechanics in the same body | [`maintainability/mixed-abstraction-levels.md`](maintainability/mixed-abstraction-levels.md) |
 | comprehension | `overly-clever-one-liner` | Expressions compressed to the point where two or three named lines would be immediately clearer | [`comprehension/overly-clever-one-liner.md`](comprehension/overly-clever-one-liner.md) |
 | comprehension | `inconsistent-abstraction-in-name` | Names that mix vocabulary from incompatible abstraction levels — business terms alongside infrastructure terms, or implementation detail encoded in a name where intent belongs | [`comprehension/inconsistent-abstraction-in-name.md`](comprehension/inconsistent-abstraction-in-name.md) |
+| correctness | `input-validation` | Missing or incomplete validation of inputs at system boundaries — unguarded bounds, unsanitized strings, `parseInt` without NaN guard, type assertions on external data | [`correctness/input-validation.md`](correctness/input-validation.md) |
+| correctness | `resource-lifetime` | Resources acquired but not reliably released — file handles, connections, timers, and listeners that leak when an error path is taken | [`correctness/resource-lifetime.md`](correctness/resource-lifetime.md) |
+| correctness | `concurrency-and-timing` | Race conditions, stale state, and ordering hazards — read-modify-write across `await`, callbacks closing over changed state, unawaited promises, check-then-act on shared state | [`correctness/concurrency-and-timing.md`](correctness/concurrency-and-timing.md) |
+| correctness | `interface-contract-violation` | Misuse of APIs and library interfaces — wrong argument order, unawaited async calls, deprecated APIs with changed semantics, Node-style callback parameter confusion | [`correctness/interface-contract-violation.md`](correctness/interface-contract-violation.md) |
+| correctness | `wrong-output` | Functions that return incorrect values or throw the wrong exception type — implicit `undefined`, success masked in a catch block, generic `Error` where typed errors are expected | [`correctness/wrong-output.md`](correctness/wrong-output.md) |
 
 ## Flags
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
-`--category=<category>` — run all passes in one category instead of all seventeen. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the six correctness passes only.
+`--category=<category>` — run all passes in one category instead of all twenty-two. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
 
 `--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
@@ -50,7 +55,7 @@ Run seventeen targeted passes over changed code across correctness, overengineer
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all seventeen in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all twenty-two in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
@@ -97,6 +102,36 @@ Gather **at least two** of the evidence types for the active pass before reporti
 2. **Missing arrange evidence** — a test has no setup for data or state it clearly requires, meaning that state must have been produced by a prior test.
 3. **Mutation evidence** — a `beforeAll` or module-level object is mutated by one or more tests rather than recreated fresh per test, making each test's starting conditions depend on execution order.
 4. **Ordering signal evidence** — test names use sequential numbering, step language, or lifecycle terms ("step 1", "then", "after") implying a required order that the test runner does not enforce.
+
+#### `input-validation`
+1. **Source evidence** — the value originates from an external boundary: `req.body`, `req.query`, `req.params`, `process.env`, `JSON.parse`, a file read, or a third-party API response.
+2. **Usage evidence** — the unvalidated value is used directly in a sensitive operation: arithmetic, array indexing, path construction, database query, or type assertion.
+3. **Missing check evidence** — no bounds check, `isNaN`, `Number.isFinite`, format check, or schema validation appears between the source and the usage.
+4. **Impact evidence** — a concrete description of what goes wrong: negative offset, path traversal, NaN propagation, SQL injection surface, or invalid value persisted to storage.
+
+#### `resource-lifetime`
+1. **Acquisition evidence** — a resource is opened or acquired: `fs.open`, `pool.connect`, `createReadStream`, `setInterval`, `emitter.on`, or any operation that returns a handle requiring explicit release.
+2. **Release evidence** — the corresponding release (`close`, `release`, `destroy`, `clearInterval`, `removeListener`) is absent, or is only reachable on the happy path (not in a `finally` block).
+3. **Error path evidence** — a `throw`, `return`, or `await` in the same scope can exit the function before the release is reached.
+4. **Impact evidence** — the leak is observable: connection pool exhaustion, open file descriptor accumulating, timer firing on a dead object, or listener accumulating across multiple instances.
+
+#### `concurrency-and-timing`
+1. **Shared state evidence** — a variable, cache, or external resource is read or written by code that may execute concurrently: module-level mutable state, a shared object across `await` calls, or a resource accessed from multiple async call paths.
+2. **Async boundary evidence** — an `await`, `setTimeout`, `setInterval`, or event callback creates a gap where interleaving can occur between a read and a subsequent write of the same state.
+3. **Interleaving evidence** — a concrete scenario where a second concurrent execution changes the shared state between the read and the write of the first, producing an incorrect result.
+4. **Impact evidence** — the race is observable: counter drift, stale cache served, double-execution of a side effect, partial-success left unrecoverable, or unhandled promise rejection.
+
+#### `interface-contract-violation`
+1. **Contract evidence** — the API's documented signature (argument order, callback convention, return value semantics, async contract) is established: from the standard library, a popular third-party library, or visible in the diff.
+2. **Violation evidence** — the call in the diff deviates: arguments are transposed, the async return value is not awaited, the callback parameters are in the wrong order, or a deprecated API is used where the replacement has different semantics.
+3. **Type silence evidence** — the type checker accepts the call without error because the argument types are compatible (both `string`, both `number`), hiding the violation at compile time.
+4. **Impact evidence** — the concrete incorrect behavior: operation runs backwards, rejection goes unhandled, callback receives the error as its value, or a security-relevant invariant is violated.
+
+#### `wrong-output`
+1. **Contract evidence** — the function's name, return type annotation, or documented behavior promises a specific output: a non-optional value, a typed domain error, a reliable boolean indicator, or an immutable snapshot.
+2. **Violation evidence** — the implementation produces a different output on at least one reachable path: implicit `undefined`, `true` returned from a `catch`, a generic `Error` thrown where a typed error is expected, or the internal mutable reference returned directly.
+3. **Path evidence** — the violating path is reachable in normal operation, not only under contrived conditions.
+4. **Impact evidence** — the caller is concretely harmed: arithmetic on `NaN`, a typed error catch that never matches, a failure displayed as success, or private state mutated by an external caller.
 
 ### Overengineering
 
