@@ -1,6 +1,6 @@
 # Suppression Rules — Comprehension Passes
 
-Pass-specific suppressions for: `overly-clever-one-liner`, `inconsistent-abstraction-in-name`, `misleading-name`, `complex-condition`.
+Pass-specific suppressions for: `overly-clever-one-liner`, `inconsistent-abstraction-in-name`, `misleading-name`, `complex-condition`, `awkward-construct`.
 
 Apply [`shared/suppression-rules.md`](../shared/suppression-rules.md) first, then the relevant section below.
 
@@ -143,3 +143,43 @@ At four terms the reader must hold all simultaneously. Always flag and suggest e
 ### S-CC-A2. Negation of a compound `&&`/`||` expression without explicit parentheses (do NOT suppress)
 
 `!(a || b)` without parentheses making the grouping explicit, or a mixed `&&`/`||` condition where operator precedence is required to evaluate correctly. Always flag.
+
+---
+
+## `awkward-construct` suppressions
+
+### S-AC-1. Codebase does not use the modern idiom consistently
+
+If the surrounding codebase uses `.then()` chains throughout and `async/await` appears nowhere, flagging one chain is inconsistency noise. Flag new code written in a codebase that has already adopted the modern idiom.
+
+### S-AC-2. `for` loop with cross-iteration state or non-independent iterations
+
+A loop that accumulates state beyond a simple per-element transform, or whose iterations depend on each other's results, cannot be mechanically replaced with `.map()` or `.filter()`. Suppress when the loop logic is not a direct encoding of a map or filter operation.
+
+### S-AC-3. `&&` chain result used as a boolean, not a navigation expression
+
+`user && user.isAdmin && user.emailVerified` where the result is used as a boolean condition. Optional chaining returns `undefined` (not `false`), so replacing `&&` with `?.` changes the semantics. Only flag `&&` chains assigned to a typed variable expecting the leaf value or used as a non-boolean expression.
+
+### S-AC-4. Callback required by the API contract
+
+Event listeners, stream handlers, and integrations with callback-only third-party libraries have no promise alternative. When the callee does not offer a promise interface, the callback is correct, not awkward.
+
+### S-AC-5. Sequential async `for` loop
+
+A `for...of` loop with `await` inside runs iterations sequentially. `.map()` with `async` callbacks does not — `Promise.all(items.map(async item => ...))` is concurrent. Do not flag sequential async `for` loops as candidates for `.map()`.
+
+### S-AC-6. String concatenation in a performance-critical path with a documented reason
+
+Template literal parsing has a small overhead. Suppress when an adjacent comment explicitly cites a performance constraint and the context is a known hot path.
+
+### S-AC-D1. `.then()` chain that is two levels deep with simple callbacks (soft — downgrade)
+
+A single `.then(result => doSomething(result))` is not a pyramid. Downgrade and ask whether `async/await` would be clearer, rather than asserting it is required.
+
+### S-AC-A1. Nested `.then()` callbacks creating an indentation pyramid (do NOT suppress)
+
+Two or more levels of nested `.then()` callbacks, each opening a new closure. The structure re-introduces callback hell. Always flag.
+
+### S-AC-A2. `for` loop that is a direct encoding of `.map()` or `.filter()` with no cross-iteration state (do NOT suppress)
+
+An empty array initialised before the loop, a push inside the loop body (with or without a condition), and nothing else. The declarative form is unambiguously clearer. Always flag.

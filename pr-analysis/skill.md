@@ -1,11 +1,11 @@
 ---
 name: pr-analysis
-description: Run thirty-one focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers, speculative generality, unnecessary code growth), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run thirty-one focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers, speculative generality, unnecessary code growth), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition, awkward constructs) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
 
-Run thirty-one targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run thirty-two targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
@@ -32,6 +32,7 @@ Run thirty-one targeted passes over changed code across correctness, overenginee
 | comprehension | `inconsistent-abstraction-in-name` | Names that mix vocabulary from incompatible abstraction levels — business terms alongside infrastructure terms, or implementation detail encoded in a name where intent belongs | [`comprehension/inconsistent-abstraction-in-name.md`](comprehension/inconsistent-abstraction-in-name.md) |
 | comprehension | `misleading-name` | Names whose implicit contract is violated by the implementation — query-named functions that mutate, booleans named for their inverse, identifiers omitting load-bearing units, names promising one concern but the function does several | [`comprehension/misleading-name.md`](comprehension/misleading-name.md) |
 | comprehension | `complex-condition` | Boolean expressions that are cognitively expensive to evaluate — double negatives, four-or-more-clause predicates, De Morgan violations, and flag variables whose name does not communicate the loop's exit condition | [`comprehension/complex-condition.md`](comprehension/complex-condition.md) |
+| comprehension | `awkward-construct` | Verbose or indirect patterns where a more direct idiom exists — nested `.then()` chains that should be `async/await`, manual accumulation loops that should be `.map()`/`.filter()`, `&&` navigation chains that should be optional chaining, `Object.keys` re-indexing that should be `Object.entries`, string concatenation that should be a template literal | [`comprehension/awkward-construct.md`](comprehension/awkward-construct.md) |
 | correctness | `input-validation` | Missing or incomplete validation of inputs at system boundaries — unguarded bounds, unsanitized strings, `parseInt` without NaN guard, type assertions on external data | [`correctness/input-validation.md`](correctness/input-validation.md) |
 | correctness | `resource-lifetime` | Resources acquired but not reliably released — file handles, connections, timers, and listeners that leak when an error path is taken | [`correctness/resource-lifetime.md`](correctness/resource-lifetime.md) |
 | correctness | `concurrency-and-timing` | Race conditions, stale state, and ordering hazards — read-modify-write across `await`, callbacks closing over changed state, unawaited promises, check-then-act on shared state | [`correctness/concurrency-and-timing.md`](correctness/concurrency-and-timing.md) |
@@ -47,7 +48,7 @@ Run thirty-one targeted passes over changed code across correctness, overenginee
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
-`--category=<category>` — run all passes in one category instead of all thirty-one. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
+`--category=<category>` — run all passes in one category instead of all thirty-two. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
 
 `--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
@@ -64,7 +65,7 @@ Run thirty-one targeted passes over changed code across correctness, overenginee
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all thirty-one in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all thirty-two in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
@@ -268,26 +269,18 @@ Gather **at least two** of the evidence types for the active pass before reporti
 3. **Extractability evidence** — the condition could be given a name (`isEligible`, `canProceed`, `hasNoIssues`) that would reduce the call site to a single boolean read, making the extraction both feasible and meaningful.
 4. **Absence of named predicate** — the compound logic is inline and unnamed; no existing function or variable captures the combined concept, meaning the reader must re-derive it at every call site.
 
+#### `awkward-construct`
+1. **Modern-idiom evidence** — a more direct construct exists in the language or standard library that expresses the same intent: `async/await` for promise chains, `.map()`/`.filter()` for accumulation loops, optional chaining for `&&` navigation, `Object.entries()` for key-value iteration, template literals for string interpolation.
+2. **Translation cost evidence** — the reader must mentally convert the verbose pattern into its modern equivalent before the intent becomes clear; the roundabout form adds a decoding step that the direct idiom eliminates.
+3. **Codebase-consistency evidence** — the modern idiom is already used elsewhere in the same file or module, making the older pattern an inconsistency rather than a deliberate style choice.
+4. **Mechanical substitutability evidence** — the replacement is a straightforward rewrite with identical semantics: no change to control flow, error handling, or observable behavior is required to make the substitution.
+
 ## Finding schema
 
-```json
-{
-  "skill": "pr_analysis",
-  "category": "correctness",
-  "pass": "null-access",
-  "file": "src/users.ts",
-  "line": 42,
-  "expression": "user.name",
-  "claim": "user.name may throw because users.find(...) can return undefined",
-  "evidence": [
-    "users.find(...) returns User | undefined",
-    "no guard between assignment at line 41 and dereference at line 42",
-    "an unreachable guard exists at line 47"
-  ],
-  "confidence": "high",
-  "severity": "blocking",
-  "suggested_fix": "Guard `user` before reading `name`, throw a domain error, or use `?? defaultUser`."
-}
+One JSON object per line (JSONL). Each finding is a single line — no array wrapper, no trailing commas between objects.
+
+```jsonl
+{"skill":"pr_analysis","category":"correctness","pass":"null-access","file":"src/users.ts","line":42,"expression":"user.name","claim":"user.name may throw because users.find(...) can return undefined","evidence":["users.find(...) returns User | undefined","no guard between assignment at line 41 and dereference at line 42","an unreachable guard exists at line 47"],"confidence":"high","severity":"blocking","suggested_fix":"Guard `user` before reading `name`, throw a domain error, or use `?? defaultUser`."}
 ```
 
 ## Confidence calibration
@@ -311,45 +304,13 @@ If no findings across all passes, output exactly: `No issues detected in the cha
 
 ### `--format=annotations`
 
-For CI pipelines and PR review comment automation. Emit a single JSON array of findings from all passes — always, even if empty. No prose, no summary line.
+For CI pipelines and PR review comment automation. Emit one JSON object per line (JSONL) — one finding per line, no array wrapper, no trailing commas. Produce output always, even when there are no findings (emit nothing in that case — not an empty array). No prose, no summary line.
 
 Example:
 
-```json
-[
-  {
-    "skill": "pr_analysis",
-    "category": "correctness",
-    "pass": "null-access",
-    "file": "src/users.ts",
-    "line": 42,
-    "expression": "user.name",
-    "claim": "user.name may throw because users.find(...) can return undefined",
-    "evidence": [
-      "users.find(...) returns User | undefined",
-      "no guard between assignment at line 41 and dereference at line 42"
-    ],
-    "confidence": "high",
-    "severity": "blocking",
-    "suggested_fix": "Guard `user` before reading `name`, throw a domain error, or use `?? defaultUser`."
-  },
-  {
-    "skill": "pr_analysis",
-    "category": "correctness",
-    "pass": "swallowed-exceptions",
-    "file": "src/storage.ts",
-    "line": 58,
-    "expression": "catch (e) {}",
-    "claim": "Exception from writeFile() is silently discarded; callers cannot detect the failure",
-    "evidence": [
-      "catch block body is empty — exception binding `e` is never used",
-      "writeFile failure is not communicated via return value or callback"
-    ],
-    "confidence": "high",
-    "severity": "blocking",
-    "suggested_fix": "Re-throw the error, return a Result/Either type, or at minimum log at error level and document why proceeding is safe."
-  }
-]
+```jsonl
+{"skill":"pr_analysis","category":"correctness","pass":"null-access","file":"src/users.ts","line":42,"expression":"user.name","claim":"user.name may throw because users.find(...) can return undefined","evidence":["users.find(...) returns User | undefined","no guard between assignment at line 41 and dereference at line 42"],"confidence":"high","severity":"blocking","suggested_fix":"Guard `user` before reading `name`, throw a domain error, or use `?? defaultUser`."}
+{"skill":"pr_analysis","category":"correctness","pass":"swallowed-exceptions","file":"src/storage.ts","line":58,"expression":"catch (e) {}","claim":"Exception from writeFile() is silently discarded; callers cannot detect the failure","evidence":["catch block body is empty — exception binding `e` is never used","writeFile failure is not communicated via return value or callback"],"confidence":"high","severity":"blocking","suggested_fix":"Re-throw the error, return a Result/Either type, or at minimum log at error level and document why proceeding is safe."}
 ```
 
-Suppress `low` confidence findings entirely. 
+Suppress `low` confidence findings entirely.
