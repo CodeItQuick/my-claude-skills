@@ -1,6 +1,6 @@
 ---
 name: pr-analysis
-description: Run thirty-one focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers, speculative generality, unnecessary code growth), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition, awkward constructs) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run thirty-two focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers, speculative generality, unnecessary code growth), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition, awkward constructs) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
@@ -66,10 +66,22 @@ Run thirty-two targeted passes over changed code across correctness, overenginee
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
 2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all thirty-two in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
-3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
-4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
+3. **For each candidate, complete this checklist before proceeding. If any box cannot be checked, STOP — do not report this finding.**
+   - [ ] Evidence type 1 present: ___ (name the evidence type and quote the code)
+   - [ ] Evidence type 2 present: ___ (name the evidence type and quote the code)
+   - [ ] Suppression rules checked — shared rules ([`shared/suppression-rules.md`](shared/suppression-rules.md)) and category rules ([`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md)) reviewed and none apply: ___
+
+4. **Declare confidence explicitly before generating any comment. If confidence is not `high`, STOP — do not generate a comment.**
+   ```
+   Confidence: [high / medium / low]
+   Reason: [one sentence citing the specific evidence that justifies this level]
+   ```
+   A finding is `high` only when two or more evidence types are present and the failure path is concrete and demonstrable. `medium` or `low` must be suppressed — do not rationalize them upward.
+
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
-6. **Generate review comments** only for `high` confidence or strong `medium` findings, using the format in [`shared/comment-format.md`](shared/comment-format.md).
+
+6. **Generate review comments** only for `high` confidence findings, using the format in [`shared/comment-format.md`](shared/comment-format.md). Each comment must include a one-sentence suppression justification stating which suppression rules were considered and why none applied. Format:
+   > *Suppression check: [rule names checked] — none apply because [reason].*
 
 ## Evidence required (per pass)
 
@@ -298,13 +310,21 @@ One JSON object per line (JSONL). Each finding is a single line — no array wra
 For CLI use. Human-readable output — no JSON. Group findings by pass, then output:
 
 1. **Review comments** — derived from `high` confidence findings only, using the format in [`shared/comment-format.md`](shared/comment-format.md).
-2. **Summary line** — `Found N issues across M passes (P reportable after suppression).`
+2. **Summary table** — after all comments, output a markdown table with one row per reported finding:
+
+   | # | Pass | File | Line | Severity | Summary |
+   |---|---|---|---|---|---|
+   | 1 | `pass-name` | `file.cs` | 42 | Blocking | One-sentence description of the issue |
+
+3. **Summary line** — `Found N issues across M passes (P reportable after suppression).`
 
 If no findings across all passes, output exactly: `No issues detected in the changed code.`
 
 ### `--format=annotations`
 
-For CI pipelines and PR review comment automation. Emit one JSON object per line (JSONL) — one finding per line, no array wrapper, no trailing commas. Produce output always, even when there are no findings (emit nothing in that case — not an empty array). No prose, no summary line.
+For CI pipelines and PR review comment automation. Emit one JSON object per line (JSONL) — one finding per line, no array wrapper, no trailing commas. When there are no findings, emit nothing (no output at all — not an empty array, not a placeholder line). No prose, no summary line.
+
+> **Format note:** Prior to the JSONL format, this flag emitted a single JSON array (`[{...}, {...}]`). Consumers that call `JSON.parse(output)` expecting an array must be updated to read one line at a time instead.
 
 Example:
 

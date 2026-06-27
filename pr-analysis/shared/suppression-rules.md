@@ -2,6 +2,8 @@
 
 A noisy reviewer is worse than a quiet one. **When in doubt, suppress.** Apply these shared suppressions first, then the pass-specific rules in the relevant category file.
 
+**Suppression is the default. Reporting requires explicit justification.** For every finding you do report, you must state which suppression rules you checked and why none of them applied. If you cannot write that justification in one sentence, suppress the finding.
+
 **Category suppression files:**
 - [`correctness/suppression-rules.md`](../correctness/suppression-rules.md) — null-access, swallowed-exceptions, suspicious-conditional, mutation-of-input, implicit-boolean-coercion, implicit-test-ordering
 - [`overengineering/suppression-rules.md`](../overengineering/suppression-rules.md) — boolean-flag-splitter, passthrough-wrapper
