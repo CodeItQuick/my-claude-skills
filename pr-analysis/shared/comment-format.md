@@ -543,6 +543,44 @@ Keep each comment to 2–4 sentences. If you find yourself writing a paragraph, 
 
 ---
 
+### `misleading-name`
+
+**Good:**
+
+> **Suggested:** `findExpiredSessions` at line 22 also calls `db.sessions.deleteMany` before returning. Callers who treat it as a safe read operation — in tests, in a cron health check, in a dry-run mode — will unknowingly delete sessions. Could the deletion move to a separate `purgeExpiredSessions` function, or could the name reflect both operations?
+
+> **Suggested:** `timeout` at line 8 is passed to `setTimeout(flush, timeout)`. `setTimeout` expects milliseconds; if the caller assumed seconds, the flush fires 1000× sooner than intended. Could this be renamed `timeoutMs` to make the unit unambiguous at every call site?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| `get*` / `find*` function with a visible delete or insert in the body | Assert: "`findExpiredSessions` deletes rows before returning — callers who treat it as a read operation will unknowingly destroy data." |
+| Boolean named for its inverse (`isDisabled = true` means enabled) | Assert: "`isDisabled` is assigned `true` to enable the feature — the name means the opposite of the value." |
+| Unit-sensitive identifier with no unit suffix | Ask: "Is `timeout` in milliseconds here? `setTimeout` expects ms — renaming to `timeoutMs` would prevent a silent magnitude error if the caller uses seconds." |
+| Function name announces one concern, body does several | Ask: "Does `saveUser` also send a welcome email and push analytics? If so, could the additional behavior move to the call site or be reflected in the name?" |
+
+---
+
+### `complex-condition`
+
+**Good:**
+
+> **Suggested:** `if (!isNotReady)` at line 14 requires cancelling two negations to read as "if ready". Could `isNotReady` be renamed `isReady` so the guard becomes `if (isReady)`?
+
+> **Suggested:** The condition at line 31 has six terms — `user.role`, `!user.isBanned`, `user.emailVerifiedAt`, `!isSessionExpired(user)`, `featureFlags.newDashboard`, and `user.agreedToTerms`. Could this extract to `canAccessDashboard(user, featureFlags)` so the call site is a single readable predicate and the logic can be tested in isolation?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Double negative (`!isNotReady`, `!isInactive`) | Ask: "Could `isNotReady` be renamed `isReady` so the guard reads `if (isReady)` rather than requiring two negations?" |
+| Four or more terms inline | Ask: "Could these N conditions extract to `isEligible(...)` so the branch expresses one concept at the call site?" |
+| Mixed `&&`/`||` without parentheses | Assert: "`a || b && c` evaluates as `a || (b && c)` — explicit parentheses would prevent a future reader from misreading the grouping." |
+| `!(a || b)` without distributing the negation | Ask: "Could `!(isAdmin || isModerator)` be written `!isAdmin && !isModerator` to avoid the De Morgan transformation?" |
+
+---
+
 ## Examples — bad (all passes)
 
 > ❌ "This might be null." — vague, no location, no action.

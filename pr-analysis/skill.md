@@ -1,11 +1,11 @@
 ---
 name: pr-analysis
-description: Run twenty-seven focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run twenty-nine focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name, misleading name, complex condition) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
 
-Run twenty-seven targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run twenty-nine targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
@@ -28,6 +28,8 @@ Run twenty-seven targeted passes over changed code across correctness, overengin
 | maintainability | `mixed-abstraction-levels` | Functions that mix high-level business intent with low-level mechanics in the same body | [`maintainability/mixed-abstraction-levels.md`](maintainability/mixed-abstraction-levels.md) |
 | comprehension | `overly-clever-one-liner` | Expressions compressed to the point where two or three named lines would be immediately clearer | [`comprehension/overly-clever-one-liner.md`](comprehension/overly-clever-one-liner.md) |
 | comprehension | `inconsistent-abstraction-in-name` | Names that mix vocabulary from incompatible abstraction levels — business terms alongside infrastructure terms, or implementation detail encoded in a name where intent belongs | [`comprehension/inconsistent-abstraction-in-name.md`](comprehension/inconsistent-abstraction-in-name.md) |
+| comprehension | `misleading-name` | Names whose implicit contract is violated by the implementation — query-named functions that mutate, booleans named for their inverse, identifiers omitting load-bearing units, names promising one concern but the function does several | [`comprehension/misleading-name.md`](comprehension/misleading-name.md) |
+| comprehension | `complex-condition` | Boolean expressions that are cognitively expensive to evaluate — double negatives, four-or-more-clause predicates, De Morgan violations, and flag variables whose name does not communicate the loop's exit condition | [`comprehension/complex-condition.md`](comprehension/complex-condition.md) |
 | correctness | `input-validation` | Missing or incomplete validation of inputs at system boundaries — unguarded bounds, unsanitized strings, `parseInt` without NaN guard, type assertions on external data | [`correctness/input-validation.md`](correctness/input-validation.md) |
 | correctness | `resource-lifetime` | Resources acquired but not reliably released — file handles, connections, timers, and listeners that leak when an error path is taken | [`correctness/resource-lifetime.md`](correctness/resource-lifetime.md) |
 | correctness | `concurrency-and-timing` | Race conditions, stale state, and ordering hazards — read-modify-write across `await`, callbacks closing over changed state, unawaited promises, check-then-act on shared state | [`correctness/concurrency-and-timing.md`](correctness/concurrency-and-timing.md) |
@@ -43,7 +45,7 @@ Run twenty-seven targeted passes over changed code across correctness, overengin
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
-`--category=<category>` — run all passes in one category instead of all twenty-seven. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
+`--category=<category>` — run all passes in one category instead of all twenty-nine. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
 
 `--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
@@ -60,7 +62,7 @@ Run twenty-seven targeted passes over changed code across correctness, overengin
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all twenty-seven in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all twenty-nine in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
@@ -239,6 +241,18 @@ Gather **at least two** of the evidence types for the active pass before reporti
 2. **Sibling contrast evidence** — two or more names in the same scope (module, class, or function signature) use incompatible vocabulary levels, making one name an outlier: one function is `createOrder`, the next is `executeInsertQuery`.
 3. **Implementation encoding evidence** — the name encodes a mechanism or transport that callers should not need to know: `fetchUserFromDatabaseByPrimaryKey`, `sendHttpPostRequest`, `serializeToJsonAndPersist`.
 4. **Expectation violation evidence** — the name implies a query (`get`, `find`, `is`, `has`) but the function has side effects, or the name implies a single concern but contains multiple sequential verbs (`getAndCache`, `loadAndValidateAndSave`).
+
+#### `misleading-name`
+1. **Contract evidence** — the name establishes an implicit promise: a `get*`/`find*`/`is*` prefix promises purity; `SCREAMING_SNAKE_CASE` promises immutability; a singular noun promises a single value; omitting a unit promises the unit is irrelevant or universally agreed.
+2. **Violation evidence** — the implementation breaks the promise: the function deletes or writes, the exported constant is mutated, the function returns a collection, or the identifier's unit determines correctness and differs from what callers assume.
+3. **Caller harm evidence** — a caller relying on the name's implicit contract would produce incorrect behavior: a test calling a `get*` function in a setup phase that unexpectedly deletes data, an arithmetic operation on a unitless value producing a silent magnitude error, a consumer mutating a shared `DEFAULT_*` object and corrupting other callers.
+4. **Absence of documentation** — no adjacent comment, type annotation, or module-level convention explains the deviation, so the caller has no way to discover the contract violation without reading the implementation.
+
+#### `complex-condition`
+1. **Structure evidence** — the condition contains a double negative (negation applied to a name encoding a negative concept), four or more boolean terms, mixed `&&`/`||` operators without parentheses clarifying precedence, or a negated compound expression (`!(a || b)`).
+2. **Resolution cost evidence** — a reader must perform a non-trivial mental transformation to evaluate the condition: cancelling two negations, applying De Morgan's law, or holding four independent terms simultaneously before the branch meaning becomes clear.
+3. **Extractability evidence** — the condition could be given a name (`isEligible`, `canProceed`, `hasNoIssues`) that would reduce the call site to a single boolean read, making the extraction both feasible and meaningful.
+4. **Absence of named predicate** — the compound logic is inline and unnamed; no existing function or variable captures the combined concept, meaning the reader must re-derive it at every call site.
 
 ## Finding schema
 
