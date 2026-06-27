@@ -1,11 +1,11 @@
 ---
 name: pr-analysis
-description: Run twenty-two focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
+description: Run twenty-seven focused analysis passes across four categories — correctness (null access, swallowed exceptions, suspicious conditionals, mutation of input, implicit boolean coercion, implicit test ordering, input validation, resource lifetime, concurrency and timing, interface contract violations, wrong output), overengineering (boolean flag splitting, passthrough wrappers), maintainability (copy-paste variation, boolean state machine, deep nesting, long parameter list, primitive obsession, feature envy, mixed abstraction levels, document intent, flag debt explicitly, remove clutter, long method, data class), and comprehension (overly clever one-liners, inconsistent abstraction in name) — on code or pull request diffs. Use when asked to "analyse this PR", "review for quality", "find issues", or "run a pass over this". Produces structured findings and high-signal review comments, with explicit suppression rules to avoid noise.
 ---
 
 # PR Analysis
 
-Run twenty-two targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run twenty-seven targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
@@ -33,12 +33,17 @@ Run twenty-two targeted passes over changed code across correctness, overenginee
 | correctness | `concurrency-and-timing` | Race conditions, stale state, and ordering hazards — read-modify-write across `await`, callbacks closing over changed state, unawaited promises, check-then-act on shared state | [`correctness/concurrency-and-timing.md`](correctness/concurrency-and-timing.md) |
 | correctness | `interface-contract-violation` | Misuse of APIs and library interfaces — wrong argument order, unawaited async calls, deprecated APIs with changed semantics, Node-style callback parameter confusion | [`correctness/interface-contract-violation.md`](correctness/interface-contract-violation.md) |
 | correctness | `wrong-output` | Functions that return incorrect values or throw the wrong exception type — implicit `undefined`, success masked in a catch block, generic `Error` where typed errors are expected | [`correctness/wrong-output.md`](correctness/wrong-output.md) |
+| maintainability | `document-intent` | Magic values, undocumented side effects, non-obvious algorithms, and workarounds with no stated rationale — code that forces a reader to look up or re-derive what the author already knew | [`maintainability/document-intent.md`](maintainability/document-intent.md) |
+| maintainability | `flag-debt-explicitly` | Technical debt introduced or left without tracking — TODOs with no ticket, FIXMEs with no explanation, disabled tests with no reason, and type suppressions with no comment | [`maintainability/flag-debt-explicitly.md`](maintainability/flag-debt-explicitly.md) |
+| maintainability | `remove-clutter` | Noise without information — dead code after unconditional control flow, commented-out blocks, unused declarations, and comments that restate what the code already clearly says | [`maintainability/remove-clutter.md`](maintainability/remove-clutter.md) |
+| maintainability | `long-method` | Functions that handle multiple distinct concerns inline — validate + transform + persist + notify as one body — where named extraction would make each concern independently readable and testable | [`maintainability/long-method.md`](maintainability/long-method.md) |
+| maintainability | `data-class` | Classes that hold data but implement no behavior, leaving operations scattered across external functions that are repeatedly envious of the class's fields | [`maintainability/data-class.md`](maintainability/data-class.md) |
 
 ## Flags
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output for CLI use), `annotations` (a JSON array of finding objects, one element per finding, machine-parseable for CI pipelines or PR review comment automation).
 
-`--category=<category>` — run all passes in one category instead of all twenty-two. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
+`--category=<category>` — run all passes in one category instead of all twenty-seven. Valid values: `correctness`, `overengineering`, `maintainability`, `comprehension`. Example: `/pr-analysis --category=correctness` runs the eleven correctness passes only.
 
 `--pass=<pass>` — run exactly one pass. Valid values: any pass name from the table above. Example: `/pr-analysis --pass=null-access`. Takes precedence over `--category` if both are supplied.
 
@@ -55,7 +60,7 @@ Run twenty-two targeted passes over changed code across correctness, overenginee
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all twenty-two in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all twenty-seven in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
@@ -190,6 +195,36 @@ Gather **at least two** of the evidence types for the active pass before reporti
 2. **Extractability evidence** — a contiguous block of lines inside the function could be extracted into a well-named helper with no change to callers, and that helper's name would be more specific than the parent function's name.
 3. **Granularity mismatch evidence** — some steps in the function are single named calls (`await notifyCustomer(order)`) while others are multi-line inline implementations of a comparable step, making the function uneven to read.
 4. **Layer violation evidence** — a function in the business/service layer directly references persistence details (SQL, ORM internals, raw error codes) or protocol details (HTTP headers, status codes, serialization formats) that belong in a lower layer.
+
+#### `document-intent`
+1. **Opacity evidence** — a literal value, identifier, or expression requires knowledge outside the code to interpret: a bare numeric literal with domain meaning, an abbreviated string key, a bit operation, or a complex regex.
+2. **Derivation cost evidence** — a reader must perform arithmetic, look up a specification, or recall an idiom to confirm the value is correct; the derivation cost is not zero.
+3. **Surprise risk evidence** — the code is correct but non-obvious enough that a future maintainer would plausibly "fix" it incorrectly: a workaround, a counterintuitive ordering, or a value whose unit is invisible.
+4. **Absence evidence** — no adjacent comment, no named constant, and no surrounding context explains the non-obvious element.
+
+#### `flag-debt-explicitly`
+1. **Marker evidence** — a `TODO`, `FIXME`, `HACK`, `XXX`, `@ts-ignore`, `@ts-expect-error`, `it.skip`, `xit`, or hardcoded value with an inline comment marking it as temporary is present in the diff.
+2. **Missing resolution path evidence** — the marker has no ticket number, no owner, and no stated condition under which the debt can be resolved.
+3. **Trackability evidence** — the debt cannot be surfaced by a project management system because it is not linked to any tracked work item.
+4. **Permanence risk evidence** — without a resolution path, the debt is structurally indistinguishable from debt that is intended to remain indefinitely.
+
+#### `remove-clutter`
+1. **Unreachability evidence** — a statement, block, or declaration is provably never executed or never referenced: after an unconditional `return`/`throw`, an unused import or variable, or a branch that is structurally impossible.
+2. **No-information evidence** — a comment, empty block, or duplicate declaration adds no information that the code does not already express: a comment restating the operation, an empty `else` with a placeholder comment, or a duplicate adjacent comment.
+3. **Maintenance burden evidence** — the clutter is not neutral: it creates a false impression of active alternatives (commented-out code), forces readers to confirm nothing is there (empty blocks), or will drift out of sync with the code it describes (restatement comments).
+4. **No suppression applies** — the clutter is not a framework requirement, an intentional no-op, a type-only import, or a tracked placeholder.
+
+#### `long-method`
+1. **Phase evidence** — the function body contains two or more distinct phases — validate, transform, persist, notify, fetch, enrich, aggregate — each of which is a named concept in the domain and a natural test boundary.
+2. **Independence evidence** — the phases share little intermediate state; each phase could be extracted to a function that accepts a clear input and returns a clear output with no implicit dependency on the other phases.
+3. **Length evidence** — the function is long enough that no single reader can hold its full purpose in working memory without scrolling: more than 30–40 lines as a rough guide, but phase count is the primary signal.
+4. **Testability evidence** — the inline logic cannot be tested in isolation without exercising the full function; extraction would create independently testable units.
+
+#### `data-class`
+1. **Class evidence** — a `class` declaration (not an `interface`, `type`, or plain object literal) has fields and a constructor but no methods beyond trivial getters and setters.
+2. **Displacement evidence** — two or more external functions each read three or more fields from the class and perform operations that would naturally live as methods of the class.
+3. **Feature envy evidence** — the external functions are entirely derived from the class's data, with no contribution from their own module's state, making the class the natural home for the logic.
+4. **Scatter evidence** — the displaced behavior is spread across multiple files or utilities, meaning a change to the class's fields requires finding and updating all the external functions that depend on them.
 
 ### Comprehension
 

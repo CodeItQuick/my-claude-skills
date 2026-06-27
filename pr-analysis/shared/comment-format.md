@@ -449,6 +449,100 @@ Keep each comment to 2–4 sentences. If you find yourself writing a paragraph, 
 
 ---
 
+### `document-intent`
+
+**Good:**
+
+> **Suggested:** `setTimeout(flush, 86400000)` at line 12 passes a bare millisecond literal. The value is one day, but a reader must do the arithmetic to confirm. Could this be a named constant `ONE_DAY_MS` or a comment like `// 24 h` to make the unit and intent scannable?
+
+> **Suggested:** The bit operation `(ptr + 7) & ~7` at line 34 performs eight-byte alignment, but there is no comment indicating that. A future maintainer who does not recognise the pattern may "simplify" it incorrectly. Would a `// align to 8-byte boundary` comment prevent that?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Magic numeric literal with no constant name | Ask: "Could `86400000` become `ONE_DAY_MS` or a comment stating the unit?" |
+| Non-obvious workaround with no comment | Ask: "Is there a known reason for `arr.sort().reverse()` instead of `arr.sort((a, b) => b - a)`? A brief comment would protect this from being 'simplified' away." |
+| Side-effecting function with a query name | Ask: "Does `getUser` also write to the audit log? If so, should the name or the JSDoc mention the side effect?" |
+| Complex regex with no description | Ask: "Could this regex have a named constant and a one-line comment describing what it matches?" |
+
+---
+
+### `flag-debt-explicitly`
+
+**Good:**
+
+> **Suggested:** `// TODO: fix this` at line 18 has no ticket reference or resolution condition. It will remain indefinitely with no mechanism to resurface it. Could we add a ticket number or a stated condition (`// TODO(PROJ-123): remove after migration completes`)?
+
+> **Suggested:** `it.skip("handles concurrent writes")` at line 44 has no explanation of why it is disabled. A future contributor has no way to know whether it is safe to re-enable. Could we add a reason and a ticket reference so the skip is trackable?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| TODO with no ticket or condition | Ask: "Could we add a ticket reference or a stated condition so this is traceable?" |
+| FIXME with no explanation | Ask: "What is the workaround working around? A one-line explanation would let a future maintainer know when it's safe to remove." |
+| Skipped test with no reason | Ask: "Why is this test skipped? A brief comment or ticket would make the skip intentional rather than mysterious." |
+| `@ts-ignore` with no comment | Ask: "What error is being suppressed here? A comment citing the root cause would make this reviewable when the library updates." |
+
+---
+
+### `remove-clutter`
+
+**Good:**
+
+> **Suggested:** `item.lastChecked = Date.now()` at line 9 is after `return { skipped: true }` and can never execute. Could we remove it to avoid misleading future readers about what this branch does?
+
+> **Suggested:** The three commented-out lines at lines 12–14 (`// const result = legacyProcess(data)`) have no explanation of why they are preserved. They create the impression of an alternative path. If this is safe to delete, could we remove it and let version control preserve it?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Statement after unconditional `return`/`throw` | Assert: "`item.lastChecked = ...` at line N is unreachable — the `return` on line M always exits first." |
+| Commented-out code with no explanation | Ask: "Is the commented-out block at lines N–M still needed? If not, version control preserves it and we can delete it." |
+| Comment restating the code | Ask: "Does `// increment i` add anything beyond what `i++` already says? Removing it would reduce the reading noise." |
+| Empty `catch` with a misleading comment | Ask: "The `catch` block says `// handled elsewhere` but there is no handler upstream — should this at least log or re-throw?" |
+
+---
+
+### `long-method`
+
+**Good:**
+
+> **Suggested:** `submitOrder` at line 8 validates the input, calculates the price, persists the order, and sends a confirmation email — all inline. Each step is a named concept and a natural test boundary. Could `validateOrderInput`, `calculateOrderTotal`, `persistOrder`, and `sendConfirmation` be extracted so each can be tested and changed independently?
+
+> **Suggested:** `handleEvent` at line 22 dispatches on `event.type` with `if`/`else if` branches that each contain 15–20 lines of logic. Each branch is effectively a separate handler. Could `handleOrderPlaced`, `handleOrderCancelled`, and `handlePaymentFailed` replace the branches so `handleEvent` becomes a router?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Function does validate + transform + persist + notify inline | Ask: "Could each phase (`validateInput`, `calculateTotal`, `persist`, `notify`) extract to a named function so each is independently testable?" |
+| Long sequential steps with little shared state | Ask: "The steps here — fetch, enrich, aggregate, format — share almost no intermediate state. Could each become a named helper so the data flow is visible at the orchestration level?" |
+| `if`/`else` dispatcher with substantial branch logic | Ask: "Each branch in this dispatcher is 15–20 lines. Could the branches become named handlers so `handleEvent` is purely routing?" |
+| Test covering multiple unrelated scenarios | Ask: "This test exercises three independent scenarios. Could they become separate `it` blocks so each fails independently?" |
+
+---
+
+### `data-class`
+
+**Good:**
+
+> **Suggested:** `Order` at line 8 has six fields and a constructor but no methods. `getDiscountRate`, `isEligibleForRefund`, and `formatSummary` in `order-utils.ts` each read three or more `Order` fields. Could these move to `Order` as methods so the data and its operations are co-located?
+
+> **Suggested:** `Address` at line 12 exposes only getters and setters with no computed behavior. `formatAddress`, `isInternational`, and `validate` in `address-helpers.ts` are entirely derived from `Address` fields. Is there a reason these live outside the class, or is this an opportunity to move them in?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Class has fields + constructor, behavior in external utils | Ask: "Could `getDiscountRate` and `isEligibleForRefund` move to `Order` as methods? They read only `Order` data and would be more discoverable there." |
+| External function reads 3+ fields from one class | Ask: "Does `formatInvoiceLine` belong on `Order`? It reads `order.taxRate`, `order.discountCode`, and `order.discountAmount` while using no state of its own." |
+| Class with only getters/setters, behavior elsewhere | Ask: "Are `format` and `validate` intentionally external to `Address`, or is this a data class whose behavior has drifted out?" |
+
+---
+
 ## Examples — bad (all passes)
 
 > ❌ "This might be null." — vague, no location, no action.

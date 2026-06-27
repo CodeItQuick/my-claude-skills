@@ -1,6 +1,6 @@
 # Suppression Rules — Maintainability Passes
 
-Pass-specific suppressions for: `copy-paste-variation`, `boolean-state-machine`, `deep-nesting`, `long-parameter-list`, `primitive-obsession`, `feature-envy`, `mixed-abstraction-levels`.
+Pass-specific suppressions for: `copy-paste-variation`, `boolean-state-machine`, `deep-nesting`, `long-parameter-list`, `primitive-obsession`, `feature-envy`, `mixed-abstraction-levels`, `document-intent`, `flag-debt-explicitly`, `remove-clutter`, `long-method`, `data-class`.
 
 Apply [`shared/suppression-rules.md`](../shared/suppression-rules.md) first, then the relevant section below.
 
@@ -243,3 +243,135 @@ Strong signal of a layer violation. Flag.
 ### S-MAL-A2. Infrastructure setup inside a function that is supposed to execute work (do NOT suppress)
 
 Creating loggers, connection pools, or queues inside a function that should orchestrate business logic. The setup belongs at the composition root or module boundary.
+
+---
+
+## `document-intent` suppressions
+
+### S-DI-1. Self-documenting name already communicates the value
+
+`ONE_DAY_MS = 86_400_000`, `MAX_INT_32 = 2_147_483_647`. When the constant's name makes its meaning unambiguous, an additional comment restates what the name already says.
+
+### S-DI-2. Well-known idiom
+
+`arr.length - 1` for the last index, `i++` in a loop counter, `x ?? defaultValue`, `Object.keys(obj)` for enumeration. These are universally understood by the target audience and need no explanation.
+
+### S-DI-3. Purpose obvious from immediate context
+
+A one-liner whose intent is clear from the enclosing function name and surrounding code. `return items.filter(x => x.active)` inside `getActiveItems` needs no comment; the function name and the expression together are unambiguous.
+
+### S-DI-4. Test code
+
+Test function names serve as documentation. Test bodies are expected to be direct — a bare assertion in a well-named test is not a magic value.
+
+### S-DI-5. Generated or scaffolded code
+
+Migration files, protobuf stubs, ORM-generated entities, code produced by a tool. The generator is responsible for documentation.
+
+### S-DI-6. Comment already present
+
+Do not flag code that already has an adjacent comment explaining the non-obvious element, even if the comment is brief. The concern is the absence of explanation, not the quality of existing explanation.
+
+---
+
+## `flag-debt-explicitly` suppressions
+
+### S-FDE-1. TODO with a ticket number and stated resolution condition
+
+`// TODO(PROJ-123): remove after migration completes`. The debt is tracked in a system that can surface it. No finding.
+
+### S-FDE-2. FIXME or HACK that states the issue and the fix
+
+`// FIXME: relies on Node 18 Promise.any ordering — update when we drop Node 16`. The condition for removal is explicit and actionable.
+
+### S-FDE-3. Skipped test with an explanation and a linked issue
+
+`it.skip("flaky on CI — tracked in PROJ-456")`. The reason for skipping is documented and the debt is traceable.
+
+### S-FDE-4. `@ts-ignore` or `@ts-expect-error` with a comment citing the cause
+
+`// @ts-ignore: react-query v4 types don't yet include suspense overloads`. The suppression is explained and reviewable.
+
+### S-FDE-5. In-progress branch or draft PR
+
+TODOs in a WIP commit that will be resolved before merge are ephemeral work-in-progress. Suppress findings in branches explicitly marked as drafts where the debt is clearly transitional.
+
+---
+
+## `remove-clutter` suppressions
+
+### S-RC-1. Intentional no-op with documentation
+
+An empty `catch` or empty function body with a comment explaining why doing nothing is correct (`// intentional no-op — error is non-fatal and already logged by the middleware`). The empty block is purposeful; the comment makes it auditable.
+
+### S-RC-2. Placeholder method required by an interface or abstract class
+
+A class implementing an interface may deliberately leave certain methods empty if the implementation does not use that hook. The emptiness is a contract fulfillment, not an oversight.
+
+### S-RC-3. Type-only import
+
+`import type { Foo }` used only in a type position may appear unused to a non-TypeScript-aware pass. It is load-free and erasable; the compiler removes it. Do not flag type-only imports as unused.
+
+### S-RC-4. `_`-prefixed parameters
+
+A parameter prefixed with `_` (`_event`, `_ctx`, `_next`) explicitly signals intentional non-use. This is the idiomatic TypeScript/JavaScript convention; flagging it would produce noise on every convention-following codebase.
+
+### S-RC-5. Commented-out code with an adjacent TODO referencing a tracked ticket
+
+Code preserved intentionally pending a tracked decision is not clutter — it is a checkpoint. Suppress when a comment accompanying the block references a ticket number and a stated condition.
+
+### S-RC-6. Framework scaffolding with structural empty blocks
+
+Empty lifecycle hooks in newly scaffolded files (Angular, NestJS, React class components), empty test suites before tests are written. These are structural starting points, not dead code.
+
+---
+
+## `long-method` suppressions
+
+### S-LM-1. Single cohesive operation that cannot be subdivided without losing meaning
+
+A parser, codec, mathematical transformation, or cryptographic operation with many steps where the steps share tight intermediate state and extraction would produce helpers with no useful standalone meaning. Length reflects the problem's irreducible complexity.
+
+### S-LM-2. Generated code
+
+ORM migrations, protocol buffer serializers, scaffolded CRUD handlers, code produced by a tool. Length is the generator's output; flagging it produces a finding with no actionable fix in the diff.
+
+### S-LM-3. Exhaustive `switch` or `if`/`else` chain whose branches are each one or two lines
+
+A 20-case switch where each case is a single assignment or return. Long in line count but not in complexity; extraction would produce 20 single-line helpers named after their cases.
+
+### S-LM-4. Framework-imposed handler structure
+
+Request handlers, reducers, saga workers, Redux middleware whose length is dictated by the required handling of multiple action types. The framework constrains how the routing must be expressed.
+
+### S-LM-5. Configuration or builder chain
+
+Long but declarative; each line is a setting, not a step in a computation. `webpack.config.js`, a Fastify route builder, a Jest config. No extraction into named steps would improve comprehension.
+
+---
+
+## `data-class` suppressions
+
+### S-DC-1. TypeScript `interface` or `type`
+
+Structural descriptions are intentionally data-only. `interface User { id: string; name: string }` is not a class and carries no implication about where behavior lives.
+
+### S-DC-2. DTO or API payload type
+
+Objects whose explicit purpose is to carry data across a boundary — HTTP request/response bodies, database row shapes, message queue payloads. Behavior belongs in the domain model, not in transport objects.
+
+### S-DC-3. Value object with identity based on all fields
+
+Small immutable objects like `Money`, `Coordinate`, or `DateRange` may have minimal methods by design. Suppress unless observable behavior that belongs in the class is known to be implemented externally.
+
+### S-DC-4. Framework model object
+
+ORM entities, GraphQL input types, form models where the framework owns the lifecycle and behavior hooks. The framework constrains what methods are appropriate on the class.
+
+### S-DC-5. Configuration object
+
+A class that aggregates settings for dependency injection or factory construction has no domain behavior to add. Its purpose is to carry named values to a constructor.
+
+### S-DC-A1. Class with no methods and behavior demonstrably scattered across external functions (do NOT suppress)
+
+When two or more external functions each read three or more fields from the same class and perform operations that would naturally live in the class, the data-class pattern is confirmed. Always flag.
