@@ -31,7 +31,7 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 
 1. Identify what the question is really asking: is it a correctness question, a user experience question, a business question, or a strategic question?
 2. Pick roles that sit at different points on the two axes relative to that question. Avoid picking two roles that share both a vantage point and a time horizon — they will find the same things.
-3. Aim for 2–4 roles. Fewer is better if the question is narrow.
+3. Aim for 3–5 roles. Fewer is better if the question is narrow.
 
 ### Available roles
 

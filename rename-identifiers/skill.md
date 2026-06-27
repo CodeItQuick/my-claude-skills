@@ -13,7 +13,15 @@ You are a senior software engineer conducting a naming audit on this codebase. H
 
 `--format=<format>` — control output format. Valid values: `report` (default, grouped human-readable output), `annotations` (JSON object with a `summary` string and a `findings` array, machine-parseable). Use `annotations` in CI pipelines so output can be consumed by build scripts or posted as PR review comments.
 
-Example CI invocation: `/rename-identifiers --min-severity=HIGH --format=annotations`
+**File/directory invocation:** `/rename-identifiers src/orders/`
+
+**PR diff invocation:** provide the diff as input, then invoke the skill:
+```
+git diff main...HEAD | /rename-identifiers --format=annotations
+```
+In diff mode, Phase 1 reads only the `+` lines from the diff. Exported identifiers are flagged but marked **requires full-scope rename** — apply those separately against the full codebase once the PR is merged.
+
+**CI pipeline invocation:** `/rename-identifiers --min-severity=HIGH --format=annotations`
 
 ---
 

@@ -1,6 +1,21 @@
 # Detection Patterns — Overly Clever One-Liner
 
+You are a senior software engineer identifying expressions that require significant mental effort to parse, where two or three named lines would be immediately clear.
+
 Patterns where code is compressed into a single expression that requires significant mental effort to parse, and where two or three named lines would be immediately clear. Each pattern is a *candidate*, not a finding — apply the evidence rules in `skill.md` and the shared suppression rules in `../shared/suppression-rules.md` before reporting.
+
+**Before flagging any pattern:** confirm at least two evidence types are present (code, path, convention, or impact), check the suppression list below, and reason through both before concluding.
+
+## Patterns to **not** flag
+
+- **Established single-expression idioms** that every JS/TS developer recognises: `arr.includes(x)`, `x ?? default`, `obj?.prop`, `Math.min(a, b)`, `(n & 1) === 0`, `!!value`, `+string`. These are readable precisely because they are idioms.
+- **Short ternaries for simple two-way choices** with no nesting: `const label = isActive ? "Active" : "Inactive"` — one condition, two short branches, immediate to read.
+- **Array methods chained two or three deep** where each step's output is obvious from the previous: `users.filter(u => u.active).map(u => u.email)` — the data shape is not hard to track.
+- **Functional pipelines in a codebase that uses them consistently** — if the codebase uses `pipe` or `compose` throughout, multi-step chains are idiomatic rather than clever.
+- **Performance-critical code with a comment** — a bit trick in a tight loop with an adjacent comment explaining why is a legitimate tradeoff, not cleverness for its own sake.
+- **Code-generated or DSL expressions** — output from tools, query builders, or schema definitions may be dense by necessity.
+
+---
 
 ## 1. Nested ternaries replacing a simple if/else chain
 
@@ -89,13 +104,3 @@ const updated = Object.assign({}, base, condition1 && extra1, condition2 && extr
 
 Spreading a `false` value is a well-known pattern, but multiple conditional spreads in one expression make it hard to reason about which keys are present and under what conditions. Named variables for each conditional layer, or an explicit `if` block that builds the object, communicate the conditions and their effects more directly.
 
----
-
-## Patterns to **not** flag
-
-- **Established single-expression idioms** that every JS/TS developer recognises: `arr.includes(x)`, `x ?? default`, `obj?.prop`, `Math.min(a, b)`, `(n & 1) === 0`, `!!value`, `+string`. These are readable precisely because they are idioms.
-- **Short ternaries for simple two-way choices** with no nesting: `const label = isActive ? "Active" : "Inactive"` — one condition, two short branches, immediate to read.
-- **Array methods chained two or three deep** where each step's output is obvious from the previous: `users.filter(u => u.active).map(u => u.email)` — the data shape is not hard to track.
-- **Functional pipelines in a codebase that uses them consistently** — if the codebase uses `pipe` or `compose` throughout, multi-step chains are idiomatic rather than clever.
-- **Performance-critical code with a comment** — a bit trick in a tight loop with an adjacent comment explaining why is a legitimate tradeoff, not cleverness for its own sake.
-- **Code-generated or DSL expressions** — output from tools, query builders, or schema definitions may be dense by necessity.

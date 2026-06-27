@@ -50,7 +50,7 @@ Run seventeen targeted passes over changed code across correctness, overengineer
 ## Workflow
 
 1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on changed lines.
-2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all thirteen in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
+2. **Determine which passes to run.** If `--pass` is specified, run only that pass. If `--category` is specified, run only the passes in that category. Otherwise run all seventeen in order. For each pass, walk the changed code looking for the patterns in the corresponding file in the category folder.
 3. **For each candidate**, collect evidence (see Evidence Required per pass below). If you cannot collect at least two pieces of evidence, suppress.
 4. **Apply suppression rules.** Start with [`shared/suppression-rules.md`](shared/suppression-rules.md), then the category file for the active pass: [`correctness/suppression-rules.md`](correctness/suppression-rules.md), [`overengineering/suppression-rules.md`](overengineering/suppression-rules.md), [`maintainability/suppression-rules.md`](maintainability/suppression-rules.md), or [`comprehension/suppression-rules.md`](comprehension/suppression-rules.md). When in doubt, suppress.
 5. **Emit a structured finding** (JSON, see schema below). This is the source of truth — comments are derived from it.
