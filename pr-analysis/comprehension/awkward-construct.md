@@ -122,3 +122,23 @@ Gather **at least two** before reporting:
 - **String concatenation inside a performance-critical loop** — where avoiding template literal parsing overhead is a known constraint, flag only if a comment explains the reason.
 - **Callback-style required by a framework or legacy API contract** — event listeners, Node.js stream handlers, some test framework hooks, and integration points with callback-only third-party libraries. When the callee does not offer a promise interface, the callback is not awkward — it is required.
 - **`for` loop expressing inherently sequential or order-dependent logic** — `async/await` in `.map()` does not run sequentially; a `for...of` with `await` inside is the correct pattern for sequential async iteration. Do not flag sequential async `for` loops as candidates for `.map()`.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `loadUserProfile` at line 8 nests three `.then()` callbacks, recreating the callback pyramid that `async/await` was designed to flatten. Each closure adds an indentation level and a new scope to track. Could this be rewritten with `async/await` so each step is a named variable on its own line?
+
+> **Suggested:** Lines 14–18 initialise an empty array, loop over `users`, and push `user.email` when `user.active` is true. This is a direct encoding of `.filter(u => u.active).map(u => u.email)`. Could the loop be replaced so the transformation is expressed as two named operations?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Nested `.then()` pyramid (2+ levels deep) | Ask: "Could this be rewritten with `async/await` to flatten the nested callbacks into sequential named lines?" |
+| `for` loop that is `.map()` or `.filter()` with no cross-iteration state | Ask: "Could `for` + `push` be replaced with `.filter(...).map(...)` so the two operations are named directly?" |
+| `&&` chain navigating nested properties | Ask: "Could `user && user.address && user.address.city` become `user?.address?.city` to make the optional navigation explicit?" |
+| `Object.keys().forEach(k => obj[k])` | Ask: "Could this use `Object.entries()` to avoid re-indexing `obj[k]` on every iteration?" |
+| String concatenation with 3+ interpolated values | Ask: "Could this use a template literal so the shape of the resulting string is visible directly?" |

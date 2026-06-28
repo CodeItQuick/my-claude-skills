@@ -115,3 +115,22 @@ const updated = Object.assign({}, base, condition1 && extra1, condition2 && extr
 
 Spreading a `false` value is a well-known pattern, but multiple conditional spreads in one expression make it hard to reason about which keys are present and under what conditions. Named variables for each conditional layer, or an explicit `if` block that builds the object, communicate the conditions and their effects more directly.
 
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `~arr.indexOf(x)` at line 18 returns a truthy value when `x` is found and `0` (falsy) when it's not, by exploiting `~(-1) === 0`. This is not a widely recognized idiom — `arr.includes(x)` expresses the same intent directly. Could we use `includes`?
+
+> **Suggested:** The nested ternary at line 31 encodes four status labels across three levels of `? :`. Tracing which label maps to which status requires multiple reads. An object lookup (`STATUS_LABELS[status] ?? "Unknown"`) or `if/else if` chain would be immediately scannable.
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| `~indexOf` or bit shift for non-bit purpose | Ask: "Is `~arr.indexOf(x)` intentional? `arr.includes(x)` would express the same thing more clearly." |
+| Nested ternary with 2+ levels | Ask: "This ternary has N levels — would an `if/else if` chain or lookup object be easier to scan?" |
+| 4+ chained methods with no named intermediates | Ask: "Could the result after `filter` be named so the data shape at each step is explicit?" |
+| Side effect hidden in `&&`/`\|\|` short-circuit | Ask: "Is the mutation in `items.length \|\| items.push(default)` intentional? An `if` would make the control flow explicit." |
+

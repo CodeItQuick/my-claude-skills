@@ -107,3 +107,22 @@ Gather **at least two** before reporting:
 - **In-memory objects with no OS or external resource** — a plain object, array, or Map going out of scope is collected by the GC with no explicit release needed.
 - **Short-lived script context** — a CLI process that exits immediately after use; the OS reclaims all handles on exit.
 - **Test setup that uses `afterEach`/`afterAll` for cleanup** — the test framework guarantees release after each test or suite.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `conn = await pool.connect()` at line 14 is not released in a `finally` block. If `conn.query(sql)` throws, `conn.release()` at line 17 is never reached and the connection leaks. Could the release move into a `finally` block?
+
+> **Suggested:** The `readStream` at line 22 is not destroyed when `writeStream` emits an error. If the write fails, `readStream` stays open and holds the file handle. Could we call `readStream.destroy()` in the `writeStream` error handler alongside `writeStream.destroy()`?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Cleanup only in happy path, not `finally` | Assert: "`conn.release()` is only reached if `query()` succeeds — a `finally` block would cover the error path." |
+| Stream not destroyed on sibling error | Ask: "Does destroying `writeStream` on error also clean up `readStream`, or does `readStream` need its own `destroy()` call?" |
+| `setInterval` with no `clearInterval` | Ask: "Is there a `stop()` method or lifecycle hook that calls `clearInterval` on this timer?" |
+| Loop opens resource, cleanup is outside loop | Assert: "Only the last `handle` is closed — handles from earlier iterations are never released." |

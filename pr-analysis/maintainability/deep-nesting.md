@@ -144,3 +144,23 @@ Gather **at least two** before reporting:
 - **State machine implementations** — a `switch` inside a `while` loop is idiomatic for state machines; the nesting is structural, not accidental
 - **Intentionally nested data transformation** — nested `map`/`filter`/`reduce` over nested data structures where the shape of the code mirrors the shape of the data
 - **Test describe/it blocks** — nesting in test files groups related cases; this is conventional and expected
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `processOrder` at line 8 has four levels of nested `if` checks before reaching `charge(order)`. Each guard wraps everything below it rather than returning early. Could we invert each condition to a guard clause (`if (!order) return`, `if (!order.items.length) return`, ...) to bring the main path to the top level?
+
+> **Suggested:** The inner body of the triple-nested loop at line 22 — `for department → for team → for member` — is four levels deep. Could `collectActiveMembers(teams)` extract the inner logic so the outer loop stays at one level and the transformation can be tested in isolation?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Positive condition wraps entire function body | Assert: "The entire body is inside `if (x)` — inverting to `if (!x) return` would eliminate all nesting." |
+| Pyramid of successive guards | Ask: "Could each guard return early so the common path isn't buried four levels in?" |
+| Nested loops with extractable inner body | Ask: "Could the inner loop body extract to `processTeamMember(member)` to reduce depth and enable unit testing?" |
+| Callback pyramid | Ask: "Could this be rewritten with `async/await` to flatten the three nested callbacks?" |
+| Nested try/catch | Ask: "Could each operation move to its own function with its own `try/catch` so the happy path stays at one level?" |

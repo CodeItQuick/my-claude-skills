@@ -144,3 +144,22 @@ Gather **at least two** before reporting:
 - **Test cases with the same structure but different inputs and expectations** — parameterised test data is a better fix than extraction, and even unparameterised tests are conventionally allowed to repeat structure for readability
 - **Framework boilerplate where the pattern is idiomatic** — Redux reducers, React lifecycle methods, and similar patterns where the duplication is prescribed by the framework
 - **Two instances only, where the variation is the entire meaningful difference** — `formatDate(date)` and `formatTime(date)` share almost nothing once you remove the format string; extraction would add an abstraction with no useful name
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `getTotalPrice` and `getTotalCost` at lines 12 and 18 are identical except for `item.price` vs `item.cost`. If the reduce logic ever needs to change — rounding, currency conversion, filtering zero-quantity items — it would need to be updated in both places. Could these share a `sumBy(items, key: 'price' | 'cost')` helper?
+
+> **Suggested:** The three event-type blocks at lines 24–36 follow the same two-step pattern (`logger.info` + `metrics.increment`) with only the type string varying. A fourth event type would require a fourth copy. Could `trackEvent(type, event)` replace all three?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Three or more copies of the same block | Assert: "This pattern appears N times with only X varying — a future logic change must be applied to all N copies." |
+| Two copies where variation is a single field name | Ask: "Could `getTotalPrice` and `getTotalCost` share a `sumBy(items, key)` helper so the reduce logic lives once?" |
+| Two event handlers differing only in field key | Ask: "Could `makeFieldHandler(field)` produce both handlers so the clear-error and set-value logic is defined once?" |
+| Duplicated validation with different field names | Ask: "Could these three length checks become `validateMinLength(field, label, min)` calls so the rule is defined once?" |

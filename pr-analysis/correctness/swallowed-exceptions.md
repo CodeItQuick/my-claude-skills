@@ -140,3 +140,22 @@ Gather **at least two** before reporting:
 - Catch in a test that asserts the error: `expect(() => fn()).toThrow()`
 - Catch in a finalizer/cleanup path documented as best-effort
 - `process.on("uncaughtException", ...)` handlers that log and exit — intentional top-level boundaries
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** The `catch` block at line 58 discards the exception from `writeFile()` without logging or re-throwing. Callers at line 72 proceed to read the file as if the write succeeded. Could we re-throw here, or return a `Result` type so callers can detect the failure?
+
+> **Suggested:** `fetchUser(id).catch(() => {})` at line 34 silently resolves the promise to `undefined`. Any `.then()` consumer downstream will receive `undefined` for a user that failed to load. Should this propagate the rejection, or at least return a typed sentinel the caller can check?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Catch block is completely empty | Assert: "`catch (e) {}` at line N will silently hide any failure from `op()`..." |
+| Catch logs but does not re-throw | Assert: "The `catch` logs but the caller has no way to detect the failure..." |
+| Catch returns a default whose meaning is ambiguous | Ask: "Does the caller at line N distinguish a genuine empty result from a parse failure?" |
+| Re-throw is missing the cause chain | Ask: "Should the original `e` be passed as `{ cause: e }` so the root cause is preserved?" |

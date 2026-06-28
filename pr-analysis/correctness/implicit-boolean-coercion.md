@@ -142,3 +142,22 @@ Gather **at least two** before reporting:
 - **`.filter(Boolean)` on arrays of strings/objects where empty string and zero are not valid members** — removing `null` and `undefined` is the intent and the result is correct for that type.
 - **`??` already used** — if the code already uses `??` instead of `||` for the default, the author is aware of the distinction and has handled it correctly.
 - **Explicit `!== null && !== undefined` guards already present** — do not flag code that has already opted into explicit null/undefined checking.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `{count && <span>{count} items</span>}` at line 44 renders `"0"` as a text node when `count` is zero, because `0` is falsy but React renders numeric falsy values. Could we use `{count > 0 && <span>...}` or `{Boolean(count) && ...}`?
+
+> **Suggested:** `const port = config.port || 3000` at line 12 will use `3000` when `config.port` is `0`. Port `0` is a valid OS-assigned value. If the intent is "use the default only when not set", `config.port ?? 3000` would be safer.
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| JSX `{count && ...}` where `count` is `number` | Assert: "`{count && ...}` renders `"0"` as text when count is zero — could we use `count > 0 &&`?" |
+| `\|\|` default where `0` or `""` is a valid domain value | Ask: "If `port` can legitimately be `0`, should this use `??` instead of `\|\|`?" |
+| `.filter(Boolean)` on an array that may contain `0` or `""` | Ask: "Does this array ever contain `0` or `''` as valid values? `.filter(Boolean)` would silently remove them." |
+| Bare truthiness check on a `number` parameter | Ask: "If `limit` can be `0`, `if (!limit)` treats it as missing — is `limit == null` the right check?" |

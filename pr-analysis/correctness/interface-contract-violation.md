@@ -103,3 +103,22 @@ Gather **at least two** before reporting:
 - **Documented intentional workarounds** — a comment citing a specific library issue or known deviation from the interface spec suppresses the finding.
 - **Deprecated API used with an explicit migration comment** — the usage is acknowledged.
 - **Platform-specific behavior that is tested** — if a companion test explicitly asserts the surprising behavior, the author is aware.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `fs.rename(newPath, oldPath, cb)` at line 19 has the arguments in the wrong order. `fs.rename` takes `(oldPath, newPath, callback)` — as written, the rename runs backwards, moving `newPath` to `oldPath`. Could we swap the first two arguments?
+
+> **Suggested:** `db.users.delete(id)` at line 31 is called without `await`. The function is `async` and returns a `Promise`. The deletion is fired and forgotten — if it rejects, the rejection is unhandled and the caller receives a response before the delete completes. Should this be `await db.users.delete(id)`?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Well-known API with arguments transposed | Assert: "`fs.rename(newPath, oldPath, cb)` — the first two arguments are swapped; the rename runs backwards." |
+| Node-style callback with `(result, err)` | Assert: "Node callbacks are `(err, result)` — `result` receives the error and `err` receives the value." |
+| Async function called without `await` | Ask: "Is `db.users.delete(id)` intentionally fire-and-forget, or should it be awaited so the caller knows when it completes?" |
+| Deprecated API used | Ask: "Is `crypto.createCipher` intentional here? It was deprecated in Node 10 and the replacement `createCipheriv` has different key-derivation semantics." |

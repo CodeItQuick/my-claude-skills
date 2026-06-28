@@ -123,3 +123,22 @@ Gather **at least two** before reporting:
 - **Future requirement explicitly tracked** — if the branch or option is accompanied by a ticket reference and a stated condition for enablement, the growth is intentional and tracked.
 - **Exported from a library or shared package** — a zero-caller export may have consumers in other packages outside the visible codebase.
 - **Test infrastructure and fixtures** — helper functions, factories, and fixtures in test files may be used by tests that are not yet written; suppress unless the test file itself is abandoned.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `order.currency` is typed as `"USD" | "EUR" | "GBP"`, but the `else` branch at line 44 calls `scheduleForBatch` for a case the type system says cannot occur. TypeScript would flag this branch as unreachable. Could it be removed, or is it anticipating a future currency type that should be added to the union first?
+
+> **Suggested:** `options.experimental_animations` is passed as `false` at every call site in the codebase. The branch at line 18 for `experimental_animations: true` has never run. Could the property be removed until the feature is ready, or is there a ticket tracking when it will be enabled?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Branch the type system makes structurally unreachable | Assert: "The `else` branch at line N is unreachable — `currency` is typed as `'USD' \| 'EUR' \| 'GBP'` and all three are handled above." |
+| Option property always the same value across all call sites | Ask: "Is `experimental_animations` ever set to `true` anywhere? If not, could the property and its branch be removed until the feature ships?" |
+| Exported function with zero internal callers | Ask: "Is `buildBatchPayload` used anywhere outside this codebase? It has no internal callers — if it's not part of a public API, could it be removed?" |
+| Error handler for an impossible condition after a proven guard | Ask: "Can `result` be non-finite here? `b` is checked for zero on line N — if the check covers all infinite cases, could this handler be removed?" |

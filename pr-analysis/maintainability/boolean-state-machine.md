@@ -123,3 +123,22 @@ Gather **at least two** before reporting:
 - **Feature flags and user preferences** — `notifications.emailEnabled`, `notifications.smsEnabled` — independent toggles, not lifecycle phases; all combinations are intentional
 - **Single boolean with no siblings** — a lone `isLoading` flag with nothing to coordinate with is not a state machine
 - **Boolean that controls a cross-cutting concern** — `isReadOnly`, `isArchived` — these are properties of an entity, not phases of a lifecycle; they are orthogonal to other state
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `Request` at line 8 tracks its lifecycle with four booleans — `isLoading`, `isLoaded`, `hasFailed`, `isRetrying`. Combinations like `isLoading && isLoaded` are structurally possible but meaningless, and every transition requires resetting multiple flags in sync. Could these collapse to a single `state: 'idle' | 'loading' | 'retrying' | 'loaded' | 'failed'` field?
+
+> **Suggested:** `startFetch`, `onSuccess`, and `onError` at lines 14, 22, and 31 each set `isLoading`, `isLoaded`, and `hasFailed` in tandem. If any transition omits a reset, the object lands in an invalid combination with no type-level protection. Would a single `this.status` assignment make each transition atomic?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Three or more booleans reset together in a method | Assert: "`reset()` zeros four booleans in sync — a single `state = 'idle'` assignment would be atomic and exhaustive." |
+| Compound boolean check to determine current state | Ask: "Could `if (!isLoading && !hasFailed && data)` become `if (state === 'loaded')`?" |
+| Mutually exclusive booleans (only one true at a time) | Ask: "Could `isAdmin`, `isModerator`, and `isGuest` become `role: 'admin' \| 'moderator' \| 'guest'` to make the mutual exclusion enforced rather than assumed?" |
+| Two booleans with one impossible combination | Ask: "Is `isSaving && isSaved` ever possible? If not, a three-state enum would make that unrepresentable." |

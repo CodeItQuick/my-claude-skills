@@ -118,6 +118,25 @@ async function isNewUser(userId: string): Promise<boolean> {
   await auditLog.record("user_check", userId);
   return userRepo.isNew(userId);
 }
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** In `orders/service.ts`, `createOrder` and `updateOrder` use domain vocabulary, but `deleteFromOrdersTable` at line 34 names a SQL operation. A reader browsing the module can't tell which layer they're in. Could this be `deleteOrder` to match the sibling naming?
+
+> **Suggested:** `httpResponse`, `jsonPayload`, and `dbRecord` at lines 12–14 are infrastructure names inside `processPayment`, a business function. Names like `chargeResult`, `paymentConfirmation`, and `savedPayment` would describe what these values *mean* rather than how they arrived. Does the current naming make the business logic harder to follow?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Sibling functions mixing domain and persistence vocabulary | Ask: "Could `deleteFromOrdersTable` be renamed `deleteOrder` to match `createOrder` and `updateOrder`?" |
+| Infrastructure variable names inside business logic | Ask: "Would `chargeResult` be clearer than `httpResponse` here — it names the value's meaning rather than its transport?" |
+| Function name encodes storage or transport mechanism | Ask: "Does `fetchUserFromDatabaseByPrimaryKey` need to advertise the mechanism? `getUser(id)` would hide the detail." |
+| Query-named function with side effects | Ask: "Does `getUser` also write to the audit log? If so, should the name or the side effect change?" |
 ```
 
 `getOrCreateUser` reads as a pure query but mutates state. `findAndDeleteExpiredTokens` presents deletion as a secondary effect of finding. `isNewUser` looks like a predicate but writes to an audit log. Callers who treat these as safe read-only operations will be surprised by the mutations. Names that start with `get`, `find`, `is`, `has`, or `check` create a strong expectation of purity.

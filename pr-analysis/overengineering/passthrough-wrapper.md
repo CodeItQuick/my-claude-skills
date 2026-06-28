@@ -156,3 +156,21 @@ Gather **at least two** before reporting:
 - **Barrel files grouping many exports** used together by multiple consumers — the grouping itself is the value.
 - **Test doubles or spy wrappers** — passthrough behavior is intentional for test infrastructure.
 - **Interface with multiple implementations in the diff** — even if there is currently one implementation, if a second is being added in the same PR, the interface is justified.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `UserRepository.findById` at line 8 only calls `this.db.users.findById(id)` and returns the result with no transformation, error translation, or added behavior. Callers could import `db.users.findById` directly. Is there planned behavior that makes this wrapper worth keeping?
+
+> **Suggested:** The `notify` method at line 24 maps 1:1 to `emailService.send(to, subject, body)` with no logging, retry, or error handling. If it exists to enable mocking in tests, would injecting `emailService` directly into callers give them more control?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Pure delegation, parameters map 1:1, no cross-cutting concern | Ask: "Does this wrapper add anything callers couldn't get by calling `X` directly?" |
+| Wrapper name suggests future behavior | Ask: "Is there planned behavior here, or could callers call `X` directly for now?" |
+| Wrapper exists for test isolation | Ask: "If this exists for testability, would injecting `X` directly give callers more flexibility?" |

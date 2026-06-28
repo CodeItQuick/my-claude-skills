@@ -120,3 +120,22 @@ Gather **at least two** before reporting:
 - **`getOrCreate` and similar established compound idioms** — the mutation is signaled by the compound verb and is conventional in the domain.
 - **Test helpers and builder functions** — `buildUser`, `createTestOrder`, `makeStub` are creation idioms even if the function also registers cleanup.
 - **Negated names that are the primary domain term** — `isDisabled`, `isHidden`, `isSuspended` where the negative is the natural domain concept (a feature flag that defaults to off, a user status). Flag only when the value assigned to the name is also negated relative to its meaning.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `findExpiredSessions` at line 22 also calls `db.sessions.deleteMany` before returning. Callers who treat it as a safe read operation — in tests, in a cron health check, in a dry-run mode — will unknowingly delete sessions. Could the deletion move to a separate `purgeExpiredSessions` function, or could the name reflect both operations?
+
+> **Suggested:** `timeout` at line 8 is passed to `setTimeout(flush, timeout)`. `setTimeout` expects milliseconds; if the caller assumed seconds, the flush fires 1000× sooner than intended. Could this be renamed `timeoutMs` to make the unit unambiguous at every call site?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| `get*` / `find*` function with a visible delete or insert in the body | Assert: "`findExpiredSessions` deletes rows before returning — callers who treat it as a read operation will unknowingly destroy data." |
+| Boolean named for its inverse (`isDisabled = true` means enabled) | Assert: "`isDisabled` is assigned `true` to enable the feature — the name means the opposite of the value." |
+| Unit-sensitive identifier with no unit suffix | Ask: "Is `timeout` in milliseconds here? `setTimeout` expects ms — renaming to `timeoutMs` would prevent a silent magnitude error if the caller uses seconds." |
+| Function name announces one concern, body does several | Ask: "Does `saveUser` also send a welcome email and push analytics? If so, could the additional behavior move to the call site or be reflected in the name?" |

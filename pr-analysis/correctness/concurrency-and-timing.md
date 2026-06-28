@@ -110,3 +110,22 @@ Gather **at least two** before reporting:
 - **Atomic operations provided by the platform** — Redis `INCR`, database `UPDATE … WHERE`, `Atomics.*` on `SharedArrayBuffer` are atomic by specification.
 - **`async_hooks` / `AsyncLocalStorage` for per-request context** — these are designed for sharing context across async continuations and are not races.
 - **Tests using `Promise.all` on independent fixtures** — test setup that runs non-interfering operations concurrently is intentional.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `requestCount++` at line 8 and `requestCount--` at line 12 bracket an `await`. Between those lines, concurrent calls to `handleRequest` can mutate `requestCount`, so the final decrement operates on a stale value and the counter drifts. Could this use an atomic or single-point counter?
+
+> **Suggested:** `Promise.all([db.orders.create(...), inventory.reserve(...), emailService.send(...)])` at line 34 has no rollback if one operation fails. The email may be sent for an order that fails to persist. Should these be wrapped in a transaction, or should the email be sent only after the other two succeed?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Read-modify-write on module-level state across `await` | Assert: "The `++` / `--` around `await` allows interleaving — concurrent calls will corrupt `requestCount`." |
+| `var` closed over in a loop timer | Assert: "By the time the `setTimeout` fires, `i` equals `items.length` — all callbacks process `undefined`." |
+| `Promise.all` with side-effecting operations | Ask: "If `inventory.reserve` fails after `orders.create` succeeds, is there a rollback mechanism?" |
+| Async event listener with no `try/catch` | Ask: "If the async handler throws, does the emitter catch it, or does the rejection go unhandled?" |

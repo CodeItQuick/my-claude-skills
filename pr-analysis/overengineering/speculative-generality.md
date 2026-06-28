@@ -140,3 +140,22 @@ Gather **at least two** before reporting:
 - **Public API surface for an exported package** — a library exporting a generic type or an interface for user implementations cannot be analyzed for "no current consumer" within the local codebase.
 - **Generic with a meaningful constraint that carries behavior** — `function max<T extends Comparable>(a: T, b: T)` uses the constraint to express a real requirement. The type parameter is not purely speculative even if only one type is currently passed.
 - **Optional parameter in a function called from outside the visible codebase** — an exported function's options may be used by callers in other packages.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `Repository<T>` at line 8 is only ever instantiated as `new Repository<User>()` — no other type binding exists anywhere in the codebase. The generic parameter adds complexity to the type signatures and error messages without providing any polymorphism. Could this be a concrete `UserRepository` until a second entity type is needed?
+
+> **Suggested:** `registerHook` at line 34 adds a callback to `this.hooks`, but `registerHook` is never called in the codebase. The hook system adds API surface, documentation burden, and maintenance cost for an extension mechanism that has no current consumer. Could this be added when the first consumer exists?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Generic type parameter, only one concrete binding at all call sites | Ask: "Is `T` ever bound to anything other than `User` here? If not, could this be a concrete type until a second is needed?" |
+| Abstract class with one subclass, no second in development | Ask: "Is a second implementor planned? If not, could `EmailNotifier` drop the abstract base until one is needed?" |
+| Interface never used as a mock or swap point | Ask: "Is `PaymentGateway` ever injected with an alternative — in tests or elsewhere? If not, could `StripeGateway` be used directly for now?" |
+| Hook/plugin slot with zero registered consumers | Ask: "Is `registerHook` called anywhere? If not, could the extension mechanism wait until the first consumer is being written?" |

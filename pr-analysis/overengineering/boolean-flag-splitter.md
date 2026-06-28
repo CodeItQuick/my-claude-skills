@@ -135,3 +135,21 @@ Gather **at least two** before reporting:
 - **Parameters that modify magnitude, not kind** — `truncate(str, hard: boolean)` where both branches return a `string` via the same general approach.
 - **One-liner branches** where both sides are a single expression and the function body is trivially short (3–4 lines total) — the duplication cost of two functions exceeds the clarity gain.
 - **Framework-imposed signatures** where the boolean is required by an interface, decorator, or lifecycle contract the author does not control.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `renderList(items, true)` at line 44 and `renderList(items, false)` at line 67 both pass literal booleans — every call site has already made a static choice. The two branches inside `renderList` differ in their output shape and side effects. Could these be two functions: `renderDetailedList` and `renderSummaryList`?
+
+> **Suggested:** The `verbose` parameter at line 12 controls branches where the two paths share almost no code — one fetches full records, the other returns IDs only. Since every call site passes a literal, would `fetchFull` and `fetchIds` as separate functions make the intent clearer at the call site?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Every call site passes a literal, branches are fundamentally different | Assert: "The `format` flag is always a literal at call sites; the branches differ enough to be separate functions." |
+| Branches diverge but share significant setup code | Ask: "Would `exportAsCsv` and `exportAsJson` be clearer than a `format` flag, given how different the branches are?" |
+| Flag is passed through an intermediate that doesn't use it | Ask: "Is `includeMetadata` used by `formatReport` directly, or just threaded through to `renderSection`?" |

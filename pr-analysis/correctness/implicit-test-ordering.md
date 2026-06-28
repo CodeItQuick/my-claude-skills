@@ -154,3 +154,22 @@ Gather **at least two** before reporting:
 - **Explicit test sequencers** — some frameworks (`jest-circus`, `jest-sequential`) allow declared sequential execution. If the ordering is enforced by the framework configuration, not assumed by the tests, suppress.
 - **Scenario-style integration tests documented as sequential** — end-to-end or workflow tests that are explicitly designed to run in sequence and documented as such (e.g., in a `describe("full checkout flow")` with a comment explaining the intent) are a deliberate tradeoff, not an accidental dependency.
 - **Factories called inside each test** — if each test calls a factory or fixture helper that creates its own data, the tests are self-contained even if they look similar.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `createdUserId` at line 14 is written by `"creates a user"` and read by `"fetches the created user"` with no `beforeEach` reset. If the fetch test runs first or in isolation, `createdUserId` is `undefined` and the test fails for reasons unrelated to the code under test. Could each test create its own user in a `beforeEach`?
+
+> **Suggested:** `"ships the order"` at line 38 has no arrange step but calls `shipOrder("ord-1")`, relying on a record that `"places an order"` creates. Test runners can run selectively or in randomized order — could `"ships the order"` create its own order instead?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Variable written by test A, read by test B with no reset | Assert: "`sessionId` is set by a different test — this test will fail if run in isolation or after a runner reset." |
+| No arrange step, obvious data requirement | Assert: "This test uses `userId = 1` but never creates it — it depends on a prior test having run." |
+| `beforeAll` creates mutable shared object | Ask: "Since `cart` is shared across tests and mutated by each one, could `beforeEach` create a fresh instance?" |
+| Sequential test names but tests may be self-contained | Ask: "These names imply an order the runner doesn't enforce — could each test arrange its own state?" |

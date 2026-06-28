@@ -125,3 +125,22 @@ Gather **at least two** before reporting:
 - `Array.push` / `Map.set` / `Set.add` on a locally constructed collection that is then returned — the collection was created in the function, so callers have no prior reference.
 - DOM manipulation functions — mutating DOM nodes is the entire purpose.
 - Functions that accept a callback and pass the parameter to it without mutating it themselves.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `items.sort(comparator)` at line 31 sorts the caller's array in-place. `items` is the parameter — the caller's original array is silently reordered. `transform` in the function name implies a new array is returned. Could we use `[...items].sort(comparator)` instead?
+
+> **Suggested:** `cart.discounts.push(newDiscount)` at line 18 mutates the `discounts` array on the passed `cart` object. If callers expect `applyDiscount` to return a new cart, both the original and the returned reference now have the discount applied. Should this operate on a copy?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| In-place array method (`sort`, `push`, `splice`) on a parameter | Assert: "`items.sort()` mutates the caller's array — callers named `transform*` expect a copy." |
+| Property assignment directly on a parameter object | Assert: "`order.status = 'paid'` mutates the object the caller passed — is that the intended contract?" |
+| Function name is ambiguous about mutation | Ask: "Does `processCart` guarantee it returns a new cart, or may it mutate the passed one?" |
+| Shallow spread that still shares nested objects | Ask: "This spreads `order` but `order.items` is still the same reference — is mutation of `items` safe here?" |

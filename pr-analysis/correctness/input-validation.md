@@ -94,3 +94,22 @@ Gather **at least two** before reporting:
 - **TypeScript type guards already enforce the constraint** — if the type system has narrowed the value to a safe range (e.g., a discriminated union), the runtime check is redundant.
 - **Deliberate pass-through of unvalidated data with documentation** — a proxy or forwarding layer that explicitly notes it does not validate.
 - **Test code** — test inputs are constructed by the author and do not represent external data.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `pageNumber * PAGE_SIZE` at line 12 uses `pageNumber` directly from `req.query` without a bounds check. A negative or non-integer value produces a negative offset passed to the database. Could we validate `pageNumber >= 1` and `Number.isInteger(pageNumber)` before the calculation?
+
+> **Suggested:** `parseInt(process.env.TIMEOUT_MS)` at line 8 is used directly as a delay. `parseInt` returns `NaN` when the environment variable is missing or non-numeric, and `delay(NaN)` has implementation-defined behavior. Could we add `Number.isFinite(timeout)` guard with a fallback default?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Raw request param used in path join | Assert: "`path.join(base, req.params.file)` is unguarded — a `..` segment traverses outside the base directory." |
+| `parseInt` result used without NaN check | Ask: "If `TIMEOUT_MS` is unset or non-numeric, `parseInt` returns `NaN` — should we default or throw here?" |
+| `as Type` cast on external data | Assert: "`req.body.status as Status` asserts a type without validating it — any string passes." |
+| Numeric index from user input | Ask: "Does `items[index]` need a bounds check? If `index` is out of range, the access returns `undefined` silently." |

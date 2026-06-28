@@ -121,3 +121,22 @@ Gather **at least two** before reporting:
 - **Re-throwing the same exception** — `catch (e) { throw e; }` preserves the original type and is correct.
 - **Generic `Error` in utility code** — low-level utilities with no domain concept may reasonably throw `Error`. Only flag when the call site demonstrates it expects a more specific type.
 - **Early return of `undefined` in a `void` function** — `return;` in a `void` function is a control flow statement, not a missing return value.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `findDiscountRate` at line 18 falls off the end when `promotions.get(code)` returns `undefined`, implicitly returning `undefined`. The return type is `number`, and callers multiply the result with `total` — producing `NaN` silently. Could we add an explicit `return 0` or throw `new UnknownPromoCodeError(code)`?
+
+> **Suggested:** `saveUser` at line 44 returns `true` in both the `try` and `catch` branches. Callers that branch on the return value (`if (!await saveUser(user)) showError()`) never see a failure. Should the `catch` branch return `false` or re-throw?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Implicit `undefined` returned on a branch typed as non-optional | Assert: "`findDiscountRate` returns `undefined` when no promo matches — the return type `number` doesn't permit this." |
+| `return true` / `return { success: true }` inside `catch` | Assert: "The `catch` branch returns `true` — callers cannot distinguish success from failure." |
+| Generic `Error` thrown where typed error expected | Ask: "Does the caller catch `UserNotFoundError` specifically? If so, throwing `Error` means that catch block is never reached." |
+| Internal reference returned from a getter | Ask: "Does `getSettings()` need to return a copy? Returning the internal object lets callers mutate `Config`'s private state." |

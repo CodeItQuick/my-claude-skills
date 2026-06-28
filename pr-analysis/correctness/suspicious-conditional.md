@@ -134,3 +134,23 @@ Gather **at least two** before reporting:
 - `if (process.env.NODE_ENV === "test") { ... }` — environment guards
 - Defensive `!== null` on externally-sourced data (`JSON.parse`, `any`-typed API responses)
 - Double negation for intentional boolean coercion of a non-boolean: `!!maybeString`
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `if (retries > MAX_RETRIES)` at line 37 runs one extra iteration — when `retries` equals `MAX_RETRIES` the condition is still false and the loop body executes again. `retryWithDelay` in the same file uses `>=` for the same invariant. Should this be `>= MAX_RETRIES`?
+
+> **Suggested:** `if (isEnabled === "true")` at line 14 — `isEnabled` is typed as `boolean`, which is never the string `"true"`, so this branch can never execute. Did you mean `=== true`, or is `isEnabled` expected to be a string from an environment variable?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Condition is provably tautological given the type | Assert: "`if (count === null)` can never be true — `count` is `number`." |
+| Off-by-one where boundary value is defined by a constant | Assert: "With `>`, the loop executes when `retries === MAX_RETRIES`, which exceeds the intended limit." |
+| Duplicate condition in chain | Assert: "The branch at line N is dead — `status === 'active'` is already tested at line M." |
+| Operator precedence where intent is unclear | Ask: "Is this `a \|\| (b && c)` or `(a \|\| b) && c`? The current form evaluates as the former." |
+| Suspicious boundary where the correct value isn't obvious | Ask: "Should this be `>=` to include the boundary, or is `>` intentional here?" |

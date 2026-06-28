@@ -101,3 +101,22 @@ Gather **at least two** before reporting:
 - **Skipped test with an explanation and a linked issue** — `it.skip("flaky on CI — tracked in PROJ-456")`. The debt is explicit and trackable.
 - **`@ts-ignore` with a comment citing the library bug or version** — suppression with an explanation is acceptable when the type system limitation is documented.
 - **In-progress branches or draft PRs** — TODOs in a WIP commit that will be resolved before merge are ephemeral work-in-progress, not permanent debt.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `// TODO: fix this` at line 18 has no ticket reference or resolution condition. It will remain indefinitely with no mechanism to resurface it. Could we add a ticket number or a stated condition (`// TODO(PROJ-123): remove after migration completes`)?
+
+> **Suggested:** `it.skip("handles concurrent writes")` at line 44 has no explanation of why it is disabled. A future contributor has no way to know whether it is safe to re-enable. Could we add a reason and a ticket reference so the skip is trackable?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| TODO with no ticket or condition | Ask: "Could we add a ticket reference or a stated condition so this is traceable?" |
+| FIXME with no explanation | Ask: "What is the workaround working around? A one-line explanation would let a future maintainer know when it's safe to remove." |
+| Skipped test with no reason | Ask: "Why is this test skipped? A brief comment or ticket would make the skip intentional rather than mysterious." |
+| `@ts-ignore` with no comment | Ask: "What error is being suppressed here? A comment citing the root cause would make this reviewable when the library updates." |

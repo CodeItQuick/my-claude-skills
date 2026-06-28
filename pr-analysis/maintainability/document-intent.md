@@ -101,3 +101,22 @@ Gather **at least two** before reporting:
 - **Test code** — test function names serve as documentation; test bodies are expected to be direct.
 - **Generated or scaffolded code** — migration files, protobuf stubs, code produced by a tool. The generator is responsible for documentation.
 - **Comments already present** — do not flag code that already has an adjacent comment explaining the non-obvious element, even if the comment is brief.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `setTimeout(flush, 86400000)` at line 12 passes a bare millisecond literal. The value is one day, but a reader must do the arithmetic to confirm. Could this be a named constant `ONE_DAY_MS` or a comment like `// 24 h` to make the unit and intent scannable?
+
+> **Suggested:** The bit operation `(ptr + 7) & ~7` at line 34 performs eight-byte alignment, but there is no comment indicating that. A future maintainer who does not recognise the pattern may "simplify" it incorrectly. Would a `// align to 8-byte boundary` comment prevent that?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Magic numeric literal with no constant name | Ask: "Could `86400000` become `ONE_DAY_MS` or a comment stating the unit?" |
+| Non-obvious workaround with no comment | Ask: "Is there a known reason for `arr.sort().reverse()` instead of `arr.sort((a, b) => b - a)`? A brief comment would protect this from being 'simplified' away." |
+| Side-effecting function with a query name | Ask: "Does `getUser` also write to the audit log? If so, should the name or the JSDoc mention the side effect?" |
+| Complex regex with no description | Ask: "Could this regex have a named constant and a one-line comment describing what it matches?" |

@@ -160,3 +160,22 @@ Gather **at least two** before reporting:
 - **Intentional low-level modules** — a module explicitly responsible for serialization, encoding, or protocol handling is expected to contain low-level code. Mixed levels is a concern only when a higher-level module unexpectedly drops to this level.
 - **Configuration at module boundary** — a module's top-level initialization (`const db = new Pool(process.env.DATABASE_URL)`) is infrastructure setup at the right place: the module boundary. The problem is when setup appears inside functions that are supposed to do work.
 - **Logging for auditability at domain events** — a single `logger.info("Order completed", { orderId })` at the end of a business function is an audit trail, not a level violation. The problem is when infrastructure details (log formats, metric names, raw error codes) appear inside business logic.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `completeOrder` at line 12 calls `validateOrder` and `chargeCustomer` (domain operations), then constructs HTTP headers, base64-encodes a body, and calls `fetch` directly (protocol operations). Could the low-level block extract to `submitToFulfillment(order, payment)` to keep this function at one abstraction level?
+
+> **Suggested:** `processRefund` at line 28 traverses `order.items.filter(...)` and a `reduce` over prices inline, then calls `issueRefund`. Does `processRefund` need to know about item flags and timestamps, or could `order.calculateRefundAmount()` encapsulate the traversal?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Business function with inline HTTP/SQL | Ask: "Could the `fetch` call extract to `submitToFulfillment()` to keep this function at the domain level?" |
+| Orchestrator dipping into data structure internals | Ask: "Could `order.calculateRefundAmount()` encapsulate the item traversal so `processRefund` stays domain-level?" |
+| Database error code in a service-layer catch | Ask: "Is `23505` a PostgreSQL unique-violation code? Could the repository layer translate this to `DuplicateAccountError`?" |
+| Infrastructure setup inside a worker function | Ask: "Could the logger and pool construction move to a factory or composition root so `runJob` contains only execution logic?" |

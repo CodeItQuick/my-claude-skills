@@ -100,3 +100,21 @@ Gather **at least two** before reporting:
 - **Value objects with identity based on all fields** — small immutable objects like `Money`, `Coordinate`, or `DateRange` may have minimal methods by design; flag only when observable behavior is missing and is known to be implemented elsewhere.
 - **Framework model objects** — ORM entities, GraphQL input types, form models where the framework owns the lifecycle and behavior hooks. The framework constrains what methods are appropriate.
 - **Configuration objects** — classes that aggregate settings for injection have no domain behavior to add.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `Order` at line 8 has six fields and a constructor but no methods. `getDiscountRate`, `isEligibleForRefund`, and `formatSummary` in `order-utils.ts` each read three or more `Order` fields. Could these move to `Order` as methods so the data and its operations are co-located?
+
+> **Suggested:** `Address` at line 12 exposes only getters and setters with no computed behavior. `formatAddress`, `isInternational`, and `validate` in `address-helpers.ts` are entirely derived from `Address` fields. Is there a reason these live outside the class, or is this an opportunity to move them in?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Class has fields + constructor, behavior in external utils | Ask: "Could `getDiscountRate` and `isEligibleForRefund` move to `Order` as methods? They read only `Order` data and would be more discoverable there." |
+| External function reads 3+ fields from one class | Ask: "Does `formatInvoiceLine` belong on `Order`? It reads `order.taxRate`, `order.discountCode`, and `order.discountAmount` while using no state of its own." |
+| Class with only getters/setters, behavior elsewhere | Ask: "Are `format` and `validate` intentionally external to `Address`, or is this a data class whose behavior has drifted out?" |

@@ -123,3 +123,22 @@ Gather **at least two** before reporting:
 - **`_` prefixed parameters** — a function parameter prefixed with `_` (`_event`, `_ctx`) explicitly signals intentional non-use.
 - **Commented-out code with an adjacent TODO referencing a ticket** — preserved intentionally pending a tracked decision.
 - **Structural empty blocks in framework scaffolding** — empty lifecycle hooks, empty test suites in newly scaffolded files before tests are written.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `item.lastChecked = Date.now()` at line 9 is after `return { skipped: true }` and can never execute. Could we remove it to avoid misleading future readers about what this branch does?
+
+> **Suggested:** The three commented-out lines at lines 12–14 (`// const result = legacyProcess(data)`) have no explanation of why they are preserved. They create the impression of an alternative path. If this is safe to delete, could we remove it and let version control preserve it?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Statement after unconditional `return`/`throw` | Assert: "`item.lastChecked = ...` at line N is unreachable — the `return` on line M always exits first." |
+| Commented-out code with no explanation | Ask: "Is the commented-out block at lines N–M still needed? If not, version control preserves it and we can delete it." |
+| Comment restating the code | Ask: "Does `// increment i` add anything beyond what `i++` already says? Removing it would reduce the reading noise." |
+| Empty `catch` with a misleading comment | Ask: "The `catch` block says `// handled elsewhere` but there is no handler upstream — should this at least log or re-throw?" |

@@ -128,3 +128,22 @@ Gather **at least two** before reporting:
 - **Exhaustive `switch` or `if`/`else` chains where each branch is a one- or two-liner** — a 20-case switch whose cases are each a single assignment is long in line count but not in complexity.
 - **Framework-imposed handler structure** — request handlers, reducers, saga workers whose length is dictated by the required handling of multiple action types.
 - **Configuration or builder chains** — long but declarative; each line is a setting, not a step in a computation.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `submitOrder` at line 8 validates the input, calculates the price, persists the order, and sends a confirmation email — all inline. Each step is a named concept and a natural test boundary. Could `validateOrderInput`, `calculateOrderTotal`, `persistOrder`, and `sendConfirmation` be extracted so each can be tested and changed independently?
+
+> **Suggested:** `handleEvent` at line 22 dispatches on `event.type` with `if`/`else if` branches that each contain 15–20 lines of logic. Each branch is effectively a separate handler. Could `handleOrderPlaced`, `handleOrderCancelled`, and `handlePaymentFailed` replace the branches so `handleEvent` becomes a router?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Function does validate + transform + persist + notify inline | Ask: "Could each phase (`validateInput`, `calculateTotal`, `persist`, `notify`) extract to a named function so each is independently testable?" |
+| Long sequential steps with little shared state | Ask: "The steps here — fetch, enrich, aggregate, format — share almost no intermediate state. Could each become a named helper so the data flow is visible at the orchestration level?" |
+| `if`/`else` dispatcher with substantial branch logic | Ask: "Each branch in this dispatcher is 15–20 lines. Could the branches become named handlers so `handleEvent` is purely routing?" |
+| Test covering multiple unrelated scenarios | Ask: "This test exercises three independent scenarios. Could they become separate `it` blocks so each fails independently?" |

@@ -110,3 +110,22 @@ Gather **at least two** before reporting:
 - **Mathematical or algorithmic functions** — `clamp(value, min, max)`, `lerp(a, b, t)` — short, well-ordered, universally understood
 - **Constructor of an options object itself** — a class whose whole purpose is to hold these values; the constructor is the right place for them
 - **All parameters are distinct types with no grouping** — `setTimeout(fn: () => void, delay: number)` — two parameters, different types, no sensible group
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `createInvoice` at line 12 takes five positional parameters — `userId`, `orderId`, `amount`, `currency`, and `dueDate`. `userId` and `orderId` are both `string`, so they can be silently transposed with no compile error. Could these become a `CreateInvoiceRequest` options object so call sites are self-documenting?
+
+> **Suggested:** `fetchReport(userId, startDate, endDate, undefined, undefined, "UTC")` at line 44 passes three `undefined` placeholders to reach the `timezone` parameter. An options object would let callers name only the parameters they care about. Would `fetchReport({ userId, startDate, endDate, timezone: "UTC" })` be worth the refactor?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Two or more adjacent same-type params | Assert: "`userId` and `orderId` are both `string` — callers can transpose them silently." |
+| Five or more params with a clear grouping | Ask: "Could `firstName`, `lastName`, and `email` group into a `UserDetails` options object?" |
+| Call site passes positional literals | Ask: "At line N, `true, false` are hard to read without the signature — would named fields help?" |
+| Boolean flags in a long list | Ask: "Could `includeHeaders` and `compress` move into an options object so call sites don't need positional booleans?" |

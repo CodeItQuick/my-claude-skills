@@ -122,3 +122,21 @@ Gather **at least two** before reporting:
 - **Functions constrained by a framework interface** — controllers, resolvers, and event handlers must accept the types the framework provides. The envy may be real but the fix requires restructuring beyond the diff.
 - **Short accessor functions (1–2 field accesses)** — a function that reads one or two fields from a foreign object is not yet envious. Envy requires a clear pattern of repeated access to many fields of the same object.
 - **Read-only access through a well-defined public API** — if the foreign object exposes the accessed fields as intentional public interface (not internal implementation details), the access is legitimate consumption of a public contract.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `formatInvoiceLine` at line 15 reads `order.taxRate`, `order.discountCode`, and `order.discountAmount` while referencing no state of its own — the logic is entirely derived from `Order`. Could this move to `Order` as a method, or to an `OrderFormatter` class in the same module?
+
+> **Suggested:** `isUserActive` in `user-utils.ts` at line 8 reads `user.status`, `user.deletedAt`, and `user.emailVerified`. This looks like a displaced method — `user.isActive()` would be more discoverable and keep the `User` invariants centralized. Is there a reason this lives outside the `User` class?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Function reads 3+ fields of one object, `this` not referenced | Ask: "Could this move to `X` as a method, since it's entirely derived from `X`'s data?" |
+| Utility file accumulating single-type projections | Ask: "These helpers each take `User` and derive a value — would they be more discoverable as `User` methods?" |
+| Deep navigation into a nested structure | Ask: "Does `order.customer.contactInfo.email` need to be accessed here, or could `Order` expose a `recipientEmail` property?" |

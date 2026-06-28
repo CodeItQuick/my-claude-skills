@@ -135,3 +135,22 @@ Gather **at least two** before reporting:
 - **Small utilities and pure functions** — a `clamp(value: number, min: number, max: number)` utility operates on numbers as numbers. Its parameters are not domain identifiers.
 - **Already-wrapped types** — if the codebase uses `UserId`, `OrderId`, `EmailAddress` etc., and a new function correctly accepts those types, do not flag. The pattern only applies where a raw primitive is used *instead of* an available domain type.
 - **Test code constructing primitives to feed domain types** — test files calling `UserId("abc")` or `new EmailAddress("x@y.com")` are using primitives to construct domain types. That is correct usage, not primitive obsession.
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Suggested:** `createInvoice(userId, orderId)` at line 22 takes two `string` parameters. `userId` and `orderId` are interchangeable at the type level — passing them in the wrong order produces no compile error. Branded types (`UserId`, `OrderId`) or an options object would make the transposition impossible.
+
+> **Suggested:** The format check `email.includes("@") && email.length > 3` appears at lines 17, 44, and 89. An `Email` type that enforces the invariant once at construction would eliminate the scatter and prevent unchecked email strings from flowing through the system.
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Two same-type domain IDs in a function signature | Ask: "Could `userId` and `orderId` be branded types so the compiler catches transpositions?" |
+| Same validation duplicated at 3+ call sites | Assert: "This format check appears at N call sites — an `Email` type would centralize the invariant." |
+| Unconstrained number with a valid range | Ask: "Should `discountRate: number` be constrained to 0–1? A `Rate` type could carry that invariant." |
+| Status string used as a discriminant | Ask: "Would a union type (`'active' \| 'suspended' \| 'deleted'`) be safer than a raw string here?" |

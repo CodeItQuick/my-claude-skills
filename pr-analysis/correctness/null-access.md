@@ -122,3 +122,22 @@ Gather **at least two** before reporting:
 - Value just constructed locally: `const u = { name: "x" }; u.name`
 - Value type is non-nullable and no narrowing was lost
 - Inside a branch guarded by `if (x != null)` for `x` itself
+
+---
+
+## Comment examples
+
+**Good:**
+
+> **Blocking:** `user.name` on line 42 is read before `user` is checked. `users.find(...)` returns `undefined` when no match exists, and the guard at line 47 is unreachable. Could we move the guard above the access, or throw a `UserNotFoundError`?
+
+> **Suggested:** `session.touch()` may throw because `sessions.get(sessionId)` returns `undefined` for unknown sessions. If the session is guaranteed to exist here, could we add an `assertExists` to make that contract explicit?
+
+**When to ask vs. assert:**
+
+| Situation | Phrasing |
+|---|---|
+| Type system clearly says nullable, no guard at all | Assert: "`x.y` will throw because `x` is undefined when ..." |
+| Type system silenced via `!` or `as` | Ask: "Is `x` guaranteed non-null here? The `!` removes the type error but ..." |
+| Source operation can return undefined but you can't see the contract | Ask: "Does `getUser(id)` always return a user, or can it return null?" |
+| Guard exists but might not cover all branches | Ask: "Does the guard at line N cover the path through line M?" |
