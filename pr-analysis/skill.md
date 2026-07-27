@@ -5,7 +5,7 @@ description: Run thirty-two focused analysis passes across four categories — c
 
 # PR Analysis
 
-Run thirty-two targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
+Run  targeted passes over changed code across correctness, overengineering, maintainability, and comprehension. Optimize for **suppression of weak findings** over coverage — a noisy reviewer is worse than a quiet one.
 
 ## Passes
 
