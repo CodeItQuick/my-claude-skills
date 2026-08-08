@@ -18,19 +18,19 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 **Posture** — is the role looking for what is wrong, or for what is missing?
 
 - **Defensive** — reads the diff for what should not ship: defects, risks, costs, confusion. Emits `Blocking` and `Suggested` findings. Almost every role is defensive.
-- **Generative** — reads the diff for what should exist next: leverage, adjacency, unserved need. Emits `Opportunity` findings only, which never hold a ship decision (Innovation Lead).
+- **Generative** — reads the diff for what should exist next: leverage, adjacency, unserved need. Emits `Opportunity` findings only, which never hold a ship decision (Innovation Lead, Growth Lead, Platform Capability Scout, Data Platform Scout, Launch Editor, Toolsmith, Revenue Operations Analyst).
 
 **Vantage point** — where does the role sit relative to the product?
 
 - **Internal / build** — roles that see the code and architecture (QA, Security, Tech Lead, CTO, Platform)
 - **External / use** — roles that see the product from the outside (Customer Success, Support, Designer, Sales, Marketing)
-- **Strategic** — roles that evaluate whether the product is the right product (CEO, PM, CTO)
+- **Strategic** — roles that evaluate whether the product is the right product, or whether the company can ship it at all (CEO, PM, CTO, Legal Counsel)
 
 **Time horizon** — when does the consequence materialise? (For a defensive role, when the risk lands; for a generative role, when the opportunity would pay off.)
 
-- **Now** — does this work correctly when it ships? (QA, Security, Support)
-- **Soon** — will users succeed with it? Will it create operational burden? (Designer, Customer Success, Tech Lead, Platform)
-- **Later** — are we building the right foundation? Is this the right direction? (CTO, PM, CEO, Marketing, Innovation Lead)
+- **Now** — does this work correctly when it ships? (QA, Security, Support, Legal Counsel, Launch Editor, Toolsmith)
+- **Soon** — will users succeed with it? Will it create operational burden? (Designer, Customer Success, Tech Lead, Platform, Growth Lead, Platform Capability Scout, Revenue Operations Analyst)
+- **Later** — are we building the right foundation? Is this the right direction? (CTO, PM, CEO, Marketing, Innovation Lead, Data Platform Scout)
 
 ### How to pick
 
@@ -64,13 +64,28 @@ A panel is a set of roles whose questions do not overlap but all bear on the use
 | Trial User | Can I get to value before I run out of patience? | Defensive | Now | External | [`role-profiles/trial-user.md`](role-profiles/trial-user.md) |
 | Power User | Did anything change about how I actually use this every day? | Defensive | Now | External | [`role-profiles/power-user.md`](role-profiles/power-user.md) |
 | AI Prompt Engineer | Is this prompt a reliable spec — or does it leave enough ambiguity that the model will guess inconsistently? | Defensive | Now + Soon | Internal | [`role-profiles/ai-prompt-engineer.md`](role-profiles/ai-prompt-engineer.md) |
+| Legal Counsel / Compliance | Does this breach a commitment we have already made? | Defensive | Now | Strategic | [`role-profiles/legal-counsel.md`](role-profiles/legal-counsel.md) |
 | Innovation Lead | What does this change make cheap that wasn't cheap before? | **Generative** | Later | Strategic + External | [`role-profiles/innovation-lead.md`](role-profiles/innovation-lead.md) |
+| Growth / Experimentation Lead | What experiment is now a config change rather than a project? | **Generative** | Soon | External | [`role-profiles/growth-experimentation-lead.md`](role-profiles/growth-experimentation-lead.md) |
+| Platform Capability Scout | What did this make available to the rest of the codebase? | **Generative** | Soon | Internal | [`role-profiles/platform-capability-scout.md`](role-profiles/platform-capability-scout.md) |
+| Data Platform Scout | What did this make knowable, and what is unrecoverable if we don't record it now? | **Generative** | Later | Internal | [`role-profiles/data-platform-scout.md`](role-profiles/data-platform-scout.md) |
+| Launch Editor | What just became true for users that nothing here tells them? | **Generative** | Now | External | [`role-profiles/launch-editor.md`](role-profiles/launch-editor.md) |
+| Toolsmith | What manual step did this just supply the last missing input for? | **Generative** | Now | Internal | [`role-profiles/toolsmith.md`](role-profiles/toolsmith.md) |
+| Revenue Operations Analyst | What did this make countable, attributable, and separable? | **Generative** | Soon | Strategic | [`role-profiles/revenue-operations-analyst.md`](role-profiles/revenue-operations-analyst.md) |
 
 ### Using the generative posture
 
 Generative roles are opt-in. Include one only when the question asks about direction, leverage, or what to build next (`what should we do with this?`, `what does this unlock?`, `are we missing anything?`), or when requested by flag. Do not add one to a readiness review — padding "is this ready to ship?" with feature ideas dilutes the blocking findings.
 
 A generative role never replaces a defensive one. If the question warrants both, run the defensive panel at full strength and add the generative role alongside it; its `Opportunity` findings sort last and change no ship decision.
+
+**At most two generative roles on a panel, and never more than the number of defensive roles.** Opportunity findings are unbounded in a way defects are not — every diff makes something newly possible, so a panel weighted toward generative roles will always produce a long table that settles nothing. Pick the generative role whose vantage matches the question: the Growth Lead for a user-facing surface, the Platform Capability Scout for internal tooling or an abstraction, the Data Platform Scout for a change to what is stored or emitted, the Launch Editor when a release is imminent, the Toolsmith when the change touches operational or deploy-time work, the Revenue Operations Analyst when it touches usage, limits, or entitlements, the Innovation Lead for product direction.
+
+The Growth Lead and the Revenue Operations Analyst both notice usage counters and gating logic, and differ in what they do with them. Growth asks what user behaviour could now be tested; RevOps asks what could now be counted, attributed to a payer, and billed. If the question is about activation or conversion, pick Growth; if it is about packaging, metering, or limits, pick RevOps.
+
+The Platform Capability Scout and the Toolsmith sit close together and should not run on the same panel. The Scout's audience is code — which call sites could adopt something the diff introduced. The Toolsmith's audience is a person — which hand-run procedure the diff just supplied the last missing input for. If the change is an abstraction, pick the Scout; if it touches a runbook, script, or deploy path, pick the Toolsmith.
+
+The Launch Editor is the one generative role worth adding to a readiness review. Its findings expire at the moment of release rather than accumulating as a backlog, so "what should we tell people?" is a shipping question rather than a direction question.
 
 ---
 
@@ -101,20 +116,30 @@ A generative role never replaces a defensive one. If the question warrants both,
 | `trial-user` | `role-profiles/trial-user.md` |
 | `power-user` | `role-profiles/power-user.md` |
 | `prompt-engineer` | `role-profiles/ai-prompt-engineer.md` |
+| `legal` | `role-profiles/legal-counsel.md` |
 | `innovation` | `role-profiles/innovation-lead.md` |
+| `growth` | `role-profiles/growth-experimentation-lead.md` |
+| `platform-scout` | `role-profiles/platform-capability-scout.md` |
+| `data-scout` | `role-profiles/data-platform-scout.md` |
+| `launch-editor` | `role-profiles/launch-editor.md` |
+| `toolsmith` | `role-profiles/toolsmith.md` |
+| `revops` | `role-profiles/revenue-operations-analyst.md` |
 
 `--format=<format>` — `report` (default, markdown table) or `annotations` (JSON array for CI pipelines).
+
+`--brief` — regenerate the product brief for this repository unconditionally, then continue with the review. See [`brief.md`](brief.md).
 
 ---
 
 ## Workflow
 
-1. **Get the diff.** Run `git diff <base>...HEAD` and focus only on code visible in the diff. If no diff is available, ask the user to provide the code or diff to review.
-2. **Select roles.** If `--role` is specified, load only that role's profile. Otherwise, read the user's question, apply the panel selection criteria above, and choose 2–4 roles whose postures, vantage points and time horizons cover the question without overlapping.
-3. **Run each role independently.** For each role, read their profile in `role-profiles/` and examine the diff through that lens. One role's findings do not influence another.
-4. **For each candidate finding**, require at least two pieces of supporting evidence before reporting. When in doubt, suppress.
-5. **Emit the findings table.**
-6. **Log the run.** Pipe a JSON object to `log.sh`. Use the base directory shown at the top of this skill (`Base directory for this skill: …`) as `<base-dir>`:
+1. **Load the product brief.** Read `.product-review/brief.md` in the reviewed repository. If it does not exist, ask the user before generating one, then follow [`brief.md`](brief.md). If it exists, check its recorded commit SHA against `HEAD` and say so in the run when it is stale. If `--brief` was passed, regenerate first. A run without a brief still works — roles simply cannot fire the suppression rules that depend on product context, so the panel will over-report.
+2. **Get the diff.** Run `git diff <base>...HEAD` and focus only on code visible in the diff. If no diff is available, ask the user to provide the code or diff to review.
+3. **Select roles.** If `--role` is specified, load only that role's profile. Otherwise, read the user's question, apply the panel selection criteria above, and choose 2–4 roles whose postures, vantage points and time horizons cover the question without overlapping.
+4. **Run each role independently.** For each role, read their profile in `role-profiles/` and examine the diff through that lens. One role's findings do not influence another.
+5. **For each candidate finding**, require at least two pieces of supporting evidence before reporting. When in doubt, suppress.
+6. **Emit the findings table.**
+7. **Log the run.** Pipe a JSON object to `log.sh`. Use the base directory shown at the top of this skill (`Base directory for this skill: …`) as `<base-dir>`:
 
    ```bash
    echo '{
@@ -136,6 +161,15 @@ Each finding requires at least two of:
 - **Leverage evidence** — a specific construct in the diff plus the named capability it puts within reach, and why that capability is materially cheaper to build now than before the change (generative roles only)
 
 Impact evidence and leverage evidence are posture-specific: a defensive role cannot support a finding with leverage evidence, and a generative role cannot support one with impact evidence. Code, path, and convention evidence are available to both.
+
+### The product brief is context, never evidence
+
+The brief (see [`brief.md`](brief.md)) supplies facts about the product that a diff cannot: who the users are, whether anything is billed, what data is held, what surfaces exist. It changes what a role considers relevant. It does not change what a role can prove.
+
+- A brief fact may **suppress** a finding on its own. "No billing code present in this repository" is sufficient to silence the Revenue Operations Analyst.
+- A brief fact may **never support** a finding. Every reported finding still needs two evidence types drawn from the diff.
+- Lines from the brief's **Inferred** section — category conventions, competitive claims — carry less weight still. They may frame a finding's reasoning, but a finding resting only on them is suppressed. Named-competitor claims must be phrased as claims to verify, never asserted as fact.
+- Lines from the brief's **Unknowns** section mean *unknown*, not *absent*. A role that needs one of those facts to make its case suppresses the finding rather than assuming a value.
 
 ## Confidence calibration
 

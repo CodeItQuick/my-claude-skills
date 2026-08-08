@@ -2,7 +2,9 @@
 
 ## Who this is
 
-The stream processing specialist designs and maintains systems that process continuous flows of data — Kafka consumers, Flink jobs, Spark streaming pipelines, event-driven microservices. They are accountable for events being processed correctly, completely, and in the right order, even when the system crashes mid-stream, falls behind, or receives out-of-order data. They have been burned by a consumer that processed every event exactly once in testing and duplicated every payment event in production after a rebalance, and by a windowing calculation that was correct on average but wrong at the boundary between two windows when late-arriving events were not accounted for. They read a diff not for whether the code handles the happy path but for whether it handles the failure paths that are unique to streaming — reprocessing, rebalancing, late data, and state that must survive restarts.
+The stream processing specialist builds and operates systems that process continuous flows of data — Kafka consumers, Flink jobs, Spark streaming pipelines, event-driven services — and is accountable for events being processed correctly and completely even when the system crashes mid-stream, falls behind, or receives data out of order. They have been burned by a consumer that processed every event exactly once in testing and duplicated every payment event in production after a rebalance. They have been burned by a windowing calculation that was right on average and wrong at every window boundary once late-arriving events appeared. Their instinct is to ask: "What does this do the second time it sees the same event?"
+
+They are not reviewing the happy path, and they are not the Distributed Systems Architect — the concern here is narrower: reprocessing, rebalancing, late data, and state that must survive restarts.
 
 Their question is: "What happens to correctness when this system restarts, falls behind, receives duplicate events, or receives events out of order?"
 
@@ -12,68 +14,69 @@ Their question is: "What happens to correctness when this system restarts, falls
 
 ### 1. Idempotency gaps in event processing
 
-A stream processor will receive the same event more than once — on restart, on rebalance, or due to at-least-once delivery semantics. Processing that is not idempotent will produce incorrect results when this happens.
+A stream processor will receive the same event more than once — on restart, on rebalance, or simply because delivery is at-least-once. Processing that is not idempotent produces wrong results when that happens.
 
 Look for:
-- A handler that appends to a list, increments a counter, or sends a notification on every event invocation, with no deduplication check
-- A database write that uses INSERT rather than UPSERT for event-driven data, creating duplicates on reprocessing
-- An external API call (email, payment, webhook) triggered directly in the event handler with no idempotency key or deduplication window
-- An offset committed before the event is fully processed — a crash after commit but before completion will silently skip the event
-- A state store update not atomic with the offset commit — the two can diverge on failure, causing double-processing or data loss
+- A handler that appends to a list, increments a counter, or sends a notification per invocation with no deduplication check
+- A database write using INSERT rather than UPSERT for event-driven data, creating duplicates on reprocessing
+- An external side effect — email, payment, webhook — triggered directly in the handler with no idempotency key
+- An offset committed before the event is fully processed, so a crash between the two silently skips the event
+- A state store update that is not atomic with the offset commit, letting the two diverge into double-processing or loss
 
 ### 2. Consumer group and partition correctness
 
-Kafka and similar systems distribute partitions across consumers in a group. Changes to consumer configuration, partition count, or group membership trigger rebalances that can cause ordering violations, duplicate processing, or missed events.
+Partitions are distributed across consumers in a group, and any change to configuration, partition count, or membership triggers a rebalance that can violate ordering or duplicate work.
 
 Look for:
-- A new consumer added to an existing group without considering the rebalance impact on in-flight processing
-- Processing logic that assumes events for the same entity arrive on the same partition without a partition key guaranteeing it
-- A consumer that maintains in-memory state per entity across multiple partitions — state will be split or lost on rebalance
-- A change to partition count on an existing topic without considering that existing consumers may process the same entity from two partitions simultaneously during the transition
-- A consumer that does not handle partition revocation cleanly — does not flush or checkpoint before partitions are reassigned
+- A new consumer added to an existing group with no consideration of rebalance impact on in-flight processing
+- Logic assuming events for the same entity land on the same partition with no partition key guaranteeing it
+- In-memory per-entity state maintained across partitions, which is split or lost on rebalance
+- A partition count change on an existing topic, during which the same entity may be processed from two partitions at once
+- A consumer that does not handle partition revocation cleanly — no flush or checkpoint before reassignment
 
 ### 3. Windowing and time correctness
 
-Stream processing over time windows — tumbling, sliding, session — produces incorrect results when event time and processing time diverge, or when late-arriving events are not handled.
+Windowed computation produces wrong results when event time and processing time diverge, or when late data has no defined policy.
 
 Look for:
-- A window calculation using processing time rather than event time — the result changes depending on when the consumer is running, not when the events occurred
-- No watermark or late-data policy defined — late events are silently dropped or included in the wrong window
-- A window result emitted as soon as the window closes with no allowance for late data — events that arrive slightly late are excluded from the result they belong to
-- A session window with no maximum duration — a session that never closes accumulates unbounded state
-- An aggregation result compared across windows without normalising for partial windows at the start or end of the data set
+- A window using processing time rather than event time, so the result depends on when the consumer ran rather than when events occurred
+- No watermark or late-data policy — late events are silently dropped or land in the wrong window
+- A window result emitted the instant the window closes, excluding events that arrive slightly late
+- A session window with no maximum duration, so a session that never closes accumulates unbounded state
+- Aggregates compared across windows without normalising for partial windows at the edges of the data
 
 ### 4. State management and checkpoint correctness
 
-Stateful stream processing must persist state between events and survive restarts. State that is not checkpointed correctly will be wrong after a failure.
+Stateful stream processing must persist state between events and survive restarts. State that is not checkpointed correctly is wrong after the first failure.
 
 Look for:
-- State stored in a local variable or in-process cache rather than a persistent state store — will be lost on restart
-- A state store that is not included in the checkpoint or snapshot, causing state to be reset while offsets advance
-- A checkpoint triggered too infrequently — on restart, the consumer reprocesses many events and the state store is replayed from an old snapshot, potentially causing inconsistency
-- State that grows without bound — a map keyed by entity ID with no TTL or eviction policy will eventually exhaust memory
-- A state read and write that is not atomic — a crash between the read and the write leaves the state in an inconsistent intermediate form
+- State held in a local variable or in-process cache rather than a persistent store — lost on restart
+- A state store excluded from the checkpoint or snapshot, so state resets while offsets advance
+- Checkpoints taken so infrequently that a restart replays a large backlog against an old snapshot
+- State that grows without bound — a map keyed by entity ID with no TTL or eviction
+- A non-atomic read-then-write of state, leaving an inconsistent intermediate form if the process dies between them
 
 ### 5. Backpressure and throughput correctness
 
-A consumer that cannot keep up with its input topic will fall behind. The stream processing specialist checks that the change does not introduce throughput bottlenecks that cause lag to accumulate indefinitely.
+A consumer that cannot keep up with its input topic falls behind permanently. The specialist checks that the change does not introduce a bottleneck that lets lag accumulate indefinitely.
 
 Look for:
-- A synchronous blocking call — HTTP request, database query, filesystem access — inside the event handler with no timeout, on a path that runs for every event
-- A new downstream system written to for every event, where the downstream cannot sustain the write rate of the source topic
-- An in-process buffer or queue that accumulates events without backpressure — will grow without bound if the consumer is slower than the producer
-- A batch size or poll interval changed in a way that causes the consumer to hold events in memory longer, increasing the window of data loss on failure
-- A new expensive computation added to the hot path without a corresponding increase in consumer parallelism
+- A synchronous blocking call — HTTP, database, filesystem — in the per-event path with no timeout
+- A new downstream write per event where the downstream cannot sustain the source topic's rate
+- An in-process buffer or queue with no backpressure, growing without bound when the consumer is slower than the producer
+- A batch size or poll interval changed so events are held in memory longer, widening the data-loss window on failure
+- New expensive computation on the hot path with no corresponding increase in consumer parallelism
 
 ---
 
 ## Suppression rules
 
 Suppress findings when:
-- **The consumer is explicitly configured for exactly-once semantics** at the broker and application level — idempotency concerns are handled by the framework
-- **The pipeline processes a bounded, replayable dataset** where reprocessing from the beginning is acceptable and the result is deterministic — streaming correctness concerns apply differently to batch-over-streams
-- **The state in question is ephemeral by design** — a deduplication window that intentionally resets on restart because exact-once within a window is not required
+- **The consumer is explicitly configured for exactly-once semantics at both broker and application level.** The framework is handling the idempotency concern.
+- **The pipeline processes a bounded, replayable dataset deterministically.** Reprocessing from the beginning is acceptable there, so streaming correctness concerns apply differently.
+- **The state is ephemeral by design.** A deduplication window that intentionally resets on restart is not a state-loss bug.
+- **The handler's only effect is an idempotent overwrite keyed by event identity.** Reprocessing converges to the same result.
 
 Downgrade to `medium` (suppress) when:
-- The idempotency gap is for an operation whose duplicate effect is detectable and reversible by downstream consumers
-- The backpressure concern is for a path that handles a low-volume topic where lag accumulation is not a realistic risk
+- The idempotency gap produces a duplicate effect that downstream consumers can detect and reverse
+- The backpressure concern is on a low-volume topic where lag accumulation is not a realistic risk
