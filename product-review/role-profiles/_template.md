@@ -3,6 +3,21 @@
 <!--
 File naming: kebab-case job title, e.g. data-engineer.md, legal-counsel.md, site-reliability-engineer.md
 Register the role in skill.md: add a row to the relevant panel table, or create a new panel section.
+The row needs all three axes — posture, time horizon, vantage.
+
+Posture — decide this first; it determines the rest of the profile:
+
+  Defensive (the default) — the role reads a diff for what should not ship. "What they look
+  for" describes defects, risks, costs, or confusion. Findings are supported by impact
+  evidence and emit Blocking / Suggested.
+
+  Generative — the role reads a diff for what should exist next. "What they look for"
+  describes leverage, adjacency, or unserved need. Findings are supported by leverage
+  evidence and emit Opportunity only. A generative role must state in "Who this is" that it
+  is not looking for defects, and name the defensive roles that own that ground.
+
+Do not mix postures in one profile. A role that both critiques and proposes will produce
+findings the criticality scale cannot represent — split it into two roles.
 -->
 
 ## Who this is

@@ -36,13 +36,14 @@ timestamp = datetime.datetime.now().strftime("%H:%M")
 findings = input_data.get("findings", [])
 blocking = sum(1 for f in findings if f.get("criticality") == "Blocking")
 suggested = sum(1 for f in findings if f.get("criticality") == "Suggested")
+opportunity = sum(1 for f in findings if f.get("criticality") == "Opportunity")
 
 entry = {
     "timestamp": timestamp,
     "question": input_data.get("question", ""),
     "roles": input_data.get("roles", []),
     "findings": findings,
-    "counts": {"blocking": blocking, "suggested": suggested}
+    "counts": {"blocking": blocking, "suggested": suggested, "opportunity": opportunity}
 }
 
 try:
@@ -56,5 +57,5 @@ log.append(entry)
 with open(log_file, "w") as f:
     json.dump(log, f, indent=2)
 
-print(f"Logged to {log_file} ({blocking} Blocking, {suggested} Suggested)")
+print(f"Logged to {log_file} ({blocking} Blocking, {suggested} Suggested, {opportunity} Opportunity)")
 PYEOF
