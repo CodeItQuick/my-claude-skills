@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Assemble a panel of specialist engineering reviewers for a pull request or diff. Given a question about implementation quality, select roles from role-profiles/ whose technical disciplines are relevant to the change, then produce a focused findings table. Roles cover database correctness, frontend state, caching, observability, test quality, stream processing, web performance, technical debt, and refactoring.
+description: Assemble a panel of specialist engineering reviewers for a pull request or diff. Given a question about implementation quality, select roles from role-profiles/ whose technical disciplines are relevant to the change, then produce a focused findings table. Roles cover database correctness, frontend state, caching, observability, test quality, stream processing, web performance, technical debt, and refactoring, plus generative roles that name reuse, automation, and analytical capability the change put within reach.
 ---
 
 # Code Review
@@ -13,33 +13,46 @@ Select a panel of specialist engineers to review the implementation quality of a
 
 A panel is a set of roles whose disciplines are relevant to the change and do not duplicate each other. The goal is coverage of the technical surface the diff touches — a database change warrants the Database Engineer; a React component warrants the Frontend Specialist; a Kafka consumer warrants the Stream Processing Specialist.
 
+### Posture
+
+Every role has a posture, and it determines what the role can report.
+
+- **Defensive** — reads the diff for what should not ship: defects, risks, fragility, confusion. Emits `Blocking` and `Suggested` findings, supported by impact evidence. Every discipline role is defensive.
+- **Generative** — reads the diff for what should exist next: capability the change put within reach that nobody has picked up. Emits `Opportunity` findings only, supported by leverage evidence, and never holds a merge (Platform Capability Scout, Toolsmith, Data Platform Scout).
+
 ### How to pick
 
 1. Identify which technical domains the diff touches — database, frontend, caching, observability, tests, streaming, performance, or general structure.
 2. Select the role whose discipline matches each domain. A diff that touches multiple domains warrants multiple roles.
 3. Aim for 2–4 roles. A diff that touches only one domain warrants one role.
+4. Default to a defensive panel. Add a generative role only when the question asks what the change enables (`what does this unlock?`, `anything worth building on this?`) or when requested by flag — **at most one, and never on a readiness review.** Padding "is this ready to merge?" with capability ideas dilutes the blocking findings.
+
+The Platform Capability Scout and the Toolsmith sit close together and should not run together. The Scout's audience is code — which call sites could adopt something the diff introduced. The Toolsmith's audience is a person — which hand-run procedure the diff just supplied the last missing input for.
 
 ### Available roles
 
-| Role | Key question | Domain | Profile |
-|---|---|---|---|
-| Database Engineer | Will this be correct and fast when the data is ten times larger? | Data layer | [`role-profiles/database-engineer.md`](role-profiles/database-engineer.md) |
-| Web Performance Engineer | Does this make the product slower to load or interact with? | Frontend performance | [`role-profiles/web-performance-engineer.md`](role-profiles/web-performance-engineer.md) |
-| Observability Engineer | Will we be able to see what is happening after this ships? | Instrumentation | [`role-profiles/observability-engineer.md`](role-profiles/observability-engineer.md) |
-| Test Architect | Does the test suite still accurately verify what the code is supposed to do? | Test quality | [`role-profiles/test-architect.md`](role-profiles/test-architect.md) |
-| Technical Debt Analyst | Does this change leave the codebase harder or easier to work in? | Code health | [`role-profiles/technical-debt-analyst.md`](role-profiles/technical-debt-analyst.md) |
-| Refactoring Specialist | Is the structure of this code the simplest correct expression of the problem? | Code structure | [`role-profiles/refactoring-specialist.md`](role-profiles/refactoring-specialist.md) |
-| Frontend Specialist | Is the client-side data flow, state ownership, and render behaviour correct? | Frontend correctness | [`role-profiles/frontend-specialist.md`](role-profiles/frontend-specialist.md) |
-| Stream Processing Specialist | What happens to correctness when this system restarts or receives duplicate events? | Event streaming | [`role-profiles/stream-processing-specialist.md`](role-profiles/stream-processing-specialist.md) |
-| Caching Engineer | Does this use the cache correctly, and what happens when the cache is wrong? | Caching | [`role-profiles/caching-engineer.md`](role-profiles/caching-engineer.md) |
-| Distributed Systems Architect | What happens to correctness when two of these run simultaneously or the network drops a message? | Distributed systems | [`role-profiles/distributed-systems-architect.md`](role-profiles/distributed-systems-architect.md) |
-| Code Review Specialist | Could a competent engineer who did not write this accurately review it and catch a bug? | Reviewability | [`role-profiles/code-review-specialist.md`](role-profiles/code-review-specialist.md) |
+| Role | Key question | Posture | Domain | Profile |
+|---|---|---|---|---|
+| Database Engineer | Will this be correct and fast when the data is ten times larger? | Defensive | Data layer | [`role-profiles/database-engineer.md`](role-profiles/database-engineer.md) |
+| Web Performance Engineer | Does this make the product slower to load or interact with? | Defensive | Frontend performance | [`role-profiles/web-performance-engineer.md`](role-profiles/web-performance-engineer.md) |
+| Observability Engineer | Will we be able to see what is happening after this ships? | Defensive | Instrumentation | [`role-profiles/observability-engineer.md`](role-profiles/observability-engineer.md) |
+| Test Architect | Does the test suite still accurately verify what the code is supposed to do? | Defensive | Test quality | [`role-profiles/test-architect.md`](role-profiles/test-architect.md) |
+| Technical Debt Analyst | Does this change leave the codebase harder or easier to work in? | Defensive | Code health | [`role-profiles/technical-debt-analyst.md`](role-profiles/technical-debt-analyst.md) |
+| Refactoring Specialist | Is the structure of this code the simplest correct expression of the problem? | Defensive | Code structure | [`role-profiles/refactoring-specialist.md`](role-profiles/refactoring-specialist.md) |
+| Frontend Specialist | Is the client-side data flow, state ownership, and render behaviour correct? | Defensive | Frontend correctness | [`role-profiles/frontend-specialist.md`](role-profiles/frontend-specialist.md) |
+| Stream Processing Specialist | What happens to correctness when this system restarts or receives duplicate events? | Defensive | Event streaming | [`role-profiles/stream-processing-specialist.md`](role-profiles/stream-processing-specialist.md) |
+| Caching Engineer | Does this use the cache correctly, and what happens when the cache is wrong? | Defensive | Caching | [`role-profiles/caching-engineer.md`](role-profiles/caching-engineer.md) |
+| Distributed Systems Architect | What happens to correctness when two of these run simultaneously or the network drops a message? | Defensive | Distributed systems | [`role-profiles/distributed-systems-architect.md`](role-profiles/distributed-systems-architect.md) |
+| Code Review Specialist | Could a competent engineer who did not write this accurately review it and catch a bug? | Defensive | Reviewability | [`role-profiles/code-review-specialist.md`](role-profiles/code-review-specialist.md) |
+| Platform Capability Scout | What did this make available to the rest of the codebase? | **Generative** | Reuse and adoption | [`role-profiles/platform-capability-scout.md`](role-profiles/platform-capability-scout.md) |
+| Toolsmith | What manual step did this just supply the last missing input for? | **Generative** | Toil and automation | [`role-profiles/toolsmith.md`](role-profiles/toolsmith.md) |
+| Data Platform Scout | What did this make knowable, and what is unrecoverable if we don't record it now? | **Generative** | Analytical substrate | [`role-profiles/data-platform-scout.md`](role-profiles/data-platform-scout.md) |
 
 ---
 
 ## Flags
 
-`--role=<role>` — run a single role. Valid values: `db-engineer`, `web-perf`, `observability`, `test-architect`, `debt-analyst`, `refactoring`, `frontend`, `stream-processing`, `caching`, `distributed-systems`, `review-specialist`.
+`--role=<role>` — run a single role. Valid values: `db-engineer`, `web-perf`, `observability`, `test-architect`, `debt-analyst`, `refactoring`, `frontend`, `stream-processing`, `caching`, `distributed-systems`, `review-specialist`, `platform-scout`, `toolsmith`, `data-scout`.
 
 `--format=<format>` — `report` (default, markdown table) or `annotations` (JSON array for CI pipelines).
 
@@ -56,7 +69,7 @@ A panel is a set of roles whose disciplines are relevant to the change and do no
    - Timestamp (HH:MM)
    - Domains touched and roles selected
    - Full findings table (copied verbatim)
-   - Count of Blocking and Suggested findings
+   - Count of Blocking, Suggested, and Opportunity findings
 
 ## Evidence requirement
 
@@ -65,12 +78,15 @@ Each finding requires at least two of:
 - **Path evidence** — a reachable code path that would trigger the problem
 - **Convention evidence** — nearby or sibling code that establishes the expected pattern this violates
 - **Impact evidence** — a concrete description of what goes wrong if this ships
+- **Leverage evidence** — a specific construct in the diff plus the named capability it puts within reach, and why that capability is materially cheaper to build now than before the change (generative roles only)
+
+Impact evidence and leverage evidence are posture-specific: a defensive role cannot support a finding with leverage evidence, and a generative role cannot support one with impact evidence. Code, path, and convention evidence are available to both.
 
 ## Confidence calibration
 
 | Confidence | Action |
 |---|---|
-| `high` | Report as `Blocking` or `Suggested` |
+| `high` | Report as `Blocking`, `Suggested`, or `Opportunity` |
 | `medium` | Suppress. Do not report. |
 | `low` | Suppress. Do not report. |
 
@@ -78,13 +94,24 @@ Each finding requires at least two of:
 
 ### `--format=report` (default)
 
-A single markdown table. Title is the panel or role name. Columns: **Criticality**, **Role**, **Observation**, **Reasoning**. One row per finding, sorted Blocking → Suggested. Each cell is one concise sentence.
+A single markdown table. Title is the panel or role name. Columns: **Criticality**, **Role**, **Observation**, **Reasoning**. One row per finding, sorted Blocking → Suggested → Opportunity. Each cell is one concise sentence.
+
+Criticality values:
+
+| Value | Meaning |
+|---|---|
+| `Blocking` | Should not merge as-is. Defensive roles only. |
+| `Suggested` | Should merge, but this is worth fixing. Defensive roles only. |
+| `Opportunity` | Nothing is wrong; this names capability the change created. Generative roles only, and never a reason to hold a merge. |
+
+Criticality follows from posture: a defensive role never emits `Opportunity`, and a generative role emits nothing else.
 
 | Criticality | Role | Observation | Reasoning |
 |---|---|---|---|
 | Blocking | Database Engineer | `getUserOrders` at line 47 executes a query inside a loop over order IDs | Produces N+1 queries against the orders table — one per order ID rather than a single IN query |
 | Blocking | Test Architect | The new `applyDiscount` branch has no test | A regression in discount calculation would pass CI undetected |
 | Suggested | Refactoring Specialist | `processItems` at line 12 both validates and persists, violating single responsibility | Splitting into `validateItems` and `saveItems` would make each independently testable |
+| Opportunity | Platform Capability Scout | `withRetry` at line 8 is defined inside `billing/` and not exported | Three other modules hand-roll the same retry loop; moving it to shared tooling makes them one import away rather than one rewrite away |
 
 If no findings: `| — | — | No concerns raised. | — |`
 
@@ -107,3 +134,5 @@ A single JSON array. Each finding:
   "suggested_fix": "..."
 }
 ```
+
+`severity` is `blocking`, `suggested`, or `opportunity`. CI pipelines should treat `opportunity` as informational — it must never fail a build.
