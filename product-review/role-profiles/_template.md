@@ -2,22 +2,38 @@
 
 <!--
 File naming: kebab-case job title, e.g. data-engineer.md, legal-counsel.md, site-reliability-engineer.md
-Register the role in skill.md: add a row to the relevant panel table, or create a new panel section.
-The row needs all three axes — posture, time horizon, vantage.
+
+The Role Title above is the canonical name for this role. Use it verbatim in the
+findings table Role column and in every log entry. Logged runs already contain
+"QA", "QA / SDET", and "qa-sdet" for one role, and that inconsistency blocks
+per-role aggregation. One spelling, everywhere.
+
+Registration — the panel cannot select a role that skill.md does not know about:
+1. Add a row to the "Available roles" table: role, key question, posture, time
+   horizon, vantage, profile link. The "Their question is" sentence below doubles
+   as the key question in that row.
+2. Add a flag value to the `--role` mapping table.
+3. If the role sits close to an existing role, add a disambiguation paragraph to
+   "Panel selection" that says which of the two to pick and when. See the
+   Growth Lead / Revenue Operations Analyst paragraph for the pattern.
+
+Keep the profile under roughly 1,000 words. Profiles load on every run that
+selects them, so length is a recurring cost.
 
 Posture — decide this first; it determines the rest of the profile:
 
-  Defensive (the default) — the role reads a diff for what should not ship. "What they look
-  for" describes defects, risks, costs, or confusion. Findings are supported by impact
-  evidence and emit Blocking / Suggested.
+  Defensive (the default) — the role reads a diff for what should not ship. "What
+  they look for" describes defects, risks, costs, or confusion. Findings are
+  supported by impact evidence and emit Blocking / Suggested.
 
-  Generative — the role reads a diff for what should exist next. "What they look for"
-  describes leverage, adjacency, or unserved need. Findings are supported by leverage
-  evidence and emit Opportunity only. A generative role must state in "Who this is" that it
-  is not looking for defects, and name the defensive roles that own that ground.
+  Generative — the role reads a diff for what should exist next. "What they look
+  for" describes leverage, adjacency, or unserved need. Findings are supported by
+  leverage evidence and emit Opportunity only. A generative role must state in
+  "Who this is" that it is not looking for defects, and name the defensive roles
+  that own that ground.
 
-Do not mix postures in one profile. A role that both critiques and proposes will produce
-findings the criticality scale cannot represent — split it into two roles.
+Do not mix postures in one profile. A role that both critiques and proposes will
+produce findings the criticality scale cannot represent — split it into two roles.
 -->
 
 ## Who this is
@@ -33,13 +49,18 @@ Three elements, in order:
    what makes them suspicious of certain patterns. Be concrete: not "poor quality" but
    "the migration that looked fine until it hit production data."
 
+   For a generative role, the burn is a missed opportunity, not a shipped defect:
+   "They have watched three teams hand-roll the same retry loop" rather than "the
+   outage that followed a bad deploy."
+
 3. Their one-sentence question — the single question no other role in the panel would ask
-   in quite the same way. Format: "Their question is: '[question]'"
+   in quite the same way. Format: "Their question is: '[question]'" This sentence is
+   reused verbatim as the key question in the skill.md role table.
 -->
 
 The [role] [owns / is responsible for / has seen] [professional reality]. They have been burned by [specific past experience that shaped their instinct]. They have [second experience if needed]. Their instinct is to ask: "[What is their gut-check question?]"
 
-[Optional second paragraph: what they are NOT looking for — the scope boundary that distinguishes them from an adjacent role.]
+[Optional second paragraph: what they are NOT looking for — the scope boundary that distinguishes them from an adjacent role. Mandatory for a generative role: state that defects are out of scope and name the defensive roles that own them.]
 
 Their question is: "[One sentence that no other panel member would ask in the same way.]"
 
@@ -53,13 +74,20 @@ Their question is: "[One sentence that no other panel member would ask in the sa
   - One paragraph: name the concern, explain why it exists, state what the reviewer asks
   - "Look for:" followed by 3–6 bullet points of specific, concrete patterns
 
+For a defensive role, a category names a risk and the bullets are its observable
+signals. For a generative role, a category names a leverage pattern and each bullet
+pairs a construct the diff could introduce with the capability it puts within reach —
+leverage evidence needs both halves.
+
 Headings should be noun phrases describing the category of concern, not verbs:
   Good: "Missing rollback path", "Scope that drifted from the stated problem"
   Avoid: "Check for missing rollback", "Look at whether scope drifted"
 
-Bullet points should be specific enough that a reviewer knows immediately whether
-the pattern applies to the diff in front of them. Avoid "things that might be wrong" —
-describe the observable signal.
+Every reported finding needs two evidence types drawn from the diff (see the
+evidence requirement in skill.md). Write each bullet so it can be matched against
+a specific diff line — a bullet that can never yield code, path, or convention
+evidence will only ever produce suppressed findings. Avoid "things that might be
+wrong"; describe the observable signal.
 -->
 
 ### 1. [Concern category name]
@@ -113,23 +141,33 @@ Look for:
 ## Suppression rules
 
 <!--
-Two types:
+Three types:
 
 Hard suppress — always skip, no finding reported. Lead with the condition, follow with
 the reason in one sentence. Format: "**[Condition].** [Why it does not apply.]"
+
+Brief-grounded suppress — a hard suppress whose condition is a fact recorded in the
+product brief (.product-review/brief.md) rather than in the diff. Format: "**The brief
+records [fact].** [Why the role has nothing to say here.]" Example: "**The brief records
+no billing code.** Metering findings cannot apply to a product that charges nothing."
+If the role's relevance depends on what the product is — who uses it, what it charges,
+what data it holds — write at least one of these, or the role will over-report on
+repositories where it does not apply. Remember the asymmetry: a brief fact can
+suppress a finding on its own, but can never support one. And if the role's case
+depends on a fact in the brief's Unknowns section, suppress — unknown is not absent.
 
 Soft suppress (downgrade) — reduce confidence to medium, which suppresses the finding
 per the confidence calibration. Use when the concern is real but the evidence is weak,
 the fix is disproportionate, or the author likely has context that makes it acceptable.
 Format: "Downgrade to `medium` (suppress) when [condition]."
 
-Aim for 3–5 hard suppress rules and 1–2 soft suppress rules. If you find yourself
-writing more than 6, the role's scope is probably too broad.
+Aim for 3–5 hard suppress rules (brief-grounded ones included) and 1–2 soft suppress
+rules. If you find yourself writing more than 6, the role's scope is probably too broad.
 -->
 
 Suppress findings when:
 - **[Condition that makes the concern moot].** [One sentence explaining why.]
-- **[Condition].** [Reason.]
+- **The brief records [fact that makes this role irrelevant].** [One sentence explaining why the role has nothing to say.]
 - **[Condition].** [Reason.]
 
 Downgrade to `medium` (suppress) when:
