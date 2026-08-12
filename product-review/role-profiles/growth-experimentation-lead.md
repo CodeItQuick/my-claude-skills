@@ -1,3 +1,13 @@
+---
+role: growth-experimentation-lead
+posture: generative
+horizon: [soon]
+vantage: external
+surface: flow
+aliases: [growth]
+question: "What experiment is now a config change rather than a project?"
+---
+
 # Reviewer: Growth / Experimentation Lead
 
 ## Who this is

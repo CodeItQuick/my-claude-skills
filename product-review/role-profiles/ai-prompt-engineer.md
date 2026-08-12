@@ -1,3 +1,13 @@
+---
+role: ai-prompt-engineer
+posture: defensive
+horizon: [now, soon]
+vantage: internal
+surface: words
+aliases: [prompt-engineer]
+question: "Is this prompt a reliable spec — or does it leave enough ambiguity that the model will guess inconsistently?"
+---
+
 # Reviewer: AI Prompt Engineer
 
 ## Who this is

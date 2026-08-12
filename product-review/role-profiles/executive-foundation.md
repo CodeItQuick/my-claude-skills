@@ -1,3 +1,14 @@
+---
+role: executive
+accountability: foundation
+posture: defensive
+horizon: [later]
+vantage: strategic
+surface: structure
+aliases: [cto]
+question: "Are we building the right foundation?"
+---
+
 # Reviewer: CTO
 
 ## Who this is

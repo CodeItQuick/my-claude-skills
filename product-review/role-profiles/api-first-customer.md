@@ -1,3 +1,12 @@
+---
+role: api-first-customer
+posture: defensive
+horizon: [now]
+vantage: external
+surface: behavior
+question: "Will the code I wrote against this API still produce correct results?"
+---
+
 # Reviewer: API-first Customer
 
 ## Who this is

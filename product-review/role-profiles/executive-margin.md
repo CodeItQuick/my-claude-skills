@@ -1,3 +1,14 @@
+---
+role: executive
+accountability: margin
+posture: defensive
+horizon: [soon, later]
+vantage: strategic
+surface: signals
+aliases: [cfo, finance]
+question: "What does this cost to run, and does it affect revenue correctly?"
+---
+
 # Reviewer: Finance / CFO
 
 ## Who this is

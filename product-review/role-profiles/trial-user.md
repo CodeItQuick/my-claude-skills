@@ -1,3 +1,12 @@
+---
+role: trial-user
+posture: defensive
+horizon: [now]
+vantage: external
+surface: flow
+question: "Can I get to value before I run out of patience?"
+---
+
 # Reviewer: Trial User
 
 ## Who this is

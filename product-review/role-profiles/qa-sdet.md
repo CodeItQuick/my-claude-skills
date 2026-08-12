@@ -1,3 +1,13 @@
+---
+role: qa-sdet
+posture: defensive
+horizon: [now]
+vantage: internal
+surface: behavior
+aliases: [qa, sdet]
+question: "Are the failure modes covered?"
+---
+
 # Reviewer: QA / SDET
 
 ## Who this is

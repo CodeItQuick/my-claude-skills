@@ -1,3 +1,12 @@
+---
+role: integration-partner
+posture: defensive
+horizon: [now]
+vantage: external
+surface: contract
+question: "Will my existing integration still work after this ships?"
+---
+
 # Reviewer: Integration Partner
 
 ## Who this is

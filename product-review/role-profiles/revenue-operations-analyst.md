@@ -1,3 +1,13 @@
+---
+role: revenue-operations-analyst
+posture: generative
+horizon: [soon]
+vantage: strategic
+surface: signals
+aliases: [revops]
+question: "What did this make countable, attributable, and separable?"
+---
+
 # Reviewer: Revenue Operations Analyst
 
 ## Who this is

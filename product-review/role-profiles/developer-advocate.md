@@ -1,3 +1,13 @@
+---
+role: developer-advocate
+posture: defensive
+horizon: [soon]
+vantage: external
+surface: contract
+aliases: [devrel, advocate]
+question: "Would an external developer succeed with this, and would they recommend it?"
+---
+
 # Reviewer: Developer Advocate
 
 ## Who this is

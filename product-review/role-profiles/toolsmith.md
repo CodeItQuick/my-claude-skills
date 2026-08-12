@@ -1,3 +1,12 @@
+---
+role: toolsmith
+posture: generative
+horizon: [now]
+vantage: internal
+surface: flow
+question: "What manual step did this just supply the last missing input for?"
+---
+
 # Reviewer: Toolsmith
 
 ## Who this is

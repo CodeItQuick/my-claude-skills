@@ -1,3 +1,13 @@
+---
+role: technical-writer
+posture: defensive
+horizon: [soon]
+vantage: external
+surface: words
+aliases: [writer, docs]
+question: "Will a user who reads the docs be able to do what the code now allows?"
+---
+
 # Reviewer: Technical Writer
 
 ## Who this is

@@ -1,3 +1,13 @@
+---
+role: engineering-tech-lead
+posture: defensive
+horizon: [soon]
+vantage: internal
+surface: structure
+aliases: [tech-lead, eng-lead]
+question: "Is this the right approach?"
+---
+
 # Reviewer: Engineering / Tech Lead
 
 ## Who this is

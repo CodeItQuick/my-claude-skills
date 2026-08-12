@@ -1,3 +1,12 @@
+---
+role: launch-editor
+posture: generative
+horizon: [now]
+vantage: external
+surface: words
+question: "What just became true for users that nothing here tells them?"
+---
+
 # Reviewer: Launch Editor
 
 ## Who this is

@@ -1,3 +1,13 @@
+---
+role: product-manager
+posture: defensive
+horizon: [soon]
+vantage: strategic
+surface: behavior
+aliases: [pm]
+question: "Is this the right thing to build right now?"
+---
+
 # Reviewer: Product Manager
 
 ## Who this is

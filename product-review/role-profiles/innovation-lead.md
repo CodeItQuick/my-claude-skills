@@ -1,3 +1,12 @@
+---
+role: innovation-lead
+posture: generative
+horizon: [later]
+vantage: strategic
+surface: structure
+question: "What does this change make cheap that wasn't cheap before?"
+---
+
 # Reviewer: Innovation Lead
 
 ## Who this is

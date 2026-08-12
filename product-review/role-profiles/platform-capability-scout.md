@@ -1,3 +1,13 @@
+---
+role: platform-capability-scout
+posture: generative
+horizon: [soon]
+vantage: internal
+surface: structure
+aliases: [capability-scout]
+question: "What did this make available to the rest of the codebase?"
+---
+
 # Reviewer: Platform Capability Scout
 
 ## Who this is

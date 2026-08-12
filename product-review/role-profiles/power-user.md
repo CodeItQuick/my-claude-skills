@@ -1,3 +1,12 @@
+---
+role: power-user
+posture: defensive
+horizon: [now]
+vantage: external
+surface: habit
+question: "Did anything change about how I actually use this every day?"
+---
+
 # Reviewer: Power User
 
 ## Who this is

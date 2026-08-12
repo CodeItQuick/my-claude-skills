@@ -1,3 +1,12 @@
+---
+role: marketing
+posture: defensive
+horizon: [later]
+vantage: external
+surface: pitch
+question: "Does this make the product easier or harder to talk about?"
+---
+
 # Reviewer: Marketing
 
 ## Who this is

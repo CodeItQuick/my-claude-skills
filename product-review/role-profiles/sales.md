@@ -1,3 +1,12 @@
+---
+role: sales
+posture: defensive
+horizon: [soon]
+vantage: external
+surface: pitch
+question: "Does this help me win deals?"
+---
+
 # Reviewer: Sales
 
 ## Who this is

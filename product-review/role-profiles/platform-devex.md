@@ -1,3 +1,13 @@
+---
+role: platform-devex
+posture: defensive
+horizon: [soon]
+vantage: internal
+surface: contract
+aliases: [devex]
+question: "Does this make the platform better or harder to maintain?"
+---
+
 # Reviewer: Platform / DevEx
 
 ## Who this is

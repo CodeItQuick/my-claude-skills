@@ -11,67 +11,74 @@ Select a panel of professional reviewers for a question about a change. Each rol
 
 ## Panel selection
 
-A panel is 2–4 roles. Their questions do not overlap, but all bear on the concern of the user. Coverage beats volume: three roles at different vantage points produce better findings than six roles at similar angles. Spread the panel across three axes:
+A panel is 2–4 roles. Their questions do not overlap, but all bear on the concern of the user. Coverage beats volume: three roles at different vantage points produce better findings than six roles at similar angles.
 
-- **Posture** — **Defensive** reads the diff for what must not ship. **Generative** reads it for what must exist next.
-- **Vantage point** — **Internal** sees the code. **External** sees the product from outside. **Strategic** asks whether this is the right product at all.
-- **Time horizon** — when the consequence lands: **Now** at ship, **Soon** in use and operation, **Later** as foundation and direction.
+Each role carries four axes in its profile frontmatter:
 
-To pick a panel:
+- **Posture** — **defensive** reads the diff for what must not ship. **generative** reads it for what must exist next.
+- **Vantage** — **internal** sees the code. **external** sees the product from outside. **strategic** weighs the change against a company constraint.
+- **Horizon** — when the consequence lands: **now** at ship, **soon** in use and operation, **later** as foundation and direction.
+- **Surface** — the artifact the role reads. Two roles reading different artifacts cannot produce the same finding.
 
-1. Identify whether the question is about correctness, user experience, business, or strategy.
-2. Choose roles at different points on the axes, relative to that question.
+| Surface | What the role reads |
+|---|---|
+| `contract` | signatures, schemas, payload shapes, error codes, permissions |
+| `behavior` | the values that come out and the state left behind |
+| `flow` | the ordered steps of a first or unfamiliar run |
+| `habit` | the steps an established user already has in muscle memory |
+| `words` | instructional text: docs, labels, error messages, prompts |
+| `pitch` | persuasive text: positioning, claims, competitive framing |
+| `signals` | what the running system emits: logs, metrics, alerts, cost |
+| `structure` | module boundaries, dependencies, layering |
 
-Two roles are redundant only when they match on **all three** axes. Two roles that share a square but differ in posture are complementary. Marketing asks whether the change is harder to talk about. The Innovation Lead asks what the change unlocks. Default to a defensive panel. Add a generative role only per the rules below.
+### Choosing the panel
 
-### Available roles
+Run `panel.py --list` to see every role by square and surface. Then decide two things, which are yours to judge:
 
-Each name below is the profile filename in `role-profiles/`. Every profile opens with the key question of the role. A role that occupies two squares is listed in both.
+1. **The intent.** `readiness` asks whether the change can ship. `direction` asks where the change leads.
+2. **The surfaces the diff touches.** Read the diff and name them.
 
-**Defensive**
+Declare both, propose the roles, and let the script hold you to the consequences:
 
-| | Internal | External | Strategic |
-|---|---|---|---|
-| **Now** | `qa-sdet` `security` `site-reliability-engineer` `ai-prompt-engineer` | `support` `integration-partner` `api-first-customer` `trial-user` `power-user` | `legal-counsel` |
-| **Soon** | `engineering-tech-lead` `platform-devex` `ai-prompt-engineer` | `customer-success` `designer-ux` `sales` `technical-writer` `developer-advocate` | `finance-cfo` |
-| **Later** | `cto` | `marketing` | `ceo-founder` `product-manager` `cto` `finance-cfo` |
+```bash
+python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
+    --role qa-sdet --role executive:margin
+```
 
-**Generative**
+The script prints the profiles to read, or rejects the panel and lists every violation. If it rejects the panel, correct the roles and run it again. Do not read a profile before the panel is accepted.
 
-| | Internal | External | Strategic |
-|---|---|---|---|
-| **Now** | `toolsmith` | `launch-editor` | — |
-| **Soon** | `platform-capability-scout` | `growth-experimentation-lead` | `revenue-operations-analyst` |
-| **Later** | `data-platform-scout` | `innovation-lead` | `innovation-lead` |
+Never add or swap a role the user named explicitly. If a user-named role cannot be seated, report the rejection instead. Correcting a panel means changing roles you chose yourself.
 
-### Using the generative posture
+### What the script enforces
 
-Generative roles are opt-in. Include one only when the question asks about direction, leverage, or what to build next. Examples: "what does this unlock?", "are we missing anything?". Include one when the user asks for it by flag.
+- The panel is 2 to 4 roles.
+- No two roles match on **all four** axes. Two roles that share a square but read different surfaces are complementary, as `trial-user` and `power-user` do.
+- At least one practitioner sits on every panel. An all-executive panel cannot cite the diff.
+- Generative roles need `--intent direction`. The one exception is `launch-editor`, whose findings expire at release rather than becoming a backlog.
+- At most two generative roles, and never more generative than defensive.
+- `platform-capability-scout` and `toolsmith` never run together. The audience of the Scout is code. The audience of the Toolsmith is a person.
 
-Do not add a generative role to a readiness review. Feature ideas dilute the blocking findings of a "is this ready to ship?" review. The Launch Editor is the one exception. Its findings expire at release and never become a backlog, so "what do we tell people?" belongs in a ship review. A generative role never replaces a defensive one. Run the defensive panel at full strength, then add the generative role beside it.
+### Executives
 
-**Use at most two generative roles on a panel. Never use more generative roles than defensive roles.** Every diff makes something newly possible, so Opportunity findings are unbounded in a way that defects are not. A generative-heavy panel produces a long table that settles nothing.
+Executives are not separated by the axes, because every executive reads the whole change. They differ in what they answer for. So `executive` is one role, seated by accountability:
 
-Match the vantage of the generative role to the question:
+```bash
+--role executive:margin      # the CFO seat
+--role executive:compliance  # the General Counsel seat
+```
 
-- **Growth Lead** — a user-facing surface
-- **Platform Capability Scout** — internal tooling or an abstraction
-- **Data Platform Scout** — a change to what the system stores or emits
-- **Launch Editor** — an imminent release
-- **Toolsmith** — operational or deploy-time work
-- **Revenue Operations Analyst** — usage, limits, or entitlements
-- **Innovation Lead** — product direction
+**An executive is seated only when the diff contains the surface their accountability reads.** The count then falls out of the diff rather than a fixed cap. A rename touches `pitch` and seats one executive. A change to billing, the public API, and module boundaries touches three surfaces and seats three.
 
-Two pairs sit close together. Growth and RevOps both notice usage counters and gating logic. Growth asks what user behavior the team can now test: activation, conversion. RevOps asks what the team can now count, attribute to a payer, and bill: packaging, metering, limits.
+`identity` is the exception: it reads no surface, so it can never be justified by the diff. It needs `--intent direction`, and only one surfaceless accountability may sit on a panel.
 
-The Platform Capability Scout and the Toolsmith never run on the same panel. The audience of the Scout is code: which call sites can adopt what the diff introduced. The audience of the Toolsmith is a person: which hand-run procedure just got its last missing input.
+To add a COO or a CRO, create `role-profiles/executive-<accountability>.md` with frontmatter. No code changes.
 
 ---
 
 ## Flags
 
-- `--role=<name>` — run a single role. Resolve `<name>` to the closest role in the grid above. For example, `qa` resolves to `qa-sdet`, and `revops` resolves to `revenue-operations-analyst`. Load only that profile.
-- `--format=<format>` — `report` (default, markdown table) or `annotations` (JSON array for CI pipelines).
+- `--role=<name>` — run a single role. Pass `<name>` to `panel.py` with `--single`, which resolves aliases from the profiles. For example, `qa` resolves to `qa-sdet`, `revops` to `revenue-operations-analyst`, and `cfo` to `executive:margin`. Never add a second role to satisfy the panel floor. If the named role cannot be seated, report the rejection to the user rather than substituting another role.
+- `--format=<format>` — `report` (default, markdown table) or `jsonl` (one finding per line, for CI pipelines).
 - `--brief` — regenerate the product brief unconditionally, then continue with the review. See [`brief.md`](brief.md).
 
 ---
@@ -80,21 +87,10 @@ The Platform Capability Scout and the Toolsmith never run on the same panel. The
 
 1. **Load the product brief.** Read `.product-review/brief.md` in the reviewed repository. If the file does not exist, ask the user before you generate one. Then follow [`brief.md`](brief.md). If the recorded commit SHA is stale relative to `HEAD`, say so in the run. A run without a brief still works. The roles cannot fire the suppression rules that need product context, so the panel over-reports.
 2. **Get the diff.** Run `git diff <base>...HEAD`. Review only the code that is visible in the diff. If no diff is available, ask the user for the code to review.
-3. **Select the roles** per the panel selection criteria. For `--role`, load only that one profile.
+3. **Select the roles.** Run `panel.py` per [Panel selection](#panel-selection). For `--role=<name>`, add `--single`. Read a profile only after the script accepts the panel.
 4. **Run each role independently.** Read the profile of the role. Examine the diff through that lens alone. The findings of one role do not influence another.
 5. **Check the evidence.** Each finding needs at least two evidence types. If in doubt, suppress the finding.
-6. **Report the findings table.**
-7. **Log the run.** Pipe a JSON object to `log.sh`. Use the base directory shown at the top of this skill as `<base-dir>`.
-
-   ```bash
-   echo '{
-     "question": "...",
-     "roles": [{"role": "...", "reason": "..."}],
-     "findings": [{"criticality": "...", "role": "...", "observation": "...", "reasoning": "..."}]
-   }' | bash "<base-dir>/log.sh"
-   ```
-
-   The script appends a timestamped entry to `logs/YYYY-MM-DD.json`, with computed criticality counts.
+6. **Run `emit.py`.** Pipe the findings to it as JSONL. Report its stdout. See [Output format](#output-format).
 
 ## Evidence requirement
 
@@ -123,9 +119,15 @@ Report only `high`-confidence findings. Suppress `medium` and `low`, and never r
 
 ## Output format
 
-### `--format=report` (default)
+Pipe the findings to `emit.py` as JSONL, one finding per line. Use the base directory shown at the top of this skill as `<base-dir>`. Report the stdout of the script as the whole reply.
 
-Report a single markdown table, titled with the panel name. The columns are **Criticality**, **Role**, **Observation**, **Reasoning**. Use one row per finding. Sort the rows Blocking → Suggested → Opportunity. Write each cell as one concise sentence. The posture of the role sets the criticality:
+```bash
+python3 "<base-dir>/emit.py" --question "..." --role security=reason --role executive:margin=reason <<'EOF'
+{"criticality":"Blocking","role":"security","posture":"defensive","observation":"...","reasoning":"..."}
+EOF
+```
+
+The criticality of a finding follows from the posture of the role:
 
 | Value | Meaning |
 |---|---|
@@ -133,32 +135,16 @@ Report a single markdown table, titled with the panel name. The columns are **Cr
 | `Suggested` | The change can ship. The problem is still worth a fix. Defensive roles only. |
 | `Opportunity` | Nothing is wrong. This names leverage that the change created. Generative roles only, and never a reason to hold a ship. |
 
-| Criticality | Role | Observation | Reasoning |
-|---|---|---|---|
-| Blocking | Security | `createUser` at line 34 passes raw `req.body.email` directly into the SQL query string | No parameterization means that a malicious value can alter the query structure |
-| Suggested | Tech Lead | `OrderService` now imports directly from `db/connection.ts` and bypasses the repository layer | This couples the service layer to persistence and will block a future database migration |
-| Opportunity | Innovation Lead | `refundedAt` is written on every order at line 61 but never read | Refund history and a self-serve refund status page are now a query away, not a migration away |
+The script rejects the run and lists every violation when a rule fails:
 
-If the panel raises no findings, report this row: `| — | — | No concerns raised. | — |`
+- `criticality` is `Blocking`, `Suggested`, or `Opportunity`
+- the posture matches the criticality, per the table above
+- every `role` is a seatable name and sits on the panel that `panel.py` accepted
+- the panel is 1 to 4 roles, since `emit.py` cannot see `--single` and lets `panel.py` hold the floor of 2
+- `observation` and `reasoning` are each one sentence, on one line, without a `|`
+
+If the run is rejected, correct the findings and run the script again.
+
+The script sorts the rows, adds the no-findings row, and appends the run to `logs/YYYY-MM-DD.jsonl`. Add `--format jsonl` for a CI pipeline. A CI pipeline must treat `Opportunity` as informational. It must never fail a build.
 
 Do not add prose, role sections, summaries, or recommendations. The table is the entire output. The user will ask follow-up questions for detail on any row.
-
-### `--format=annotations`
-
-Report a single JSON array. Each finding has this shape:
-
-```json
-{
-  "skill": "product_review",
-  "role": "qa",
-  "file": "src/orders.ts",
-  "line": 42,
-  "claim": "...",
-  "evidence": ["...", "..."],
-  "confidence": "high",
-  "severity": "blocking",
-  "suggested_fix": "..."
-}
-```
-
-`severity` is `blocking`, `suggested`, or `opportunity`. A CI pipeline must treat `opportunity` as informational. It must never fail a build.

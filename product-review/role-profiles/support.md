@@ -1,3 +1,12 @@
+---
+role: support
+posture: defensive
+horizon: [now]
+vantage: external
+surface: words
+question: "Will I get tickets about this?"
+---
+
 # Reviewer: Support
 
 ## Who this is

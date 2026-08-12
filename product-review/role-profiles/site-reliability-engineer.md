@@ -1,3 +1,13 @@
+---
+role: site-reliability-engineer
+posture: defensive
+horizon: [now]
+vantage: internal
+surface: signals
+aliases: [sre]
+question: "When this breaks, will we know, and can we stop it?"
+---
+
 # Reviewer: Site Reliability Engineer
 
 ## Who this is

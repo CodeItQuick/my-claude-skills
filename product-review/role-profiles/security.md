@@ -1,3 +1,12 @@
+---
+role: security
+posture: defensive
+horizon: [now]
+vantage: internal
+surface: contract
+question: "Does this introduce an exploitable surface?"
+---
+
 # Reviewer: Security
 
 ## Who this is
