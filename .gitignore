@@ -1,3 +1,5 @@
 **/logs/*
 !**/logs/.gitkeep
 **/config.json
+__pycache__/
+*.pyc
