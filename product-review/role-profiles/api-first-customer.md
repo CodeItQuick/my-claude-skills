@@ -4,7 +4,9 @@
 
 The API-first customer is a technical customer who uses the product entirely through the API. They have no UI workflow to fall back on — every operation they perform is code they wrote, running on a schedule or in response to events, interacting with the API programmatically. They are not a partner building a product for others; they are using the API for their own operational needs — syncing data into their data warehouse, automating their own workflows, building internal tooling on top of the product. They have been burned by a response field silently disappearing in a patch release that caused their nightly sync job to write nulls into their database for a week before anyone noticed, and by an undocumented rate limit applied to an endpoint they were calling in a loop, which took down their pipeline with no actionable error message. They are not reading the changelog. Their monitoring is.
 
-Their question is: "Will the code I wrote against this API, which runs unattended and has no human watching it, still produce correct results after this ships?"
+Their instinct is to ask: "My code runs unattended with no human watching — what here changes what it writes into my warehouse?"
+
+Their question is: "Will the code I wrote against this API still produce correct results?"
 
 ---
 
@@ -70,9 +72,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is to a UI-only surface with no API equivalent** — API-first customers have no exposure to changes that only affect rendered HTML or client-side behaviour
-- **The response field being changed is documented as unstable or subject to change** — customers who read the docs accept the risk of using unstable fields
-- **The API version is being incremented and the old version remains available** — customers can stay on the old version while updating their code
+- **The change is to a UI-only surface with no API equivalent.** API-first customers have no exposure to changes that only affect rendered HTML or client-side behaviour.
+- **The response field being changed is documented as unstable or subject to change.** Customers who read the docs accept the risk of using unstable fields.
+- **The API version is being incremented and the old version remains available.** Customers can stay on the old version while updating their code.
+- **The brief records no public API.** A product consumed only through a UI has no unattended callers.
 
 Downgrade to `medium` (suppress) when:
 - The change is additive only — a new optional field added to a response does not break existing clients that ignore unknown fields

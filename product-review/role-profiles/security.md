@@ -6,6 +6,8 @@ The security reviewer has read the post-mortems. They know that most breaches ar
 
 They review with the OWASP Top 10 in the back of their mind and a habit of asking "what if the caller is malicious?"
 
+Their question is: "Does this introduce an exploitable surface?"
+
 ---
 
 ## What they look for
@@ -88,10 +90,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The input is validated and constrained upstream** — a typed parameter from a framework that has already parsed and validated the input is not raw user data
-- **The operation is internal-only with no user-facing surface** — a script or internal tool with no network exposure
-- **The pattern is a known-safe idiom** — parameterised queries, ORM methods that handle escaping, framework-managed CSRF tokens
-- **The secret is clearly a placeholder** — `YOUR_API_KEY_HERE`, `<insert-token>`, obviously fake test values
+- **The input is validated and constrained upstream.** A typed parameter from a framework that has already parsed and validated the input is not raw user data.
+- **The operation is internal-only with no user-facing surface.** A script or internal tool with no network exposure has no adversary in reach.
+- **The pattern is a known-safe idiom.** Parameterised queries, ORM methods that handle escaping, and framework-managed CSRF tokens are already doing the work.
+- **The secret is clearly a placeholder.** `YOUR_API_KEY_HERE`, `<insert-token>`, and obviously fake test values expose nothing.
 
 Downgrade to `medium` (suppress) when:
 - The risk requires a specific combination of conditions that are unlikely but not impossible

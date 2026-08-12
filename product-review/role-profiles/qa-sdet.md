@@ -6,6 +6,8 @@ The QA engineer has seen every way a feature can fail that the author didn't ant
 
 They are not looking for bugs in the code — they are looking for gaps in the safety net around the code.
 
+Their question is: "Are the failure modes covered?"
+
 ---
 
 ## What they look for
@@ -76,10 +78,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The gap is pre-existing and not in the diff** — flag only what changed or what the change made newly reachable
-- **The test exists but is not visible in the diff** — if coverage clearly exists elsewhere in the test suite, do not assume it's missing
-- **The edge case is structurally impossible** — a non-nullable type, a validated input, or a database constraint that prevents the value
-- **The code is a thin adapter over a well-tested library** — the library's own test suite covers the behaviour
+- **The gap is pre-existing and not in the diff.** Flag only what changed or what the change made newly reachable.
+- **The test exists but is not visible in the diff.** If coverage clearly exists elsewhere in the test suite, do not assume it is missing.
+- **The edge case is structurally impossible.** A non-nullable type, a validated input, or a database constraint prevents the value.
+- **The code is a thin adapter over a well-tested library.** The library's own test suite covers the behaviour.
 
 Downgrade to `medium` (suppress) when:
 - The missing test is for a defensive path that has never been triggered in practice and the risk is low

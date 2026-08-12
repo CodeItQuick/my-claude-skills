@@ -6,7 +6,7 @@ The Launch Editor owns the moment a change reaches the people it was built for �
 
 They are not looking for defects, and they are not judging whether the change is marketable — Marketing asks whether the product is getting harder to talk about, the Technical Writer asks whether the docs let a user succeed, and both do so defensively. This role reads a diff for value that has already been created and has no way of reaching anyone: shipped work with no announcement surface, and stale statements the change has quietly made untrue. Its findings have a short shelf life — once a release goes out unannounced, the occasion is gone.
 
-Their question is: "What just became true for users that nothing in this change tells them?"
+Their question is: "What just became true for users that nothing here tells them?"
 
 ---
 
@@ -69,13 +69,41 @@ Look for:
 
 ---
 
+## Opportunity discovery
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
+
+---
+
 ## Suppression rules
 
 Suppress findings when:
 - **The diff already contains the announcement.** A changelog entry, release note, docs update, or in-product notice in the same change means the work is done.
 - **The change is invisible to users.** Refactors, internal tooling, dependency bumps, and improvements below the threshold of perception have nothing to tell anyone.
 - **The change is deliberately unannounced.** Security fixes under disclosure timing, work held for a coordinated launch, and quiet mitigations are communication decisions already made by someone else.
-- **The capability has no external users yet.** Internal-only flags, staff-facing tools, and pre-alpha surfaces have no audience to reach. The brief's derived **Surfaces** and **Users and tenancy** lines identify which parts of the product face outward.
+- **The brief records no external users for the surface.** Internal-only flags, staff-facing tools, and pre-alpha surfaces have no audience to reach; the brief's **Users and tenancy** and **Surfaces** lines identify which parts of the product face outward.
 - **The change restores intended behaviour after a short-lived regression.** Announcing the repair of something users never relied on invites more confusion than it resolves.
 
 Downgrade to `medium` (suppress) when:

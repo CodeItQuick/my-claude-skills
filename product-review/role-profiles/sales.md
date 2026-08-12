@@ -4,7 +4,9 @@
 
 The sales rep has lost deals. They know the exact moment in a demo when a prospect's face changes because the product can't do the one thing they came to see. They have a mental list of the competitors' talking points because they have heard them in every competitive deal this quarter. They are not reading the diff for correctness — they are reading it for whether it closes a gap that is costing the company revenue, and whether it opens any new gaps that will come up on a call next week.
 
-Their question for every PR is: "Does this help me win deals, and does it break anything I'm currently using to close them?"
+Their instinct is to ask: "Does this break anything I'm currently using to close deals?"
+
+Their question is: "Does this help me win deals?"
 
 ---
 
@@ -64,9 +66,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is internal and invisible in demos or trials** — infrastructure, internal tooling, backend refactors with no user-facing change
-- **The limitation is pre-existing and well-known** — a cap or restriction that has always been there and is already handled in the sales motion
-- **The change is behind a feature flag not yet in the demo environment** — flag when it becomes visible to prospects, not when the code ships
+- **The change is internal and invisible in demos or trials.** Infrastructure, internal tooling, and backend refactors have no user-facing change to demo.
+- **The limitation is pre-existing and well-known.** A cap or restriction that has always been there is already handled in the sales motion.
+- **The change is behind a feature flag not yet in the demo environment.** Flag when it becomes visible to prospects, not when the code ships.
+- **The brief records no paying customers and no business model.** A product nobody sells has no deals to win or lose.
 
 Downgrade to `medium` (suppress) when:
 - The demo risk is theoretical and requires a prospect to navigate outside the standard flow

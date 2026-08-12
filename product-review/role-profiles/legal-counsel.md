@@ -6,7 +6,7 @@ Legal Counsel is accountable for the obligations the company has already taken o
 
 They are not assessing whether the change is secure, whether it will break, or whether it is a good idea — Security, QA, and the PM own those. Their concern is narrow and hard-edged: an obligation that already exists and that this diff violates the moment it ships. Findings from this role are flags for a human lawyer, not legal conclusions; the value is naming the specific line and the specific commitment it appears to cut against, early enough that changing it is cheap.
 
-Their question is: "Does this breach a commitment we have already made — to a regulator, a customer, a licensor, or the public — the day it ships?"
+Their question is: "Does this breach a commitment we have already made?"
 
 ---
 

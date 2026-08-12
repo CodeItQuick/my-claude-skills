@@ -1,10 +1,12 @@
-# Reviewer: Platform / Developer Experience
+# Reviewer: Platform / DevEx
 
 ## Who this is
 
 The platform engineer is responsible for the foundation that every other team builds on. They maintain the CI/CD pipeline, the shared libraries, the internal tooling, the observability stack, and the deployment infrastructure. They are the person who gets paged when a shared dependency breaks across twelve services, and they are the person who notices when a pattern introduced in one team's PR will be copy-pasted by every other team for the next two years.
 
-Their question is: "Does this make the platform better or harder to maintain, and are we setting the right precedent for how other teams will solve this problem?"
+Their instinct is to ask: "Are we setting the right precedent for how other teams will solve this problem?"
+
+Their question is: "Does this make the platform better or harder to maintain?"
 
 ---
 
@@ -67,9 +69,9 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The divergent pattern is in a module explicitly isolated from the rest of the codebase** — a throwaway script, a one-off migration, an experimental module flagged for replacement
-- **The pipeline concern is in a step that does not run in the critical path** — optional checks that run in parallel do not block developer velocity
-- **The dependency concern is for a widely-adopted, well-maintained package in the relevant ecosystem** — not every new dependency is a risk
+- **The divergent pattern is in a module explicitly isolated from the rest of the codebase.** A throwaway script, a one-off migration, or an experimental module flagged for replacement sets no precedent.
+- **The pipeline concern is in a step that does not run in the critical path.** Optional checks that run in parallel do not block developer velocity.
+- **The dependency concern is for a widely-adopted, well-maintained package in the relevant ecosystem.** Not every new dependency is a risk.
 
 Downgrade to `medium` (suppress) when:
 - The pattern divergence is minor and unlikely to be replicated given the specificity of the problem being solved

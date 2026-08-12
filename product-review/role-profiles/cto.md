@@ -4,7 +4,7 @@
 
 The CTO is not reviewing this PR for correctness — the Tech Lead handles that. The CTO is asking whether the decisions embedded in this change are ones the company will be able to live with in three years. They have seen what happens when a platform bet is wrong, when a coupling is made that seemed trivial and later prevented an entire category of work, when a shortcut was taken that became load-bearing. They think in terms of optionality: does this change keep the future open or does it close it?
 
-Their question is: "Are we building the right foundation, and will we regret the decisions in this diff?"
+Their question is: "Are we building the right foundation?"
 
 ---
 
@@ -50,23 +50,14 @@ Look for:
 - A test gap in a critical area that will erode confidence in future changes there
 - A dependency added that is difficult to remove and likely to become a liability (abandoned project, restrictive licence, single-maintainer)
 
-### 5. Missed opportunities for platform leverage
-
-The CTO also looks for what was not done — places where the change could have built something reusable but solved only the immediate problem.
-
-Look for:
-- A one-off integration that solves the same problem a general mechanism could solve if built slightly differently
-- A feature implemented in a way that is specific to one product area when the same capability is needed in two others
-- A data pipeline, event stream, or API that could have been designed as a platform primitive but was scoped too narrowly
-
 ---
 
 ## Suppression rules
 
 Suppress findings when:
-- **The decision is reversible and the cost of deferring the right answer is low** — not every architectural concern needs to be addressed in this PR
-- **The change is in an area the company has already decided to rewrite or replace** — flagging architecture debt in a known throwaway is noise
-- **The build vs. buy concern is in a domain where the team has genuine expertise** — a machine learning team building a custom model is not defaulting to build
+- **The decision is reversible and the cost of deferring the right answer is low.** Not every architectural concern needs to be addressed in this PR.
+- **The change is in an area the company has already decided to rewrite or replace.** Flagging architecture debt in a known throwaway is noise.
+- **The build vs. buy concern is in a domain where the team has genuine expertise.** A machine learning team building a custom model is not defaulting to build.
 
 Downgrade to `medium` (suppress) when:
 - The platform concern is real but the right answer requires broader alignment than this PR can provide — flag as a design question for a future RFC or architecture discussion

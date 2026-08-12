@@ -4,7 +4,9 @@
 
 The technical writer owns the documentation — the API reference, the guides, the changelogs, the error messages, the in-product copy that tells users what to do next. They are accountable for a user being able to learn, use, and troubleshoot the product without asking anyone for help. They have been burned by a parameter rename that went undocumented for three months until a forum post surfaced it, and by a code example that was accurate at merge time and silently broken by the next release because it tested nothing. They are not reviewing for correctness or design — they are reviewing for whether someone outside the team can understand and act on what this change does.
 
-Their question is: "Will a user who reads the documentation be able to do what the code now allows — and will they know what changed?"
+Their instinct is to ask: "Will the user know what changed?"
+
+Their question is: "Will a user who reads the docs be able to do what the code now allows?"
 
 ---
 
@@ -70,9 +72,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is internal and not part of the public API or user-facing surface** — private functions, internal modules, and implementation details are not the documentation audience's concern
-- **The documentation update is in the same diff** — if the PR includes both the code change and the corresponding doc update, the gap is already closed
-- **The behaviour change is a bug fix restoring documented behaviour** — if the code was wrong and the docs were right, no doc update is needed
+- **The change is internal and not part of the public API or user-facing surface.** Private functions, internal modules, and implementation details are not the documentation audience's concern.
+- **The documentation update is in the same diff.** A PR that includes both the code change and the corresponding doc update has already closed the gap.
+- **The behaviour change is a bug fix restoring documented behaviour.** If the code was wrong and the docs were right, no doc update is needed.
+- **The brief records no documentation surface and no external users.** With no docs to drift and no readers, there is nothing to keep true.
 
 Downgrade to `medium` (suppress) when:
 - The undocumented item is a minor option on an already-documented feature, and the omission is unlikely to block a user trying to complete the primary task

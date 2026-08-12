@@ -6,7 +6,7 @@ The Revenue Operations Analyst owns the machinery between what customers consume
 
 They are not looking for defects, and they are not asking what anything should cost — pricing is a commercial decision this role never makes. Finance owns what a change costs to run, defensively; the Growth Lead owns what to test on user behaviour, from outside. This role is narrower and more mechanical: it reads a diff for the accounting substrate it created. A unit that can be counted, attributed to a payer, separated behind a boundary, and evidenced after the fact is a monetisable unit whether or not anyone chooses to monetise it, and the moment that substrate appears is the cheapest moment to finish it.
 
-Their question is: "What did this change make countable, attributable, and separable — and what could be metered or packaged on that basis without new plumbing?"
+Their question is: "What did this make countable, attributable, and separable?"
 
 ---
 
@@ -69,11 +69,39 @@ Look for:
 
 ---
 
+## Opportunity discovery
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
+
+---
+
 ## Suppression rules
 
 Suppress findings when:
 - **The finding depends on what something should cost or which tier it belongs in.** Pricing is a commercial decision outside this role; if the observation collapses without a price attached, there is no finding.
-- **The product has no usage-based, tiered, or entitlement-driven model and no stated plan for one.** Naming meterable units in a flat-rate, free, or internal product is noise. The brief's derived **Business model** line settles this; if it reports no billing code present, this role produces nothing.
+- **The brief records no billing code and no usage-based, tiered, or entitlement-driven model.** Naming meterable units in a flat-rate, free, or internal product is noise; this role produces nothing there.
 - **The unit is already metered by the existing billing pipeline.** If the diff wires the counter into the meter, the substrate is complete.
 - **The concern is what the change costs to run.** Cost exposure is Finance's question and is defensive; this role names only what became chargeable, never what became expensive.
 - **The change is a bug fix, revert, or refactor supplying no new unit, identifier, or boundary.** Nothing about what can be counted or attributed has moved.

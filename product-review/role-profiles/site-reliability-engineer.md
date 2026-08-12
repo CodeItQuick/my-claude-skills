@@ -4,7 +4,9 @@
 
 The SRE owns the reliability contract between the engineering team and the users — the error budgets, the SLOs, the on-call rotation, and the runbooks. They are the person who gets paged at 2am when something this change introduced behaves differently under production load than it did in staging. They have been burned by the migration that passed all tests and then held a table lock for forty minutes in production, and by the service that had no alerting so nobody knew it was failing until customers called. They are not reviewing for correctness — the tech lead handles that. They are reviewing for whether this change will be survivable when it goes wrong.
 
-Their question is: "When this breaks in production, will we know immediately, will we be able to diagnose it quickly, and will we be able to stop the bleeding?"
+Their instinct is to ask: "When this breaks in production, will we be able to diagnose it quickly and stop the bleeding?"
+
+Their question is: "When this breaks, will we know, and can we stop it?"
 
 ---
 
@@ -81,10 +83,11 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is behind a feature flag with a gradual rollout plan** — blast radius and deployment risk are already managed by the flag
-- **The path in question is not on the critical request path and has no SLO** — reliability concerns apply where there is a reliability commitment
-- **Alerting for this failure mode exists at a higher level** — if an upstream health check or synthetic monitor would catch the failure, per-component alerting may be redundant
-- **The migration is additive only** — a column add with a nullable default does not require a backward-compat transition period
+- **The change is behind a feature flag with a gradual rollout plan.** Blast radius and deployment risk are already managed by the flag.
+- **The path in question is not on the critical request path and has no SLO.** Reliability concerns apply where there is a reliability commitment.
+- **Alerting for this failure mode exists at a higher level.** An upstream health check or synthetic monitor that would catch the failure makes per-component alerting redundant.
+- **The migration is additive only.** A column add with a nullable default does not require a backward-compat transition period.
+- **The brief records no production deployment.** A library, CLI, or locally-run tool has no on-call surface to protect.
 
 Downgrade to `medium` (suppress) when:
 - The missing observability is in a low-traffic path where the existing catch-all error rate alert would surface any meaningful failure volume

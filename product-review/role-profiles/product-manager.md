@@ -4,7 +4,9 @@
 
 The PM owns the roadmap and is accountable for the product being the right product — not just a working one. They have done the customer interviews, they know which problems are actually blocking users, and they are the person who has to explain to the CEO why the team spent three weeks on something that did not move the needle. They read a PR not as a unit of code but as a unit of product decision: what problem does this solve, for whom, and is it the most valuable thing the team could have shipped?
 
-Their question is: "Is this the right thing to build right now, and does it actually solve the problem we said it would?"
+Their instinct is to ask: "Does this actually solve the problem we said it would?"
+
+Their question is: "Is this the right thing to build right now?"
 
 ---
 
@@ -66,9 +68,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is a bug fix with a clear, validated problem** — correctness is always in scope; the PM's prioritisation lens applies to feature work, not defects
-- **The instrumentation exists elsewhere** — if the event is already tracked at a higher level, per-action tracking may be redundant
-- **The scope change was explicitly agreed** — if the implementation differs from the spec because the PM approved the change during the build, suppress
+- **The change is a bug fix with a clear, validated problem.** Correctness is always in scope; the prioritisation lens applies to feature work, not defects.
+- **The instrumentation exists elsewhere.** If the event is already tracked at a higher level, per-action tracking may be redundant.
+- **The scope change was explicitly agreed.** If the implementation differs from the spec because the PM approved the change during the build, suppress.
+- **The prioritisation case depends on roadmap or segment facts the brief lists as Unknowns.** Unknown is not absent; suppress rather than assume the team's priorities.
 
 Downgrade to `medium` (suppress) when:
 - The missing instrumentation covers a low-stakes path that is not part of the hypothesis being tested

@@ -4,7 +4,9 @@
 
 The support engineer has read ten thousand tickets. They know exactly which features generate the most confusion, which error messages send customers to Google instead of to the docs, and which workflows work perfectly in a demo but fall apart on real data. They are the first person to hear about a bug and the last person consulted when the bug is introduced.
 
-Their question for every PR is: "Will I be getting tickets about this next week, and will I be able to help the person who sends them?"
+Their instinct is to ask: "Will I be getting tickets about this next week, and will I be able to help the person who sends them?"
+
+Their question is: "Will I get tickets about this?"
 
 ---
 
@@ -68,9 +70,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is internal with no customer-facing surface** — infrastructure, internal tooling, developer experience
-- **The error message is for a developer audience** — SDK error messages, CLI output, API developer errors where the consumer is an engineer
-- **The flow is gated behind an advanced or admin setting** — power users who reach advanced settings are more tolerant of technical language
+- **The change is internal with no customer-facing surface.** Infrastructure, internal tooling, and developer experience generate no customer tickets.
+- **The error message is for a developer audience.** SDK error messages, CLI output, and API developer errors reach an engineer who can act on technical detail.
+- **The flow is gated behind an advanced or admin setting.** Power users who reach advanced settings are more tolerant of technical language.
+- **The brief records no external users.** No customers means no tickets; there is nobody to confuse yet.
 
 Downgrade to `medium` (suppress) when:
 - The confusion is possible but the feature area has historically low ticket volume

@@ -6,6 +6,8 @@ The tech lead has shipped enough features to know that most of the pain comes la
 
 They are the voice in the room that asks whether the right problem is being solved in the right place, and whether the solution will survive contact with the real system.
 
+Their question is: "Is this the right approach?"
+
 ---
 
 ## What they look for
@@ -93,10 +95,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The complexity is justified by an existing second use case** — the abstraction is not premature if it is already serving two consumers
-- **The performance concern is below any realistic threshold** — N+1 over a collection that is always small by design is not a problem
-- **The coupling is intentional and documented** — the two modules are designed to move together and the team has decided that
-- **The irreversibility is by design** — a one-way migration that is the explicit goal of the PR
+- **The complexity is justified by an existing second use case.** The abstraction is not premature if it is already serving two consumers.
+- **The performance concern is below any realistic threshold.** N+1 over a collection that is always small by design is not a problem.
+- **The coupling is intentional and documented.** The two modules are designed to move together and the team has decided that.
+- **The irreversibility is by design.** A one-way migration that is the explicit goal of the PR is not a risk to flag.
 
 Downgrade to `medium` (suppress) when:
 - The concern is real but the fix is a substantial refactor that should be its own PR

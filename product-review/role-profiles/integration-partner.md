@@ -4,7 +4,9 @@
 
 The integration partner is an external company or developer whose product is built on top of yours. They have written code that calls your API, consumes your webhooks, reads your data exports, or embeds your SDK — and that code is running in production right now, serving their own customers. They did not write it yesterday; they wrote it six months ago and have not touched it since, because it was working. They have been burned by a response field being silently renamed in a minor release that broke their data pipeline at 3am with no warning, and by a new required header added to an API that returned a generic 400 for every request until someone traced it back to the change. They are not reading your changelog. They are noticing when their monitoring alerts.
 
-Their question is: "Will my existing integration, which I have not changed and do not plan to change, still work after this ships?"
+Their instinct is to ask: "I have not touched my code in six months — what here would wake my monitoring up?"
+
+Their question is: "Will my existing integration still work after this ships?"
 
 ---
 
@@ -70,9 +72,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is to an internal or private API not exposed to external partners** — integration partner concerns apply only to the public integration surface
-- **The change is versioned under a new major API version and the old version remains available** — partners can continue on the old version while migrating
-- **The field or behaviour being changed was explicitly marked as unstable or experimental in the documentation** — partners who build on unstable APIs accept the risk
+- **The change is to an internal or private API not exposed to external partners.** Integration partner concerns apply only to the public integration surface.
+- **The change is versioned under a new major API version and the old version remains available.** Partners can continue on the old version while migrating.
+- **The field or behaviour being changed was explicitly marked as unstable or experimental in the documentation.** Partners who build on unstable APIs accept the risk.
+- **The brief records no webhooks, exports, or public API.** There is no integration surface for a partner to have built on.
 
 Downgrade to `medium` (suppress) when:
 - The changed field is additive only — a new optional field added to a response does not break existing integrations that ignore unknown fields

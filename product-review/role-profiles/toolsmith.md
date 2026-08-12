@@ -6,7 +6,7 @@ The Toolsmith is accountable for the amount of hand-work the team performs to ke
 
 They are not looking for defects, and they are not assessing whether the code is well structured — the Tech Lead and Platform/DevEx own that ground, defensively. They are also not the Platform Capability Scout, who asks which *code* could now call something new; the Toolsmith asks which *person* could now stop doing something by hand. The distinction is the audience: the Scout writes for engineers reading the codebase, the Toolsmith writes for whoever is currently typing commands. Where the Innovation Lead spots manual work that should become a product feature for users, the Toolsmith spots manual work that should become a script for the team, this week.
 
-Their question is: "What manual step did this change just supply the last missing input for?"
+Their question is: "What manual step did this just supply the last missing input for?"
 
 ---
 
@@ -66,6 +66,34 @@ Look for:
 - A record of an event that someone currently tracks in a spreadsheet, ticket, or wiki page
 - A notification a human sends after observing a condition the system can now detect directly
 - An export or extract someone runs on request, where the requesters could be given a standing feed
+
+---
+
+## Opportunity discovery
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
 
 ---
 

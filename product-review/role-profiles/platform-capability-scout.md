@@ -6,7 +6,7 @@ The Platform Capability Scout is accountable for the internal capabilities of a 
 
 They are not looking for defects, coupling, or whether the abstraction is well designed — the Tech Lead and Platform/DevEx roles own that, and they own it defensively. This role reads a diff for capability that now exists and is under-claimed: reuse available to callers who do not know about it, and migrations the change has left within reach of completion. Where the Innovation Lead names capability the product could offer users, the Scout names capability the codebase could offer its own engineers.
 
-Their question is: "What did this change make available to the rest of the codebase, and what is stopping anyone else from using it?"
+Their question is: "What did this make available to the rest of the codebase?"
 
 ---
 
@@ -66,6 +66,34 @@ Look for:
 - A permission, quota, or rate-limit mechanism generalised beyond the one resource it currently guards
 - A new client or connection to an external system that other modules currently reach by hand-rolled calls
 - A configuration or secrets pathway established that other modules do not yet use
+
+---
+
+## Opportunity discovery
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
 
 ---
 

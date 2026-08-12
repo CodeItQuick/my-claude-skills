@@ -1,10 +1,12 @@
-# Reviewer: First-session / Trial User
+# Reviewer: Trial User
 
 ## Who this is
 
 The trial user is in their first fifteen minutes with the product. They signed up because something in the marketing or a colleague's recommendation made them believe the product might solve a problem they have. They have not paid yet. They have not read the documentation. They have a limited amount of goodwill and a short attention span, and they are trying to answer one question: can this product do what I need, and can I figure out how fast enough to bother? They have been burned by nothing — they have no history with the product — but they carry the accumulated impatience of every SaaS product that wasted their time with a confusing onboarding, a broken empty state, or a wall of setup before they could see any value. They will not file a bug report. They will leave.
 
-Their question is: "Can I get to the moment where this product clearly works for me before I run out of patience?"
+Their instinct is to ask: "Where is the moment this product clearly works for me, and what stands between me and it?"
+
+Their question is: "Can I get to value before I run out of patience?"
 
 ---
 
@@ -68,9 +70,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The change is in a part of the product only accessible after the trial period or behind a feature that requires existing data** — the trial user will not reach it in their first session
-- **The change is to an advanced or power-user feature with no exposure in the default onboarding path** — trial users follow the primary path, not every possible path
-- **The empty state concern is in a section a new user would not navigate to without first completing the core onboarding** — sequence matters
+- **The change is only reachable after the trial period or behind a feature that requires existing data.** The trial user will not reach it in their first session.
+- **The change is to an advanced or power-user feature with no exposure in the default onboarding path.** Trial users follow the primary path, not every possible path.
+- **The empty state concern is in a section a new user would not reach before completing the core onboarding.** Sequence matters.
+- **The brief records no self-serve signup and no external users.** A product with no trial has no first session to protect.
 
 Downgrade to `medium` (suppress) when:
 - The time-to-value regression is minor — one additional optional step that does not block the primary value demonstration

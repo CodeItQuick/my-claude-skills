@@ -4,8 +4,8 @@
 <!-- Scope: the product-review skill itself. Takes precedence over the -->
 <!-- repository-level brief at ../../.product-review/brief.md for changes in this subtree. -->
 
-- **Derived from commit:** `0bd7245` (working tree ahead of HEAD: 7 new role profiles, `brief.md`, and modified `skill.md` uncommitted)
-- **Generated:** 2026-08-08
+- **Derived from commit:** `8c44b56` (working tree ahead of HEAD: `_template.md` and `ai-prompt-engineer.md` modified, uncommitted)
+- **Generated:** 2026-08-11
 
 ## Derived
 
@@ -14,11 +14,13 @@ Facts grounded in this repository. Every line cites at least one path.
 - **What it is:** A Claude Code skill that assembles a panel of role-based reviewers for a diff and emits a single findings table; invoked as `/product-review` with an optional question (`skill.md` frontmatter and Workflow).
 - **Users and tenancy:** One operator — the skill's author — plus the Claude Code harness that executes it. No accounts, auth, or tenancy exist; the 29 "roles" are review lenses defined in `role-profiles/`, not user identities.
 - **Business model:** None. No billing, plan, quota, or entitlement code exists in this skill or the surrounding repository.
-- **Surfaces:** `skill.md` (~3,000 words, loaded on every run); 29 role profiles plus `_template.md` (~29,000 words, loaded selectively); `brief.md` (context-generation instructions); `log.sh`, requiring bash and `python3`; `config.json`, a single `{"logging": true}` toggle read only by `log.sh`; `logs/*.json`.
+- **Surfaces:** `skill.md` (~2,300 words after an August 11 compression, loaded on every run); 29 role profiles plus `_template.md` (~30,000 words, loaded selectively); `brief.md` (context-generation instructions); `log.sh`, requiring bash and `python3`; `config.json`, a single `{"logging": true}` toggle read only by `log.sh`; `logs/*.json`.
 - **Sensitive data:** The skill collects nothing about people, but `logs/*.json` retain verbatim questions, observations, and code excerpts from every reviewed repository, which may be proprietary. The repository `.gitignore` excludes `**/logs/*` and `**/config.json`, so run history stays local and uncommitted.
 - **Delivery:** No CI, no tests, no build, no release process. Edits to `skill.md` or any profile take effect on the next invocation; git is the only versioning mechanism.
 - **Role coverage:** 22 defensive and 7 generative roles across the posture × horizon × vantage matrix (`skill.md` role table). All nine defensive squares are occupied; the generative side fills eight of nine, with Now + Strategic deliberately empty.
-- **Observed usage:** 36 logged runs across six dated files record 40 Blocking and 61 Suggested findings and zero Opportunity findings — every generative role postdates the last logged run. Role names are recorded inconsistently across runs ("QA", "QA / SDET", and "qa-sdet" all appear), so per-role counts cannot currently be aggregated reliably.
+- **Template mechanics:** `_template.md` now mandates a canonical role spelling for tables and logs, a brief-grounded suppression type, a ~1,000-word profile budget, and — for generative roles — an "Opportunity discovery" procedure: diverge to ten candidates, filter to three, and tag each with a Low / Medium / High investment tier. Only `ai-prompt-engineer.md` has been regenerated against this template; the seven generative profiles predate the discovery section.
+- **Known drift:** `_template.md` registration step 2 references a `--role` mapping table that `skill.md` no longer contains — flags now resolve by closest match (`skill.md` Flags).
+- **Observed usage:** 39 logged runs across seven dated files record 45 Blocking, 70 Suggested, and 10 Opportunity findings; the generative posture was first exercised in the August 2026 runs. Role names are recorded inconsistently in older files ("QA", "QA / SDET", and "qa-sdet" all appear), so per-role counts cannot be aggregated across the full history.
 
 ## Inferred
 
@@ -42,7 +44,7 @@ not as "absent". A human can fill these in; do not invent them.
 - Whether this skill is for personal use or intended to be shared or published
 - What kinds of repository it will mostly be pointed at, which determines which roles matter
 - The tolerable noise level: how many findings per run is useful versus overwhelming
-- Whether the 29-role roster is aspirational or expected to be exercised
+- Whether the full 29-role roster is expected to be exercised, or only a working subset
 
 ## Human notes
 

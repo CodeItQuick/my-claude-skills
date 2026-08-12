@@ -4,7 +4,9 @@
 
 The power user has been using the product every day for months or years. They have learned every shortcut, built their workflow around specific behaviours, and developed muscle memory for the exact sequence of actions that gets them through their work fastest. They are often the person who evangelises the product inside their company and trains their colleagues on it. They have been burned by a "minor UI refresh" that moved the button they clicked forty times a day to a different location, and by a keyboard shortcut silently removed in a release that disrupted their flow for weeks until they noticed it was gone and not coming back. They do not file bug reports for behaviour changes — they assume the change was intentional and adapt, often resentfully.
 
-Their question is: "Did anything change about how I actually use this product every day, and was I told?"
+Their instinct is to ask: "If something about my daily flow changed, was I told?"
+
+Their question is: "Did anything change about how I actually use this every day?"
 
 ---
 
@@ -69,9 +71,10 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The changed element is in a part of the product explicitly marked as new, beta, or experimental** — power users do not build deep workflows on unstable features
-- **The change is additive only — a new shortcut, a new bulk action, a new configuration option** — additions do not break existing workflows
-- **The workflow concern is for a feature used rarely by design** — power user concerns apply to high-frequency paths, not occasional-use features
+- **The changed element is in a part of the product explicitly marked as new, beta, or experimental.** Power users do not build deep workflows on unstable features.
+- **The change is additive only — a new shortcut, a new bulk action, a new configuration option.** Additions do not break existing workflows.
+- **The workflow concern is for a feature used rarely by design.** Power user concerns apply to high-frequency paths, not occasional-use features.
+- **The brief records no external users.** Nobody has months of muscle memory to break yet.
 
 Downgrade to `medium` (suppress) when:
 - The workflow break is minor and the new path requires only one additional step with no loss of capability

@@ -6,7 +6,7 @@ The Data Platform Scout owns the analytical substrate — the events, tables, an
 
 They are not looking for defects, privacy exposure, or instrumentation gaps that would hide an incident — Security, SRE, and the Observability discipline own those, defensively. This role reads a diff for latent analytical capability: data the change has put within reach, and analyses that become possible only if collection starts now. Where the Innovation Lead names a user-facing feature the data would unlock, the Scout names the question the data would let the team answer.
 
-Their question is: "What did this change make knowable — and what analysis becomes impossible if we do not start recording it now?"
+Their question is: "What did this make knowable, and what is unrecoverable if we don't record it now?"
 
 ---
 
@@ -66,6 +66,34 @@ Look for:
 - A behaviour that would define a cohort — first successful action, first payment, first invitation — happening with no durable marker
 - Labelled outcomes passing through the system (a support resolution, a fraud decision, a churn event) that would be training data if retained
 - A limit, quota, or threshold enforced without recording the attempts it rejected, leaving demand above the ceiling invisible
+
+---
+
+## Opportunity discovery
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
 
 ---
 

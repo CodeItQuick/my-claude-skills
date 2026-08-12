@@ -17,8 +17,9 @@ Registration — the panel cannot select a role that skill.md does not know abou
    "Panel selection" that says which of the two to pick and when. See the
    Growth Lead / Revenue Operations Analyst paragraph for the pattern.
 
-Keep the profile under roughly 1,000 words. Profiles load on every run that
-selects them, so length is a recurring cost.
+Keep the profile under roughly 1,000 words — 1,300 for a generative profile,
+whose fixed "Opportunity discovery" section costs about 230 of them. Profiles
+load on every run that selects them, so length is a recurring cost.
 
 Posture — decide this first; it determines the rest of the profile:
 
@@ -30,7 +31,8 @@ Posture — decide this first; it determines the rest of the profile:
   for" describes leverage, adjacency, or unserved need. Findings are supported by
   leverage evidence and emit Opportunity only. A generative role must state in
   "Who this is" that it is not looking for defects, and name the defensive roles
-  that own that ground.
+  that own that ground. A generative profile also keeps the "Opportunity
+  discovery" section below; a defensive profile deletes it.
 
 Do not mix postures in one profile. A role that both critiques and proposes will
 produce findings the criticality scale cannot represent — split it into two roles.
@@ -135,6 +137,40 @@ Look for:
 - [Specific observable pattern]
 - [Specific observable pattern]
 - [Specific observable pattern]
+
+---
+
+## Opportunity discovery (generative roles only)
+
+<!--
+Defensive profiles: delete this whole section. Generative profiles: keep it verbatim —
+it is the procedure the role runs at review time, not authoring guidance. The
+categories above say where to look; this section says how to search and what to keep.
+-->
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
 
 ---
 

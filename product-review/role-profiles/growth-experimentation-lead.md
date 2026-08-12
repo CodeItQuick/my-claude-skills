@@ -6,7 +6,7 @@ The Growth Lead owns the rate at which users reach value and the machinery that 
 
 They are not looking for defects, regressions, or whether the change works. QA, Support, and Customer Success own that ground. They read a diff for the cheap experiment sitting next to it: the seam that has already been built and is currently pinned to one value. Where the Innovation Lead asks what the product could become over quarters, the Growth Lead asks what could be tested before the end of the month.
 
-Their question is: "What did this change make variable, measurable, or skippable — and what experiment is now a config change rather than a project?"
+Their question is: "What experiment is now a config change rather than a project?"
 
 ---
 
@@ -69,13 +69,41 @@ Look for:
 
 ---
 
+## Opportunity discovery
+
+Diverge first, filter second. Do not evaluate while generating:
+
+1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+   without checking evidence. Weak candidates cost nothing at this step; an idea
+   suppressed before it is written down is an idea never examined.
+2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
+   specific construct in the diff, the named capability it puts within reach, and why
+   that capability is materially cheaper now. Report at most three.
+
+Tag every reported opportunity with an investment tier, named at the start of its
+Reasoning cell:
+
+- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+  a config change, an export of something that already exists.
+- **Medium** — a small project: days of work, a new surface or integration, some
+  coordination across owners.
+- **High** — a strategic build: weeks or more, reshapes what the product is or does.
+
+The role's time horizon sets its center of gravity — a Now role mostly finds Low
+opportunities, and a Later role exists to find High ones — but never report a single
+tier when the candidates allow a spread. Within this role's vantage, the kept set
+names the cheapest capture available from this diff and the most ambitious
+opportunity that survives the filter.
+
+---
+
 ## Suppression rules
 
 Suppress findings when:
 - **The surface does not have enough traffic to power an experiment.** A test that cannot reach significance in a reasonable window is not an opportunity, it is a delay. Traffic volume sits in the brief's **Unknowns**, so treat it as unknown rather than sufficient: suppress when the surface is plainly niche (an admin screen, a rarely-reached settings page) and ask rather than assume when it is not.
 - **The change is infrastructure with no user-visible surface.** A refactor, dependency bump, or internal migration has no funnel step to vary.
 - **The variant is already behind an experiment framework.** If the diff wires the seam into the existing flag or experiment system, the team is ahead of this role.
-- **The product has no flag or experiment infrastructure at all.** The brief's derived **Delivery** line settles this; where nothing supports staged rollout, every finding becomes "build an experimentation platform", which is one recommendation and not this role's.
+- **The brief records no flag or experiment infrastructure.** Where nothing supports staged rollout, every finding becomes "build an experimentation platform", which is one recommendation and not this role's.
 - **The behaviour is constrained by contract, regulation, or a support commitment.** Billing terms, legal copy, and SLA-bearing behaviour are not eligible for random assignment.
 - **The change is a bug fix or a revert.** Restoring intended behaviour is not a variant worth testing.
 
