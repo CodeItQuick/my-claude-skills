@@ -4,47 +4,45 @@
 <!-- Scope: the product-review skill itself. Takes precedence over the -->
 <!-- repository-level brief at ../../.product-review/brief.md for changes in this subtree. -->
 
-- **Derived from commit:** `ca6e88a` (working tree ahead of HEAD: `roles.py`, `panel.py`, `emit.py`, frontmatter on all profiles, and the executive collapse are uncommitted)
-- **Generated:** 2026-08-12
+- **Derived from commit:** `323a5db`
+- **Generated:** 2026-08-14
 
 ## Derived
 
 Facts grounded in this repository. Every line cites at least one path.
 
-- **What it is:** A Claude Code skill that seats a panel of role-based reviewers against a diff and reports one findings table (`skill.md`).
-- **Users and tenancy:** One operator plus the harness that executes it. No accounts, auth, or tenancy. The 29 seatable names in `role-profiles/` are review lenses, not user identities.
-- **Business model:** None. No billing, plan, quota, or entitlement code exists here or in the surrounding repository.
-- **Surfaces:** `skill.md` (~1,600 words, loaded every run); 29 profiles plus `_template.md` (~33,000 words, loaded selectively); three `python3` modules — `roles.py` (loader and rulebook), `panel.py` (validates a panel before any profile is read), `emit.py` (validates, sorts, renders, logs); `config.json`, a logging toggle; `logs/*.jsonl`.
-- **Sensitive data:** Nothing about people, but `logs/*` retain verbatim questions, observations, and code excerpts from every reviewed repository, which may be proprietary. `.gitignore` excludes `**/logs/*`, `**/config.json`, and `__pycache__/`, so history stays local.
-- **Delivery:** No CI, no tests, no build, no release process (no `.github/`, no test file in the subtree). Edits take effect on the next invocation. Git is the only versioning mechanism.
-- **Maturity signals:** Rules that were prose are now code — `panel.py` rejects a panel on nine conditions, `emit.py` rejects findings on six, and no branch has a test. Role axes moved into per-profile frontmatter, so `skill.md` stores no role data and cannot drift from the profiles.
-- **Role model:** Four axes — posture, horizon, vantage, surface. Surface is the artifact a role reads, one of eight, so that two roles cannot produce the same finding; all 25 practitioner roles differ on at least one axis. Executives are the one open set, seated by accountability (`executive:margin`) rather than axes, and only when the diff contains the surface that accountability reads.
-- **Observed usage:** 39 logged runs record 45 Blocking, 70 Suggested, 10 Opportunity. All predate the three-module design and use the retired `logs/*.json` array format, with inconsistent role names, so per-role counts cannot be aggregated.
+- **What it is:** A Claude Code skill that lists the roles eligible to review a diff, cuts them to a panel, runs each in a subagent, and reports one findings table (`skill.md`).
+- **Users and tenancy:** One operator and the harness. No accounts, auth, or tenancy. The 31 names in `role-profiles/` are lenses, not users.
+- **Business model:** None. No billing, plan, quota, or entitlement code.
+- **Surfaces:** Prompts — `skill.md` (every run), `cutting.md` (panel selection), `role-run.md` (subagent only). 31 profiles plus `_template.md`, 34,700 words, one loaded per subagent. Modules — `roles.py`, `panel.py`, `emit.py`. Plus `config.json` and `logs/*`.
+- **Sensitive data:** No personal data, but `logs/*` retain verbatim questions and code excerpts from reviewed repositories. `.gitignore` excludes them.
+- **Delivery:** No CI, no build. `test_panel.py` holds two tests, run by hand. Edits apply on the next invocation.
+- **Maturity signals:** `panel.py` filters on surface and posture only. `emit.py` checks six finding rules and two panel rules. Every other panel rule is prose in `cutting.md`. `roles.resolve` and `Role.square` have no caller.
+- **Role model:** Four frontmatter axes — posture, horizon, vantage, surface. 25 practitioners, 7 generative. 6 executives, seated by accountability and eligible only when the diff carries their surface. `panel.py` returns each `question` for cutting.
+- **Observed usage:** 39 legacy runs in `logs/*.json` use inconsistent role names and cannot be aggregated. `logs/2026-08-14.jsonl` holds the first current-format runs.
 
 ## Inferred
 
 Model knowledge, not observation. **Cannot support a finding.** Verify before repeating.
 
-- **Category:** Prompt-defined review tooling — a reviewer built as instructions for a coding agent, with a validation layer that enforces those instructions.
-- **Conventional capabilities in this category:** A regression corpus that runs the prompt against fixed inputs; worked examples; authoring documentation; versioning so a prompt change can be attributed when output quality shifts.
-- **Likely competitive set:** Automated PR-review products that post findings to pull requests, and review capabilities built into coding agents. Claims to confirm — this space moves faster than the model's knowledge of it.
-- **Category direction:** Toward multi-perspective review, toward suppression rules that cut noise rather than maximise findings, and toward moving soft prompt guidance into hard validation.
+- **Category:** Prompt-defined review tooling — a reviewer written as instructions for an agent, validated where a script can check it.
+- **Conventional capabilities:** A regression corpus over fixed inputs, worked examples, authoring docs, prompt versioning.
+- **Likely competitive set:** Automated PR-review products, and review built into coding agents. Claims to confirm.
+- **Category direction:** Multi-perspective review, suppression over volume, prompts split into files that load on demand.
 
-> These claims reflect the model's knowledge at training time and decay quickly.
-> Named-competitor claims are the least reliable and must be phrased as claims to
+> These claims decay quickly. Phrase any named-competitor claim as a claim to
 > confirm, never as established fact.
 
 ## Unknowns
 
-Facts the code cannot reveal. Roles must not assume these — treat each as "unknown",
-not as "absent". A human can fill these in; do not invent them.
+Treat each as unknown, not absent. Do not invent them.
 
-- Whether findings from past runs were acted on, disputed, or ignored — the logs record output, never outcome
-- Whether this skill is for personal use or intended to be shared or published
-- What kinds of repository it will mostly be pointed at, which determines which roles matter
-- The tolerable noise level: how many findings per run is useful versus overwhelming
-- Whether the full 29-name roster is expected to be exercised, or only a working subset
-- Which executive accountabilities matter beyond the four defined; `execution` and `revenue` are described in the design but have no profile
+- Whether past findings were acted on, disputed, or ignored
+- Whether this is for personal use or to be shared
+- What kinds of repository it will be pointed at
+- The tolerable noise level per run
+- Whether the full roster is expected to be exercised
+- Whether the alias layer is meant to survive, now that nothing calls it
 
 ## Human notes
 
