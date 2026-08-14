@@ -5,7 +5,6 @@ posture: defensive
 horizon: [later]
 vantage: strategic
 surface: none
-aliases: [ceo, founder]
 question: "Is this who we are? Is this the right investment?"
 ---
 

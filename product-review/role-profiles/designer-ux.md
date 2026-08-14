@@ -4,7 +4,6 @@ posture: defensive
 horizon: [soon]
 vantage: external
 surface: flow
-aliases: [ux, design]
 question: "Would someone who has never seen this know what to do?"
 ---
 

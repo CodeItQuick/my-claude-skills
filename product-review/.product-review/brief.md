@@ -42,7 +42,6 @@ Treat each as unknown, not absent. Do not invent them.
 - What kinds of repository it will be pointed at
 - The tolerable noise level per run
 - Whether the full roster is expected to be exercised
-- Whether the alias layer is meant to survive, now that nothing calls it
 
 ## Human notes
 

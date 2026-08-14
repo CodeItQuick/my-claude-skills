@@ -5,7 +5,7 @@ This is a snapshot of the frontmatter of the 31 profiles, taken from the
 files themselves. `role-profiles/_template.md` is excluded, because
 `roles.load_roles` skips any filename that starts with an underscore.
 
-The eight keys below are every key the profiles use. The shape is uniform,
+The seven keys below are every key the profiles use. The shape is uniform,
 so a test can read one key across all roles without a guard:
 
   file            the filename, which is not frontmatter but identifies the row
@@ -15,12 +15,11 @@ so a test can read one key across all roles without a guard:
   horizon         a list of now, soon, later
   vantage         internal, external, or strategic
   surface         the one artifact the role reads
-  aliases         [] when the key is absent
   question        the key question of the role
 
 Two values need care. `surface` is the literal string `"none"` for
-`identity`, and `roles.Role` converts that to `""`. `aliases` and `horizon`
-are lists in the frontmatter, and every other value is a string.
+`identity`, and `roles.Role` converts that to `""`. `horizon` is a list in
+the frontmatter, and every other value is a string.
 """
 
 import json
@@ -41,7 +40,6 @@ ROLES = [
         "horizon": ["now", "soon"],
         "vantage": "internal",
         "surface": "words",
-        "aliases": ["prompt-engineer"],
         "question": "Is this prompt a reliable spec — or does it leave "
                     "enough ambiguity that the model will guess "
                     "inconsistently?",
@@ -54,7 +52,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "external",
         "surface": "behavior",
-        "aliases": [],
         "question": "Will the code I wrote against this API still produce "
                     "correct results?",
     },
@@ -66,7 +63,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "external",
         "surface": "behavior",
-        "aliases": ["cs"],
         "question": "Will existing customers still be able to do what they "
                     "came here to do?",
     },
@@ -78,7 +74,6 @@ ROLES = [
         "horizon": ["later"],
         "vantage": "internal",
         "surface": "signals",
-        "aliases": ["data-scout"],
         "question": "What did this make knowable, and what is unrecoverable "
                     "if we don't record it now?",
     },
@@ -90,7 +85,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "external",
         "surface": "flow",
-        "aliases": ["ux", "design"],
         "question": "Would someone who has never seen this know what to do?",
     },
     {
@@ -101,7 +95,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "external",
         "surface": "contract",
-        "aliases": ["devrel", "advocate"],
         "question": "Would an external developer succeed with this, and would "
                     "they recommend it?",
     },
@@ -113,7 +106,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "internal",
         "surface": "structure",
-        "aliases": ["tech-lead", "eng-lead"],
         "question": "Is this the right approach?",
     },
     {
@@ -124,7 +116,6 @@ ROLES = [
         "horizon": ["now", "soon"],
         "vantage": "strategic",
         "surface": "words",
-        "aliases": ["cmo", "brand-officer"],
         "question": "Do these words sound like us, and what do they commit "
                     "us to?",
     },
@@ -136,7 +127,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "strategic",
         "surface": "contract",
-        "aliases": ["legal", "counsel", "gc"],
         "question": "Does this breach a commitment we have already made?",
     },
     {
@@ -147,7 +137,6 @@ ROLES = [
         "horizon": ["later"],
         "vantage": "strategic",
         "surface": "structure",
-        "aliases": ["cto"],
         "question": "Are we building the right foundation?",
     },
     {
@@ -158,7 +147,6 @@ ROLES = [
         "horizon": ["later"],
         "vantage": "strategic",
         "surface": "none",
-        "aliases": ["ceo", "founder"],
         "question": "Is this who we are? Is this the right investment?",
     },
     {
@@ -169,7 +157,6 @@ ROLES = [
         "horizon": ["soon", "later"],
         "vantage": "strategic",
         "surface": "signals",
-        "aliases": ["cfo", "finance"],
         "question": "What does this cost to run, and does it affect revenue "
                     "correctly?",
     },
@@ -181,7 +168,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "strategic",
         "surface": "pitch",
-        "aliases": ["cro", "revenue-officer"],
         "question": "Does this change what we can sell, to whom, and at what "
                     "price?",
     },
@@ -193,7 +179,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "external",
         "surface": "flow",
-        "aliases": ["growth"],
         "question": "What experiment is now a config change rather than a "
                     "project?",
     },
@@ -205,7 +190,6 @@ ROLES = [
         "horizon": ["later"],
         "vantage": "strategic",
         "surface": "structure",
-        "aliases": [],
         "question": "What does this change make cheap that wasn't cheap "
                     "before?",
     },
@@ -217,7 +201,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "external",
         "surface": "contract",
-        "aliases": [],
         "question": "Will my existing integration still work after this "
                     "ships?",
     },
@@ -229,7 +212,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "external",
         "surface": "words",
-        "aliases": [],
         "question": "What just became true for users that nothing here tells "
                     "them?",
     },
@@ -241,7 +223,6 @@ ROLES = [
         "horizon": ["later"],
         "vantage": "external",
         "surface": "pitch",
-        "aliases": [],
         "question": "Does this make the product easier or harder to talk "
                     "about?",
     },
@@ -253,7 +234,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "internal",
         "surface": "structure",
-        "aliases": ["capability-scout"],
         "question": "What did this make available to the rest of the "
                     "codebase?",
     },
@@ -265,7 +245,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "internal",
         "surface": "contract",
-        "aliases": ["devex"],
         "question": "Does this make the platform better or harder to "
                     "maintain?",
     },
@@ -277,7 +256,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "external",
         "surface": "habit",
-        "aliases": [],
         "question": "Did anything change about how I actually use this every "
                     "day?",
     },
@@ -289,7 +267,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "strategic",
         "surface": "behavior",
-        "aliases": ["pm"],
         "question": "Is this the right thing to build right now?",
     },
     {
@@ -300,7 +277,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "internal",
         "surface": "behavior",
-        "aliases": ["qa", "sdet"],
         "question": "Are the failure modes covered?",
     },
     {
@@ -311,7 +287,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "strategic",
         "surface": "signals",
-        "aliases": ["revops"],
         "question": "What did this make countable, attributable, and "
                     "separable?",
     },
@@ -323,7 +298,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "external",
         "surface": "pitch",
-        "aliases": [],
         "question": "Does this help me win deals?",
     },
     {
@@ -334,7 +308,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "internal",
         "surface": "contract",
-        "aliases": [],
         "question": "Does this introduce an exploitable surface?",
     },
     {
@@ -345,7 +318,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "internal",
         "surface": "signals",
-        "aliases": ["sre"],
         "question": "When this breaks, will we know, and can we stop it?",
     },
     {
@@ -356,7 +328,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "external",
         "surface": "words",
-        "aliases": [],
         "question": "Will I get tickets about this?",
     },
     {
@@ -367,7 +338,6 @@ ROLES = [
         "horizon": ["soon"],
         "vantage": "external",
         "surface": "words",
-        "aliases": ["writer", "docs"],
         "question": "Will a user who reads the docs be able to do what the "
                     "code now allows?",
     },
@@ -379,7 +349,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "internal",
         "surface": "flow",
-        "aliases": [],
         "question": "What manual step did this just supply the last missing "
                     "input for?",
     },
@@ -391,7 +360,6 @@ ROLES = [
         "horizon": ["now"],
         "vantage": "external",
         "surface": "flow",
-        "aliases": [],
         "question": "Can I get to value before I run out of patience?",
     },
 ]

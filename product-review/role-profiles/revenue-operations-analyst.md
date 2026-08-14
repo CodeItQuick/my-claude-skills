@@ -4,7 +4,6 @@ posture: generative
 horizon: [soon]
 vantage: strategic
 surface: signals
-aliases: [revops]
 question: "What did this make countable, attributable, and separable?"
 ---
 

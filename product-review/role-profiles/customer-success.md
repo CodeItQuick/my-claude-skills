@@ -4,7 +4,6 @@ posture: defensive
 horizon: [soon]
 vantage: external
 surface: behavior
-aliases: [cs]
 question: "Will existing customers still be able to do what they came here to do?"
 ---
 

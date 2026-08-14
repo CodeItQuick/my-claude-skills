@@ -4,7 +4,6 @@ posture: defensive
 horizon: [now]
 vantage: internal
 surface: behavior
-aliases: [qa, sdet]
 question: "Are the failure modes covered?"
 ---
 

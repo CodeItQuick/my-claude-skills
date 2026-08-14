@@ -4,7 +4,6 @@ posture: generative
 horizon: [later]
 vantage: internal
 surface: signals
-aliases: [data-scout]
 question: "What did this make knowable, and what is unrecoverable if we don't record it now?"
 ---
 

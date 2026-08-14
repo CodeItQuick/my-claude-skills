@@ -5,7 +5,6 @@ posture: defensive
 horizon: [now, soon]
 vantage: strategic
 surface: words
-aliases: [cmo, brand-officer]
 question: "Do these words sound like us, and what do they commit us to?"
 ---
 

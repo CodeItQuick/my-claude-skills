@@ -5,7 +5,6 @@ posture: defensive
 horizon: [now]
 vantage: strategic
 surface: contract
-aliases: [legal, counsel, gc]
 question: "Does this breach a commitment we have already made?"
 ---
 

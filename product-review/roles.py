@@ -68,7 +68,6 @@ class Role:
         self.posture = meta.get("posture", "")
         self.vantage = meta.get("vantage", "")
         self.question = meta.get("question", "")
-        self.aliases = tuple(meta.get("aliases", ()))
         self.horizons = tuple(meta.get("horizon", ()))
         self.surface = "" if meta.get("surface") == "none" else meta.get(
             "surface", "")
@@ -81,7 +80,6 @@ class Role:
             "horizons": tuple(meta.get("horizon", ())),
             "surface": "" if surface == "none" else surface,
             "question": meta.get("question", ""),
-            "aliases": tuple(meta.get("aliases", ())),
         }
         self.profiles[name] = path
 
@@ -160,34 +158,15 @@ def load_roles(profile_dir=PROFILE_DIR):
 
 
 def resolve(name, roles):
-    """Resolve a user-supplied name to a slug. Deterministic, not fuzzy-guessed.
+    """Split a seat name into (slug, accountability). Exact matches only.
 
-    Returns (slug, accountability) or (None, None) when nothing matches.
+    A role has one name, the one in its `role:` frontmatter. There are no
+    aliases and no prefix matching, so `cfo` and `qa` resolve to nothing.
+    Returns (None, None) when the slug is not a loaded role.
     """
-    name = name.strip().lower()
-    base, _, accountability = name.partition(":")
-
+    base, _, accountability = name.strip().lower().partition(":")
     if base in roles:
         return base, accountability or None
-
-    # A bare accountability or its alias, such as "margin" or "cfo".
-    for slug, role in roles.items():
-        for acct, spec in role.accountabilities.items():
-            if base == acct or base in spec["aliases"]:
-                return slug, acct
-
-    for slug, role in roles.items():
-        if base in role.aliases:
-            return slug, accountability or None
-
-    prefix = [s for s in roles if s.startswith(base)]
-    if len(prefix) == 1:
-        return prefix[0], accountability or None
-
-    parts = [s for s in roles if base in s.split("-")]
-    if len(parts) == 1:
-        return parts[0], accountability or None
-
     return None, None
 
 

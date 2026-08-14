@@ -40,7 +40,7 @@ Then cut that list to the panel. Follow [`cutting.md`](cutting.md).
 
 ## Flags
 
-- `--role=<name>` — run a single role. Seat that role alone and skip the cut entirely. Still run `panel.py` for the declared surfaces, and check that the named role appears in the response. If it does not, report that to the user rather than substituting another role. Never add a second role to fill out a panel.
+- `--role=<name>` — run a single role. `<name>` is the exact seat name, as `slug` or `slug:accountability`. There are no aliases and no shorthand. Seat that role alone and skip the cut entirely. Still run `panel.py` for the declared surfaces, and check that the named role appears in the response. If it does not, report that to the user rather than substituting another role. Never add a second role to fill out a panel.
 - `--format=<format>` — `report` (default, markdown table) or `jsonl` (one finding per line, for CI pipelines).
 - `--brief` — regenerate the product brief unconditionally, then continue with the review. See [`brief.md`](brief.md).
 

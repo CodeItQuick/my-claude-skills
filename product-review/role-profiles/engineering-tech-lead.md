@@ -4,7 +4,6 @@ posture: defensive
 horizon: [soon]
 vantage: internal
 surface: structure
-aliases: [tech-lead, eng-lead]
 question: "Is this the right approach?"
 ---
 

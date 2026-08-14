@@ -5,7 +5,6 @@ posture: defensive
 horizon: [soon]
 vantage: strategic
 surface: pitch
-aliases: [cro, revenue-officer]
 question: "Does this change what we can sell, to whom, and at what price?"
 ---
 

@@ -5,7 +5,6 @@ posture: defensive
 horizon: [later]
 vantage: strategic
 surface: structure
-aliases: [cto]
 question: "Are we building the right foundation?"
 ---
 

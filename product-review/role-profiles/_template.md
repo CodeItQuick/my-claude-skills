@@ -4,7 +4,6 @@ posture: defensive
 horizon: [now]
 vantage: internal
 surface: behavior
-aliases: [short-name]
 question: "[copy the 'Their question is' sentence below, verbatim]"
 ---
 
@@ -32,7 +31,6 @@ A profile without a `role:` key does not load, and the panel cannot seat it.
               pitch      positioning, claims, competitive framing
               signals    logs, metrics, alerts, cost meters
               structure  module boundaries, dependencies, layering
-  aliases   Optional short names the command line accepts. Omit the key if none.
   question  The key question, identical to the sentence in "Who this is".
 
 Run `python3 panel.py --intent readiness --surfaces <your surface>` after
