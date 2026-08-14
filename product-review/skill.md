@@ -69,7 +69,89 @@ Executives are not separated by the axes, because every executive reads the whol
 
 **An executive is seated only when the diff contains the surface their accountability reads.** The count then falls out of the diff rather than a fixed cap. A rename touches `pitch` and seats one executive. A change to billing, the public API, and module boundaries touches three surfaces and seats three.
 
+#### How to seat them
+
+Add one executive at a time. Run the script after each one. Keep the seat only when the script accepts it.
+
+**Step 1. Read the accountabilities and the surface each one reads.** Run this once:
+
+```bash
+python3 "<base-dir>/panel.py" --list
+```
+
+Read the `EXECUTIVE` block of the output. The third column is the surface:
+
+```
+EXECUTIVE (seated by accountability)
+  brand       now+soon    words
+  compliance  now         contract
+  foundation  later       structure
+  identity    later       — no diff surface
+  margin      soon+later  signals
+  revenue     soon        pitch
+```
+
+**Step 2. Seat the practitioners first.** Run the script with no executive. Do not continue until the script accepts this panel.
+
+```bash
+python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
+    --role security --role site-reliability-engineer[skill.md](skill.md)
+```
+
+```
+Panel accepted (readiness). Read these profiles:
+  security                    defensive  now   internal  contract  ...
+  site-reliability-engineer   defensive  now   internal  signals   ...
+```
+
+Now repeat steps 3 to 5 once for each surface in `--surfaces`.
+
+**Step 3. Take the next surface.** Find the accountability that reads it in the step 1 output. If no accountability reads that surface, take the next surface. The practitioners cover it.
+
+**Step 4. Add that one seat and run the script again.** Keep every role the script already accepted. The first surface is `contract`, so the seat is `executive:compliance`:
+
+```bash
+python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
+    --role security --role site-reliability-engineer \
+    --role executive:compliance
+```
+
+**Step 5. Read the result.** If the script accepts the panel, keep the seat and return to step 3. If the script rejects the panel, act on the message:
+
+| Message | What to do |
+|---|---|
+| `reads 'X', which --surfaces does not list` | Drop the seat. The diff does not carry that surface. |
+| `--surfaces is required to seat an executive` | Name the surfaces of the diff and run again. |
+| `a panel is 2 to 4 roles, but 5 roles are seated` | Drop the executive furthest from the question of the user. |
+| `no practitioner on the panel` | Keep at least one practitioner. Drop an executive instead. |
+| `needs --intent direction` | This is `identity`. See below. |
+
+**Step 6. Stop** when every surface is handled, or when the panel holds four roles.
+
+The second surface is `signals`, so the last accepted run of the example seats four roles:
+
+```bash
+python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
+    --role security --role site-reliability-engineer \
+    --role executive:compliance --role executive:margin
+```
+
+A fifth seat breaks two rules at once, and the script names both:
+
+```
+Panel rejected. Correct these and run again:
+  - a panel is 2 to 4 roles, but 5 roles are seated
+  - executive:revenue: reads 'pitch', which --surfaces does not list (contract, signals)
+```
+
+#### The identity seat
+
 `identity` is the exception: it reads no surface, so it can never be justified by the diff. It needs `--intent direction`, and only one surfaceless accountability may sit on a panel.
+
+```bash
+python3 "<base-dir>/panel.py" --intent direction --surfaces habit \
+    --role power-user --role executive:identity
+```
 
 To add a COO or a CRO, create `role-profiles/executive-<accountability>.md` with frontmatter. No code changes.
 
