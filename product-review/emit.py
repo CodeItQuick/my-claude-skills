@@ -163,8 +163,10 @@ def main():
             errors.append(f"--role {name}: not a seatable role")
         panel.append({"role": name, "reason": reason.strip()})
 
-    # SINGLE_PANEL, not MIN_PANEL: a --single run legitimately seats one role,
-    # and this script cannot see that flag. panel.py holds the stricter line.
+    # A panel of one is legitimate: the `--role=<name>` flag seats one role,
+    # and a cut on relevance can land there on its own. This is the only
+    # panel rule left in code. The rest need the diff, so they live in
+    # cutting.md.
     if not roles_mod.SINGLE_PANEL <= len(panel) <= roles_mod.MAX_PANEL:
         errors.append(f"a panel is {roles_mod.SINGLE_PANEL} to "
                       f"{roles_mod.MAX_PANEL} roles, but {len(panel)} "

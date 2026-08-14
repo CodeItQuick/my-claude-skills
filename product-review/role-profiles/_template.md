@@ -35,8 +35,8 @@ A profile without a `role:` key does not load, and the panel cannot seat it.
   aliases   Optional short names the command line accepts. Omit the key if none.
   question  The key question, identical to the sentence in "Who this is".
 
-Run `python3 panel.py --list` after adding a profile. A role that does not
-appear in that output did not load.
+Run `python3 panel.py --intent readiness --surfaces <your surface>` after
+adding a profile. A role that does not appear in that output did not load.
 
 An executive accountability is a special case. Add an `accountability:` key,
 name the file executive-<accountability>.md, and set `role: executive`. Use
@@ -51,14 +51,15 @@ per-role aggregation. One spelling, everywhere.
 
 Registration — the frontmatter above is the whole registration. skill.md holds
 no role table, so there is nothing to edit there:
-1. Fill in the frontmatter. Confirm the role appears in `panel.py --list`.
-2. Check that no existing role shares all four axes with the new one. panel.py
-   rejects a panel that seats both, so a collision makes one role unusable
-   alongside the other. Change the surface, or reconsider whether the role is
+1. Fill in the frontmatter. Confirm the role appears in the response of
+   `panel.py --intent readiness --surfaces <your surface>`.
+2. Check that no existing role shares all four axes with the new one. Two such
+   roles see the same thing, and cutting.md drops one of them, so the new role
+   would rarely sit. Change the surface, or reconsider whether the role is
    distinct.
 3. If two roles produce the same findings for a reason the axes cannot express,
-   add the pair to EXCLUSIVE_PAIRS in roles.py. See platform-capability-scout
-   and toolsmith for the pattern.
+   add the pair to the list in cutting.md under "What the script does not
+   check". See platform-capability-scout and toolsmith for the pattern.
 
 Keep the profile under roughly 1,000 words — 1,300 for a generative profile,
 whose fixed "Opportunity discovery" section costs about 230 of them. Profiles

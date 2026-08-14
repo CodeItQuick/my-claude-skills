@@ -47,26 +47,19 @@ VANTAGES = ("internal", "external", "strategic")
 SURFACES = ("contract", "behavior", "flow", "habit",
             "words", "pitch", "signals", "structure")
 
-# --- Panel rules -----------------------------------------------------------
-# Every rule about panel composition lives here, so panel.py and emit.py
-# enforce one rulebook instead of each keeping its own copy.
+# --- Panel bounds ----------------------------------------------------------
+# The only two panel rules a script can check. panel.py reports eligibility
+# and enforces neither, so emit.py is where a bad panel size is caught.
+#
+# Every other rule about panel composition needs the diff, so it lives in
+# cutting.md as an instruction to the caller: the relevance test, the
+# practitioner floor, one seat per accountability, and the pairs that never
+# run together.
 
-MAX_PANEL = 4
-# The floor for an ordinary panel, where coverage is the goal.
-MIN_PANEL = 2
-# The absolute floor. Only a --single run may go this low, and only because
-# the user named the one role. emit.py cannot see that flag, so it validates
-# against this bound and lets panel.py hold the stricter line.
+MAX_PANEL = 5
+# One role is a legitimate panel. The `--role=<name>` flag seats exactly one,
+# and a cut on relevance can land there on its own.
 SINGLE_PANEL = 1
-
-MAX_GENERATIVE = 2
-# Its findings expire at release rather than becoming a backlog, so it is a
-# ship question even in a readiness review.
-READINESS_SAFE_GENERATIVE = ("launch-editor",)
-
-# Roles whose findings duplicate each other for reasons the axes do not
-# capture. Declared, not derived.
-EXCLUSIVE_PAIRS = (("platform-capability-scout", "toolsmith"),)
 
 
 class Role:

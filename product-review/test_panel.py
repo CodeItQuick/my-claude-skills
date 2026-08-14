@@ -1,399 +1,553 @@
 #!/usr/bin/env python3
-"""Tests for panel.py.
+"""Every role in role-profiles/, with its frontmatter, as test data.
 
-Run from this directory:
+This is a snapshot of the frontmatter of the 31 profiles, taken from the
+files themselves. `role-profiles/_template.md` is excluded, because
+`roles.load_roles` skips any filename that starts with an underscore.
 
-    python3 test_panel.py
+The eight keys below are every key the profiles use. The shape is uniform,
+so a test can read one key across all roles without a guard:
 
-The rules under test are about panel composition, so almost every test
-builds its own roles instead of reading role-profiles/. A rule test then
-fails when the rule changes, not when a profile changes. The CLI tests at
-the bottom are the exception. They run the real script over the real
-profiles, so they cover the wiring the unit tests skip.
+  file            the filename, which is not frontmatter but identifies the row
+  role            the slug. Five files share the slug `executive`.
+  accountability  None when the key is absent. Set only on `executive` files.
+  posture         defensive or generative
+  horizon         a list of now, soon, later
+  vantage         internal, external, or strategic
+  surface         the one artifact the role reads
+  aliases         [] when the key is absent
+  question        the key question of the role
+
+Two values need care. `surface` is the literal string `"none"` for
+`identity`, and `roles.Role` converts that to `""`. `aliases` and `horizon`
+are lists in the frontmatter, and every other value is a string.
 """
 
+import json
 import os
 import subprocess
 import sys
 import unittest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-import panel  # noqa: E402
-import roles as roles_mod  # noqa: E402
-
-SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "panel.py")
-
-
-def practitioner(slug, posture="defensive", horizon=("now",),
-                 vantage="internal", surface="behavior"):
-    """A closed-set role, seated by its axes."""
-    role = roles_mod.Role(slug, {
-        "posture": posture,
-        "horizon": list(horizon),
-        "vantage": vantage,
-        "surface": surface,
-    })
-    role.profiles[None] = f"role-profiles/{slug}.md"
-    return role
-
-
-def open_set(slug="executive", posture="defensive", vantage="strategic",
-             **accountabilities):
-    """An open-set role. Each keyword is `name=surface`, or `name=None`.
-
-    `None` means the accountability reads no surface in the diff.
-    """
-    role = roles_mod.Role(slug, {"posture": posture, "vantage": vantage})
-    for name, surface in accountabilities.items():
-        role.add_accountability(
-            name,
-            {"horizon": ["soon"], "surface": surface or "none"},
-            f"role-profiles/{slug}-{name}.md")
-    return role
-
-
-def seat(role, accountability=None):
-    return panel.Seat(role.slug, accountability, role)
-
-
-def two_practitioners():
-    """The smallest legal panel, for tests that only need a floor."""
-    return [seat(practitioner("qa-sdet")),
-            seat(practitioner("support", surface="words"))]
-
-
-class MatchMixin:
-    def assertHasError(self, errors, fragment):
-        joined = "\n".join(errors)
-        self.assertIn(fragment, joined)
-
-    def assertNoError(self, errors, fragment):
-        joined = "\n".join(errors)
-        self.assertNotIn(fragment, joined)
-
-
-class SeatTest(unittest.TestCase):
-    def test_practitioner_name_is_the_slug(self):
-        self.assertEqual(seat(practitioner("qa-sdet")).name, "qa-sdet")
-
-    def test_executive_name_carries_the_accountability(self):
-        role = open_set(margin="signals")
-        self.assertEqual(seat(role, "margin").name, "executive:margin")
-
-    def test_practitioner_spec_comes_from_the_role(self):
-        spec = seat(practitioner("qa-sdet")).spec
-        self.assertEqual(spec, {"horizons": ("now",), "surface": "behavior"})
-
-    def test_executive_spec_comes_from_the_accountability(self):
-        role = open_set(margin="signals", revenue="pitch")
-        self.assertEqual(seat(role, "margin").spec["surface"], "signals")
-        self.assertEqual(seat(role, "revenue").spec["surface"], "pitch")
-
-    def test_only_an_accountability_makes_a_seat_executive(self):
-        self.assertFalse(seat(practitioner("qa-sdet")).is_executive)
-        self.assertTrue(seat(open_set(margin="signals"), "margin")
-                        .is_executive)
-
-    def test_profile_path_follows_the_accountability(self):
-        self.assertEqual(seat(practitioner("qa-sdet")).profile,
-                         "role-profiles/qa-sdet.md")
-        role = open_set(margin="signals")
-        self.assertEqual(seat(role, "margin").profile,
-                         "role-profiles/executive-margin.md")
-
-
-class SeatRolesTest(unittest.TestCase, MatchMixin):
-    def setUp(self):
-        self.known = {
-            "qa-sdet": practitioner("qa-sdet"),
-            "executive": open_set(margin="signals", identity=None),
-        }
-
-    def seat_them(self, *specs):
-        errors = []
-        seats = panel.seat_roles(list(specs), self.known, errors)
-        return seats, errors
-
-    def test_a_known_role_is_seated(self):
-        seats, errors = self.seat_them("qa-sdet", "executive:margin")
-        self.assertEqual([s.name for s in seats],
-                         ["qa-sdet", "executive:margin"])
-        self.assertEqual(errors, [])
-
-    def test_an_unknown_role_is_rejected(self):
-        seats, errors = self.seat_them("nonesuch")
-        self.assertEqual(seats, [])
-        self.assertHasError(errors, "--role nonesuch: no profile matches")
-
-    def test_an_open_set_role_needs_an_accountability(self):
-        seats, errors = self.seat_them("executive")
-        self.assertEqual(seats, [])
-        self.assertHasError(errors, "needs an accountability")
-        self.assertHasError(errors, "identity, margin")
-
-    def test_a_closed_role_takes_no_accountability(self):
-        seats, errors = self.seat_them("qa-sdet:margin")
-        self.assertEqual(seats, [])
-        self.assertHasError(errors, "'qa-sdet' takes no accountability")
-
-    def test_an_undefined_accountability_names_the_file_to_create(self):
-        seats, errors = self.seat_them("executive:growth")
-        self.assertEqual(seats, [])
-        self.assertHasError(errors, "has no accountability 'growth'")
-        self.assertHasError(errors, "role-profiles/executive-growth.md")
-
-    def test_one_bad_role_does_not_drop_the_good_ones(self):
-        seats, errors = self.seat_them("qa-sdet", "nonesuch")
-        self.assertEqual([s.name for s in seats], ["qa-sdet"])
-        self.assertEqual(len(errors), 1)
-
-
-class PanelSizeTest(unittest.TestCase, MatchMixin):
-    def test_the_floor_is_two_roles(self):
-        errors = panel.check_panel([seat(practitioner("qa-sdet"))],
-                                   "readiness", set())
-        self.assertHasError(errors, "a panel is 2 to 4 roles, "
-                                    "but 1 role is seated")
-
-    def test_the_ceiling_is_four_roles(self):
-        seats = [seat(practitioner(f"role-{i}", surface=s)) for i, s in
-                 enumerate(("behavior", "words", "flow", "habit", "pitch"))]
-        errors = panel.check_panel(seats, "readiness", set())
-        self.assertHasError(errors, "but 5 roles are seated")
-
-    def test_a_panel_of_two_passes(self):
-        errors = panel.check_panel(two_practitioners(), "readiness", set())
-        self.assertEqual(errors, [])
-
-    def test_single_drops_the_floor_to_one(self):
-        errors = panel.check_panel([seat(practitioner("qa-sdet"))],
-                                   "readiness", set(), single=True)
-        self.assertEqual(errors, [])
-
-    def test_single_refuses_a_second_role(self):
-        errors = panel.check_panel(two_practitioners(), "readiness", set(),
-                                   single=True)
-        self.assertHasError(errors, "--single seats exactly one role, "
-                                    "but 2 are named")
-
-    def test_a_role_is_seated_only_once(self):
-        role = practitioner("qa-sdet")
-        errors = panel.check_panel([seat(role), seat(role)], "readiness",
-                                   set())
-        self.assertHasError(errors, "qa-sdet is seated more than once")
-
-
-class PractitionerRuleTest(unittest.TestCase, MatchMixin):
-    def test_an_all_executive_panel_is_rejected(self):
-        role = open_set(margin="signals", revenue="pitch")
-        seats = [seat(role, "margin"), seat(role, "revenue")]
-        errors = panel.check_panel(seats, "readiness", {"signals", "pitch"})
-        self.assertHasError(errors, "no practitioner on the panel")
-
-    def test_one_practitioner_satisfies_the_rule(self):
-        role = open_set(margin="signals")
-        seats = [seat(practitioner("qa-sdet")), seat(role, "margin")]
-        errors = panel.check_panel(seats, "readiness",
-                                   {"signals", "behavior"})
-        self.assertEqual(errors, [])
-
-    def test_single_waives_the_practitioner_rule(self):
-        role = open_set(margin="signals")
-        errors = panel.check_panel([seat(role, "margin")], "readiness",
-                                   {"signals"}, single=True)
-        self.assertEqual(errors, [])
-
-
-class RedundancyTest(unittest.TestCase, MatchMixin):
-    def test_two_practitioners_on_one_square_are_redundant(self):
-        seats = [seat(practitioner("qa-sdet")),
-                 seat(practitioner("api-first-customer"))]
-        errors = panel.check_panel(seats, "readiness", set())
-        self.assertHasError(errors, "redundant on all four axes")
-        self.assertHasError(errors, "api-first-customer, qa-sdet")
-
-    def test_one_differing_axis_is_enough(self):
-        seats = [seat(practitioner("qa-sdet")),
-                 seat(practitioner("support", vantage="external"))]
-        errors = panel.check_panel(seats, "readiness", set())
-        self.assertEqual(errors, [])
-
-    def test_executives_are_not_compared_on_axes(self):
-        role = open_set(margin="signals", foundation="structure")
-        seats = [seat(practitioner("qa-sdet")), seat(role, "margin"),
-                 seat(role, "foundation")]
-        errors = panel.check_panel(seats, "readiness",
-                                   {"signals", "structure", "behavior"})
-        self.assertEqual(errors, [])
-
-    def test_one_accountability_is_seated_once(self):
-        # Two open sets that share an accountability name. The seat names
-        # differ, so only the accountability rule can catch this.
-        board = open_set("board", margin="signals")
-        exec_role = open_set(margin="signals")
-        seats = [seat(practitioner("qa-sdet")), seat(board, "margin"),
-                 seat(exec_role, "margin")]
-        errors = panel.check_panel(seats, "readiness",
-                                   {"signals", "behavior"})
-        self.assertHasError(errors, "accountability 'margin' is seated "
-                                    "2 times")
-
-
-class SurfaceGateTest(unittest.TestCase, MatchMixin):
-    def setUp(self):
-        self.role = open_set(margin="signals", identity=None,
-                             foundation=None)
-
-    def panel_with(self, *seats_, intent="readiness", surfaces=()):
-        seats = [seat(practitioner("qa-sdet"))] + list(seats_)
-        return panel.check_panel(seats, intent, set(surfaces))
-
-    def test_an_executive_needs_the_surface_in_the_diff(self):
-        errors = self.panel_with(seat(self.role, "margin"),
-                                 surfaces=("behavior",))
-        self.assertHasError(errors, "executive:margin: reads 'signals', "
-                                    "which --surfaces does not list")
-
-    def test_the_surface_in_the_diff_seats_the_executive(self):
-        errors = self.panel_with(seat(self.role, "margin"),
-                                 surfaces=("behavior", "signals"))
-        self.assertEqual(errors, [])
-
-    def test_an_executive_needs_surfaces_at_all(self):
-        errors = self.panel_with(seat(self.role, "margin"))
-        self.assertHasError(errors, "--surfaces is required to seat "
-                                    "an executive")
-
-    def test_a_surfaceless_accountability_needs_intent_direction(self):
-        errors = self.panel_with(seat(self.role, "identity"),
-                                 surfaces=("behavior",))
-        self.assertHasError(errors, "executive:identity: this accountability "
-                                    "reads no surface in the diff")
-
-    def test_intent_direction_seats_a_surfaceless_accountability(self):
-        errors = self.panel_with(seat(self.role, "identity"),
-                                 intent="direction", surfaces=("behavior",))
-        self.assertEqual(errors, [])
-
-    def test_at_most_one_surfaceless_accountability(self):
-        errors = self.panel_with(seat(self.role, "identity"),
-                                 seat(self.role, "foundation"),
-                                 intent="direction", surfaces=("behavior",))
-        self.assertHasError(errors, "at most one accountability without "
-                                    "a surface: executive:foundation, "
-                                    "executive:identity")
-
-
-class GenerativePostureTest(unittest.TestCase, MatchMixin):
-    def generative(self, slug, surface="flow"):
-        return seat(practitioner(slug, posture="generative", surface=surface))
-
-    def test_at_most_two_generative_roles(self):
-        seats = [self.generative("toolsmith"),
-                 self.generative("innovation-lead", surface="structure"),
-                 self.generative("launch-editor", surface="words"),
-                 seat(practitioner("qa-sdet"))]
-        errors = panel.check_panel(seats, "direction", set())
-        self.assertHasError(errors, "at most 2 generative roles, "
-                                    "but 3 are seated")
-
-    def test_generative_roles_never_outnumber_defensive_ones(self):
-        seats = [self.generative("toolsmith"),
-                 self.generative("innovation-lead", surface="structure"),
-                 seat(practitioner("qa-sdet"))]
-        errors = panel.check_panel(seats, "direction", set())
-        self.assertHasError(errors, "2 generative outnumber 1 defensive")
-
-    def test_an_even_split_is_allowed(self):
-        seats = [self.generative("toolsmith"), seat(practitioner("qa-sdet"))]
-        errors = panel.check_panel(seats, "direction", set())
-        self.assertEqual(errors, [])
-
-    def test_a_readiness_review_refuses_a_generative_role(self):
-        seats = [self.generative("toolsmith"), seat(practitioner("qa-sdet"))]
-        errors = panel.check_panel(seats, "readiness", set())
-        self.assertHasError(errors, "toolsmith: generative roles need "
-                                    "--intent direction")
-
-    def test_a_readiness_safe_generative_role_stays(self):
-        seats = [self.generative("launch-editor", surface="words"),
-                 seat(practitioner("qa-sdet"))]
-        errors = panel.check_panel(seats, "readiness", set())
-        self.assertEqual(errors, [])
-
-    def test_single_waives_every_balance_rule(self):
-        errors = panel.check_panel([self.generative("toolsmith")],
-                                   "readiness", set(), single=True)
-        self.assertEqual(errors, [])
-
-
-class ExclusivePairTest(unittest.TestCase, MatchMixin):
-    def test_a_declared_pair_never_shares_a_panel(self):
-        left, right = roles_mod.EXCLUSIVE_PAIRS[0]
-        seats = [seat(practitioner(left, surface="structure")),
-                 seat(practitioner(right, surface="flow"))]
-        errors = panel.check_panel(seats, "direction", set())
-        self.assertHasError(errors,
-                            f"{left} and {right} never run on the same panel")
-
-    def test_one_of_the_pair_is_fine(self):
-        left, _ = roles_mod.EXCLUSIVE_PAIRS[0]
-        seats = [seat(practitioner(left, surface="structure")),
-                 seat(practitioner("qa-sdet"))]
-        errors = panel.check_panel(seats, "direction", set())
-        self.assertEqual(errors, [])
-
-
-class CommandLineTest(unittest.TestCase):
-    """End-to-end runs against the real role-profiles/ directory."""
-
-    def run_panel(self, *args):
-        return subprocess.run([sys.executable, SCRIPT, *args],
-                              capture_output=True, text=True,
-                              encoding="utf-8")
-
-    def test_list_exits_zero_and_prints_the_squares(self):
-        result = self.run_panel("--list")
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("DEFENSIVE", result.stdout)
-        self.assertIn("GENERATIVE", result.stdout)
-        self.assertIn("EXECUTIVE (seated by accountability)", result.stdout)
-
-    def test_a_valid_panel_prints_the_profiles_to_read(self):
-        result = self.run_panel("--role", "qa-sdet",
-                                "--role", "product-manager")
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("Panel accepted (readiness)", result.stdout)
-        self.assertIn("qa-sdet.md", result.stdout)
-        self.assertIn("product-manager.md", result.stdout)
-
-    def test_single_labels_the_output_differently(self):
-        result = self.run_panel("--single", "--role", "qa-sdet")
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("Single role. Read these profiles:", result.stdout)
-
-    def test_an_unknown_surface_is_rejected(self):
-        result = self.run_panel("--role", "qa-sdet",
-                                "--role", "product-manager",
-                                "--surfaces", "contract,nonesuch")
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("'nonesuch' is not a known surface", result.stderr)
-
-    def test_a_rejected_panel_reports_on_stderr(self):
-        result = self.run_panel("--role", "qa-sdet")
-        self.assertEqual(result.returncode, 1)
-        self.assertIn("Panel rejected", result.stderr)
-        self.assertEqual(result.stdout, "")
-
-    def test_an_unknown_intent_is_refused_by_the_parser(self):
-        result = self.run_panel("--role", "qa-sdet", "--intent", "vibes")
-        self.assertEqual(result.returncode, 2)
-
-    def test_errors_are_printed_once(self):
-        result = self.run_panel("--role", "nonesuch", "--role", "nonesuch")
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stderr.count("no profile matches"), 1)
+SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                      "panel.py")
+
+ROLES = [
+    {
+        "file": "ai-prompt-engineer.md",
+        "role": "ai-prompt-engineer",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now", "soon"],
+        "vantage": "internal",
+        "surface": "words",
+        "aliases": ["prompt-engineer"],
+        "question": "Is this prompt a reliable spec — or does it leave "
+                    "enough ambiguity that the model will guess "
+                    "inconsistently?",
+    },
+    {
+        "file": "api-first-customer.md",
+        "role": "api-first-customer",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "external",
+        "surface": "behavior",
+        "aliases": [],
+        "question": "Will the code I wrote against this API still produce "
+                    "correct results?",
+    },
+    {
+        "file": "customer-success.md",
+        "role": "customer-success",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "external",
+        "surface": "behavior",
+        "aliases": ["cs"],
+        "question": "Will existing customers still be able to do what they "
+                    "came here to do?",
+    },
+    {
+        "file": "data-platform-scout.md",
+        "role": "data-platform-scout",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["later"],
+        "vantage": "internal",
+        "surface": "signals",
+        "aliases": ["data-scout"],
+        "question": "What did this make knowable, and what is unrecoverable "
+                    "if we don't record it now?",
+    },
+    {
+        "file": "designer-ux.md",
+        "role": "designer-ux",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "external",
+        "surface": "flow",
+        "aliases": ["ux", "design"],
+        "question": "Would someone who has never seen this know what to do?",
+    },
+    {
+        "file": "developer-advocate.md",
+        "role": "developer-advocate",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "external",
+        "surface": "contract",
+        "aliases": ["devrel", "advocate"],
+        "question": "Would an external developer succeed with this, and would "
+                    "they recommend it?",
+    },
+    {
+        "file": "engineering-tech-lead.md",
+        "role": "engineering-tech-lead",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "internal",
+        "surface": "structure",
+        "aliases": ["tech-lead", "eng-lead"],
+        "question": "Is this the right approach?",
+    },
+    {
+        "file": "executive-brand.md",
+        "role": "executive",
+        "accountability": "brand",
+        "posture": "defensive",
+        "horizon": ["now", "soon"],
+        "vantage": "strategic",
+        "surface": "words",
+        "aliases": ["cmo", "brand-officer"],
+        "question": "Do these words sound like us, and what do they commit "
+                    "us to?",
+    },
+    {
+        "file": "executive-compliance.md",
+        "role": "executive",
+        "accountability": "compliance",
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "strategic",
+        "surface": "contract",
+        "aliases": ["legal", "counsel", "gc"],
+        "question": "Does this breach a commitment we have already made?",
+    },
+    {
+        "file": "executive-foundation.md",
+        "role": "executive",
+        "accountability": "foundation",
+        "posture": "defensive",
+        "horizon": ["later"],
+        "vantage": "strategic",
+        "surface": "structure",
+        "aliases": ["cto"],
+        "question": "Are we building the right foundation?",
+    },
+    {
+        "file": "executive-identity.md",
+        "role": "executive",
+        "accountability": "identity",
+        "posture": "defensive",
+        "horizon": ["later"],
+        "vantage": "strategic",
+        "surface": "none",
+        "aliases": ["ceo", "founder"],
+        "question": "Is this who we are? Is this the right investment?",
+    },
+    {
+        "file": "executive-margin.md",
+        "role": "executive",
+        "accountability": "margin",
+        "posture": "defensive",
+        "horizon": ["soon", "later"],
+        "vantage": "strategic",
+        "surface": "signals",
+        "aliases": ["cfo", "finance"],
+        "question": "What does this cost to run, and does it affect revenue "
+                    "correctly?",
+    },
+    {
+        "file": "executive-revenue.md",
+        "role": "executive",
+        "accountability": "revenue",
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "strategic",
+        "surface": "pitch",
+        "aliases": ["cro", "revenue-officer"],
+        "question": "Does this change what we can sell, to whom, and at what "
+                    "price?",
+    },
+    {
+        "file": "growth-experimentation-lead.md",
+        "role": "growth-experimentation-lead",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["soon"],
+        "vantage": "external",
+        "surface": "flow",
+        "aliases": ["growth"],
+        "question": "What experiment is now a config change rather than a "
+                    "project?",
+    },
+    {
+        "file": "innovation-lead.md",
+        "role": "innovation-lead",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["later"],
+        "vantage": "strategic",
+        "surface": "structure",
+        "aliases": [],
+        "question": "What does this change make cheap that wasn't cheap "
+                    "before?",
+    },
+    {
+        "file": "integration-partner.md",
+        "role": "integration-partner",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "external",
+        "surface": "contract",
+        "aliases": [],
+        "question": "Will my existing integration still work after this "
+                    "ships?",
+    },
+    {
+        "file": "launch-editor.md",
+        "role": "launch-editor",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["now"],
+        "vantage": "external",
+        "surface": "words",
+        "aliases": [],
+        "question": "What just became true for users that nothing here tells "
+                    "them?",
+    },
+    {
+        "file": "marketing.md",
+        "role": "marketing",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["later"],
+        "vantage": "external",
+        "surface": "pitch",
+        "aliases": [],
+        "question": "Does this make the product easier or harder to talk "
+                    "about?",
+    },
+    {
+        "file": "platform-capability-scout.md",
+        "role": "platform-capability-scout",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["soon"],
+        "vantage": "internal",
+        "surface": "structure",
+        "aliases": ["capability-scout"],
+        "question": "What did this make available to the rest of the "
+                    "codebase?",
+    },
+    {
+        "file": "platform-devex.md",
+        "role": "platform-devex",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "internal",
+        "surface": "contract",
+        "aliases": ["devex"],
+        "question": "Does this make the platform better or harder to "
+                    "maintain?",
+    },
+    {
+        "file": "power-user.md",
+        "role": "power-user",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "external",
+        "surface": "habit",
+        "aliases": [],
+        "question": "Did anything change about how I actually use this every "
+                    "day?",
+    },
+    {
+        "file": "product-manager.md",
+        "role": "product-manager",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "strategic",
+        "surface": "behavior",
+        "aliases": ["pm"],
+        "question": "Is this the right thing to build right now?",
+    },
+    {
+        "file": "qa-sdet.md",
+        "role": "qa-sdet",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "internal",
+        "surface": "behavior",
+        "aliases": ["qa", "sdet"],
+        "question": "Are the failure modes covered?",
+    },
+    {
+        "file": "revenue-operations-analyst.md",
+        "role": "revenue-operations-analyst",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["soon"],
+        "vantage": "strategic",
+        "surface": "signals",
+        "aliases": ["revops"],
+        "question": "What did this make countable, attributable, and "
+                    "separable?",
+    },
+    {
+        "file": "sales.md",
+        "role": "sales",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "external",
+        "surface": "pitch",
+        "aliases": [],
+        "question": "Does this help me win deals?",
+    },
+    {
+        "file": "security.md",
+        "role": "security",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "internal",
+        "surface": "contract",
+        "aliases": [],
+        "question": "Does this introduce an exploitable surface?",
+    },
+    {
+        "file": "site-reliability-engineer.md",
+        "role": "site-reliability-engineer",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "internal",
+        "surface": "signals",
+        "aliases": ["sre"],
+        "question": "When this breaks, will we know, and can we stop it?",
+    },
+    {
+        "file": "support.md",
+        "role": "support",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "external",
+        "surface": "words",
+        "aliases": [],
+        "question": "Will I get tickets about this?",
+    },
+    {
+        "file": "technical-writer.md",
+        "role": "technical-writer",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["soon"],
+        "vantage": "external",
+        "surface": "words",
+        "aliases": ["writer", "docs"],
+        "question": "Will a user who reads the docs be able to do what the "
+                    "code now allows?",
+    },
+    {
+        "file": "toolsmith.md",
+        "role": "toolsmith",
+        "accountability": None,
+        "posture": "generative",
+        "horizon": ["now"],
+        "vantage": "internal",
+        "surface": "flow",
+        "aliases": [],
+        "question": "What manual step did this just supply the last missing "
+                    "input for?",
+    },
+    {
+        "file": "trial-user.md",
+        "role": "trial-user",
+        "accountability": None,
+        "posture": "defensive",
+        "horizon": ["now"],
+        "vantage": "external",
+        "surface": "flow",
+        "aliases": [],
+        "question": "Can I get to value before I run out of patience?",
+    },
+]
+
+# The script reports eligibility, not a seating. It returns every role that
+# may sit, and the caller cuts the list to five or fewer. So these
+# constants are not panels. They are the full set of valid options for one
+# input, and each one is larger than the panel it will become.
+
+# `--intent readiness --surfaces contract,signals`.
+#
+#   developer-advocate          contract, soon/external — the developer who adopts
+#   integration-partner         contract, now/external  — the caller who breaks
+#   platform-devex              contract, soon/internal — the platform that carries it
+#   security                    contract, now/internal  — the exploitable surface
+#   site-reliability-engineer   signals,  now/internal  — the operator on call
+#   executive:compliance        contract                — the obligation already made
+#   executive:margin            signals                 — the cost of running it
+#
+# Seven valid roles for at most five seats, so the caller must cut two.
+# `data-platform-scout` and `revenue-operations-analyst` also read
+# `signals`, and both are generative, so the readiness intent drops them.
+ELIGIBLE_CONTRACT_SIGNALS = {
+    "practitioners": [
+        "developer-advocate",
+        "integration-partner",
+        "platform-devex",
+        "security",
+        "site-reliability-engineer",
+    ],
+    "executives": [
+        "executive:compliance",
+        "executive:margin",
+    ],
+}
+
+# `--intent readiness --surfaces words`.
+#
+#   ai-prompt-engineer  words, now+soon/internal — the prompts as a spec
+#   support             words, now/external      — the tickets this causes
+#   technical-writer    words, soon/external     — the docs this contradicts
+#   executive:brand     words                    — what the wording commits us to
+#
+# Four valid roles for five seats, so the caller cuts nothing. That is the
+# contrast with the case above, and the reason both cases are here.
+# `launch-editor` also reads `words`, and it is generative, so the
+# readiness intent drops it. `executive:brand` is the only accountability
+# that reads `words`.
+ELIGIBLE_WORDS = {
+    "practitioners": [
+        "ai-prompt-engineer",
+        "support",
+        "technical-writer",
+    ],
+    "executives": [
+        "executive:brand",
+    ],
+}
+
+
+class ReadinessPanelTest(unittest.TestCase):
+    """`panel.py` returns eligibility. These tests hold it to that."""
+
+    def run_script(self, surfaces, intent="readiness"):
+        result = subprocess.run(
+            [sys.executable, SCRIPT,
+             "--intent", intent,
+             "--surfaces", surfaces],
+            capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.strip(),
+                        "panel.py printed nothing")
+        return json.loads(result.stdout)
+
+    def names(self, entries):
+        return sorted(entry["role"] for entry in entries)
+
+    def assertQuestionsMatchProfiles(self, entries):
+        """The `question` of each entry is the one in the frontmatter.
+
+        The caller cuts roles by reading these, so a paraphrase here would
+        send the cut against the wrong standard.
+        """
+        known = {}
+        for row in ROLES:
+            name = row["role"]
+            if row["accountability"]:
+                name = f"{name}:{row['accountability']}"
+            known[name] = row["question"]
+        for entry in entries:
+            self.assertIn("question", entry, entry["role"])
+            self.assertEqual(entry["question"], known[entry["role"]],
+                             entry["role"])
+
+# The question behind this input:
+#
+#   "The /v1/exports endpoint now requires a new OAuth scope, drops two
+#    fields from the response, and runs behind a per-account rate limiter
+#    that meters usage. Can this ship?"
+#
+# "Can this ship?" makes it readiness rather than direction. The change
+# then declares two surfaces, and each one makes its own roles eligible:
+#
+#   contract  the new scope, the dropped fields, the endpoint signature
+#   signals   the meter, the rate-limit counters, what the limiter emits
+#
+# Seven roles are eligible and at most five may sit. The script reports all
+# seven. The caller decides which two to drop, because that decision needs
+# the question above, which the script never sees.
+
+    def test_contract_and_signals_lists_every_eligible_role(self):
+        response = self.run_script("contract,signals")
+
+        self.assertEqual(self.names(response["practitioners"]),
+                         ELIGIBLE_CONTRACT_SIGNALS["practitioners"])
+        self.assertEqual(self.names(response["executives"]),
+                         ELIGIBLE_CONTRACT_SIGNALS["executives"])
+        # The list is larger than a panel. That is the normal case, and the
+        # script must not cut it down itself.
+        self.assertEqual(len(response["practitioners"])
+                         + len(response["executives"]), 7)
+        # Each entry carries its question, so the caller can cut on
+        # relevance without opening a profile.
+        self.assertQuestionsMatchProfiles(response["practitioners"])
+        self.assertQuestionsMatchProfiles(response["executives"])
+
+# The question behind this input:
+#
+#   "The error messages and empty states in the upload flow are rewritten.
+#    Can this ship?"
+#
+# "Can this ship?" makes it readiness again. Nothing here changes a
+# signature, a meter, or a module boundary, so the change declares one
+# surface:
+#
+#   words  the error strings, the empty-state copy, the labels
+#
+# Four roles are eligible, so the caller cuts nothing. The eligible set
+# follows the surfaces: a `words` diff carries nothing that `margin` or
+# `compliance` can read, so neither appears.
+
+    def test_words_only_lists_every_eligible_role(self):
+        response = self.run_script("words")
+
+        self.assertEqual(self.names(response["practitioners"]),
+                         ELIGIBLE_WORDS["practitioners"])
+        self.assertEqual(self.names(response["executives"]),
+                         ELIGIBLE_WORDS["executives"])
+        self.assertQuestionsMatchProfiles(response["practitioners"])
+        self.assertQuestionsMatchProfiles(response["executives"])
+        # The executives follow the surfaces.
+        for name in ("executive:margin", "executive:compliance"):
+            self.assertNotIn(name, self.names(response["executives"]))
+        # The intent gate drops the generative role that reads `words`.
+        self.assertNotIn("launch-editor", self.names(
+            response["practitioners"]))
 
 
 if __name__ == "__main__":

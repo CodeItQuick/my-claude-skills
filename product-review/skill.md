@@ -1,6 +1,6 @@
 ---
 name: product-review
-description: Assemble a panel of role-based reviewers for a question about a pull request or diff. Select 2–4 roles from role-profiles/ whose posture, vantage point, and time horizon cover the question without overlap. Then report a focused findings table.
+description: Assemble a panel of role-based reviewers for a question about a pull request or diff. Run panel.py to list every eligible role, then cut it to at most 5 whose posture, vantage point, and time horizon cover the question without overlap. Then report a focused findings table.
 ---
 
 # Product Review
@@ -11,7 +11,7 @@ Select a panel of professional reviewers for a question about a change. Each rol
 
 ## Panel selection
 
-A panel is 2–4 roles. Their questions do not overlap, but all bear on the concern of the user. Coverage beats volume: three roles at different vantage points produce better findings than six roles at similar angles.
+A panel is 1 to 5 roles. Their questions do not overlap, but all bear on the concern of the user. Coverage beats volume: three roles at different vantage points produce better findings than six roles at similar angles.
 
 Each role carries four axes in its profile frontmatter:
 
@@ -33,125 +33,48 @@ Each role carries four axes in its profile frontmatter:
 
 ### Choosing the panel
 
-Run `panel.py --list` to see every role by square and surface. Then decide two things, which are yours to judge:
+The work splits in two. `panel.py` says who **may** sit. You say who **does**.
+
+- **The script** decides from the frontmatter alone. It is mechanical, and it returns the same answer every run.
+- **You** decide from the diff. The script never reads the diff, so it cannot know which eligible role this change actually gives something to.
+
+Decide two things first, which are yours to judge:
 
 1. **The intent.** `readiness` asks whether the change can ship. `direction` asks where the change leads.
 2. **The surfaces the diff touches.** Read the diff and name them.
 
-Declare both, propose the roles, and let the script hold you to the consequences:
+Declare both. The script answers with every eligible role:
 
 ```bash
-python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
-    --role qa-sdet --role executive:margin
+python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals
 ```
 
-The script prints the profiles to read, or rejects the panel and lists every violation. If it rejects the panel, correct the roles and run it again. Do not read a profile before the panel is accepted.
+```json
+{
+  "intent": "readiness",
+  "surfaces": ["contract", "signals"],
+  "practitioners": [
+    {"role": "security", "question": "Does this introduce an exploitable surface?"},
+    "... four more ..."
+  ],
+  "executives": [
+    {"role": "executive:compliance", "question": "Does this breach a commitment we have already made?"},
+    {"role": "executive:margin", "question": "What does this cost to run, and does it affect revenue correctly?"}
+  ]
+}
+```
 
-Never add or swap a role the user named explicitly. If a user-named role cannot be seated, report the rejection instead. Correcting a panel means changing roles you chose yourself.
+Seven eligible roles here. The panel will be smaller. Each entry carries the `question` of that role, so you can cut without opening a profile.
 
-### What the script enforces
+`--intent readiness` drops every generative role, so choose `direction` when the question asks where the change leads.
 
-- The panel is 2 to 4 roles.
-- No two roles match on **all four** axes. Two roles that share a square but read different surfaces are complementary, as `trial-user` and `power-user` do.
-- At least one practitioner sits on every panel. An all-executive panel cannot cite the diff.
-- Generative roles need `--intent direction`. The one exception is `launch-editor`, whose findings expire at release rather than becoming a backlog.
-- At most two generative roles, and never more generative than defensive.
-- `platform-capability-scout` and `toolsmith` never run together. The audience of the Scout is code. The audience of the Toolsmith is a person.
+Then cut the list to the panel. Follow [`cutting.md`](cutting.md).
 
 ### Executives
 
-Executives are not separated by the axes, because every executive reads the whole change. They differ in what they answer for. So `executive` is one role, seated by accountability:
+Executives are not separated by the axes, because every executive reads the whole change. They differ in what they answer for. So `executive` is one role, named by accountability: `executive:margin` is the CFO seat, `executive:compliance` the General Counsel seat.
 
-```bash
---role executive:margin      # the CFO seat
---role executive:compliance  # the General Counsel seat
-```
-
-**An executive is seated only when the diff contains the surface their accountability reads.** The count then falls out of the diff rather than a fixed cap. A rename touches `pitch` and seats one executive. A change to billing, the public API, and module boundaries touches three surfaces and seats three.
-
-#### How to seat them
-
-Add one executive at a time. Run the script after each one. Keep the seat only when the script accepts it.
-
-**Step 1. Read the accountabilities and the surface each one reads.** Run this once:
-
-```bash
-python3 "<base-dir>/panel.py" --list
-```
-
-Read the `EXECUTIVE` block of the output. The third column is the surface:
-
-```
-EXECUTIVE (seated by accountability)
-  brand       now+soon    words
-  compliance  now         contract
-  foundation  later       structure
-  identity    later       — no diff surface
-  margin      soon+later  signals
-  revenue     soon        pitch
-```
-
-**Step 2. Seat the practitioners first.** Run the script with no executive. Do not continue until the script accepts this panel.
-
-```bash
-python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
-    --role security --role site-reliability-engineer[skill.md](skill.md)
-```
-
-```
-Panel accepted (readiness). Read these profiles:
-  security                    defensive  now   internal  contract  ...
-  site-reliability-engineer   defensive  now   internal  signals   ...
-```
-
-Now repeat steps 3 to 5 once for each surface in `--surfaces`.
-
-**Step 3. Take the next surface.** Find the accountability that reads it in the step 1 output. If no accountability reads that surface, take the next surface. The practitioners cover it.
-
-**Step 4. Add that one seat and run the script again.** Keep every role the script already accepted. The first surface is `contract`, so the seat is `executive:compliance`:
-
-```bash
-python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
-    --role security --role site-reliability-engineer \
-    --role executive:compliance
-```
-
-**Step 5. Read the result.** If the script accepts the panel, keep the seat and return to step 3. If the script rejects the panel, act on the message:
-
-| Message | What to do |
-|---|---|
-| `reads 'X', which --surfaces does not list` | Drop the seat. The diff does not carry that surface. |
-| `--surfaces is required to seat an executive` | Name the surfaces of the diff and run again. |
-| `a panel is 2 to 4 roles, but 5 roles are seated` | Drop the executive furthest from the question of the user. |
-| `no practitioner on the panel` | Keep at least one practitioner. Drop an executive instead. |
-| `needs --intent direction` | This is `identity`. See below. |
-
-**Step 6. Stop** when every surface is handled, or when the panel holds four roles.
-
-The second surface is `signals`, so the last accepted run of the example seats four roles:
-
-```bash
-python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals \
-    --role security --role site-reliability-engineer \
-    --role executive:compliance --role executive:margin
-```
-
-A fifth seat breaks two rules at once, and the script names both:
-
-```
-Panel rejected. Correct these and run again:
-  - a panel is 2 to 4 roles, but 5 roles are seated
-  - executive:revenue: reads 'pitch', which --surfaces does not list (contract, signals)
-```
-
-#### The identity seat
-
-`identity` is the exception: it reads no surface, so it can never be justified by the diff. It needs `--intent direction`, and only one surfaceless accountability may sit on a panel.
-
-```bash
-python3 "<base-dir>/panel.py" --intent direction --surfaces habit \
-    --role power-user --role executive:identity
-```
+The `executives` list holds every accountability the surfaces reach, so there is nothing to seat one at a time. The count falls out of the diff rather than a fixed cap. A rename touches `pitch` and offers one executive. A change to billing, the public API, and module boundaries touches three surfaces and offers three.
 
 To add a COO or a CRO, create `role-profiles/executive-<accountability>.md` with frontmatter. No code changes.
 
@@ -159,7 +82,7 @@ To add a COO or a CRO, create `role-profiles/executive-<accountability>.md` with
 
 ## Flags
 
-- `--role=<name>` — run a single role. Pass `<name>` to `panel.py` with `--single`, which resolves aliases from the profiles. For example, `qa` resolves to `qa-sdet`, `revops` to `revenue-operations-analyst`, and `cfo` to `executive:margin`. Never add a second role to satisfy the panel floor. If the named role cannot be seated, report the rejection to the user rather than substituting another role.
+- `--role=<name>` — run a single role. Seat that role alone and skip the cut entirely. Still run `panel.py` for the declared surfaces, and check that the named role appears in the response. If it does not, report that to the user rather than substituting another role. Never add a second role to fill out a panel.
 - `--format=<format>` — `report` (default, markdown table) or `jsonl` (one finding per line, for CI pipelines).
 - `--brief` — regenerate the product brief unconditionally, then continue with the review. See [`brief.md`](brief.md).
 
@@ -167,37 +90,36 @@ To add a COO or a CRO, create `role-profiles/executive-<accountability>.md` with
 
 ## Workflow
 
+You never read a role profile, and you never review the diff yourself. Each seated role runs in its own subagent. You choose the panel, spawn them, and report what they return.
+
 1. **Load the product brief.** Read `.product-review/brief.md` in the reviewed repository. If the file does not exist, ask the user before you generate one. Then follow [`brief.md`](brief.md). If the recorded commit SHA is stale relative to `HEAD`, say so in the run. A run without a brief still works. The roles cannot fire the suppression rules that need product context, so the panel over-reports.
-2. **Get the diff.** Run `git diff <base>...HEAD`. Review only the code that is visible in the diff. If no diff is available, ask the user for the code to review.
-3. **Select the roles.** Run `panel.py` per [Panel selection](#panel-selection). For `--role=<name>`, add `--single`. Read a profile only after the script accepts the panel.
-4. **Run each role independently.** Read the profile of the role. Examine the diff through that lens alone. The findings of one role do not influence another.
-5. **Check the evidence.** Each finding needs at least two evidence types. If in doubt, suppress the finding.
-6. **Run `emit.py`.** Pipe the findings to it as JSONL. Report its stdout. See [Output format](#output-format).
+2. **Name the diff.** Establish the range, such as `main...HEAD`. Run `git diff --stat <range>` and read enough of the change to name the surfaces it touches. Do not read the whole diff. The subagents do that. If no range is available, ask the user for the code to review.
+3. **Select the roles.** Run `panel.py` per [Panel selection](#panel-selection), then cut the eligible list per [`cutting.md`](cutting.md).
+4. **Spawn one subagent per seated role,** all in one message so they run in parallel. See [Spawning the roles](#spawning-the-roles).
+5. **Collect the rows.** Each subagent returns JSONL, or nothing. Concatenate the lines in the order the subagents were spawned. Do not edit a row, and do not drop one because another role disagrees.
+6. **Run `emit.py`.** Pipe the collected rows to it as JSONL. Report its stdout. See [Output format](#output-format).
 
-## Evidence requirement
+### Spawning the roles
 
-Each finding needs at least two of these evidence types:
+Give each subagent these five arguments and nothing else. It reads its own profile and its own diff.
 
-- **Code evidence** — a specific line or expression in the diff that shows the concern
-- **Path evidence** — a reachable code path that triggers the problem
-- **Convention evidence** — nearby or sibling code that establishes the pattern this violates
-- **Impact evidence** — what goes wrong for a user or an operator if this ships (defensive roles only)
-- **Leverage evidence** — a construct in the diff, the capability it puts within reach, and why that capability is much cheaper to build now (generative roles only)
+| Argument | Value |
+|---|---|
+| `role` | The seat name, as `slug` or `slug:accountability` |
+| `profile` | `<base-dir>/role-profiles/<file>.md` |
+| `question` | The question the user asked, verbatim |
+| `diff range` | The range from step 2, such as `main...HEAD` |
+| `brief` | The path to `.product-review/brief.md`, or `none` |
 
-Code, path, and convention evidence are open to both postures. Impact evidence and leverage evidence each belong to one posture.
+Point each one at [`role-run.md`](role-run.md), which holds the evidence requirement, the suppression discipline, and the row schema. Do not restate those rules in the prompt you write.
 
-### The product brief is context, never evidence
+Three rules on the spawn:
 
-The brief (see [`brief.md`](brief.md)) supplies facts that a diff cannot: who the users are, whether the product bills anyone, what data the product holds. The brief changes what a role treats as relevant. It does not change what a role can prove.
+- **One role per subagent.** Two roles in one context can see each other, and the panel then reports one opinion twice.
+- **Spawn them together.** They are independent, so they run at once.
+- **Pass the range, never the diff text.** Five copies of a diff through this context is the cost the split exists to avoid.
 
-- A brief fact can **suppress** a finding on its own. "No billing code present" is enough to silence the Revenue Operations Analyst.
-- A brief fact can **never support** a finding. Every reported finding still needs two evidence types from the diff.
-- The **Inferred** lines of the brief carry less weight. They can frame the reasoning of a finding. Suppress a finding that rests only on them. Always phrase a named-competitor claim as a claim to check.
-- The **Unknowns** of the brief mean *unknown*, not *absent*. If a role needs one of those facts to make its case, suppress the finding. Do not assume a value.
-
-## Confidence calibration
-
-Report only `high`-confidence findings. Suppress `medium` and `low`, and never report them. The soft-suppression rules in a profile downgrade confidence to `medium`.
+If a subagent returns prose, a summary, or a wrapped array, discard the reply and spawn that role again. Do not repair the output by hand.
 
 ## Output format
 
@@ -209,23 +131,12 @@ python3 "<base-dir>/emit.py" --question "..." --role security=reason --role exec
 EOF
 ```
 
-The criticality of a finding follows from the posture of the role:
+The script validates every row and lists each violation. The row schema is in [`role-run.md`](role-run.md), which the subagents follow, so a rejection means a subagent broke its contract. Respawn that role. Never repair a row by hand, because the finding is then partly yours and attributed to the role.
 
-| Value | Meaning |
-|---|---|
-| `Blocking` | The change must not ship as-is. Defensive roles only. |
-| `Suggested` | The change can ship. The problem is still worth a fix. Defensive roles only. |
-| `Opportunity` | Nothing is wrong. This names leverage that the change created. Generative roles only, and never a reason to hold a ship. |
+Two checks belong to you rather than to a subagent, because no single role can see them:
 
-The script rejects the run and lists every violation when a rule fails:
-
-- `criticality` is `Blocking`, `Suggested`, or `Opportunity`
-- the posture matches the criticality, per the table above
-- every `role` is a seatable name and sits on the panel that `panel.py` accepted
-- the panel is 1 to 4 roles, since `emit.py` cannot see `--single` and lets `panel.py` hold the floor of 2
-- `observation` and `reasoning` are each one sentence, on one line, without a `|`
-
-If the run is rejected, correct the findings and run the script again.
+- Every `role` is a seatable name and sits on the panel you cut.
+- The panel is 1 to `MAX_PANEL` roles, read from `roles.py`.
 
 The script sorts the rows, adds the no-findings row, and appends the run to `logs/YYYY-MM-DD.jsonl`. Add `--format jsonl` for a CI pipeline. A CI pipeline must treat `Opportunity` as informational. It must never fail a build.
 

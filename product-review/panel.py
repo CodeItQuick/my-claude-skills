@@ -1,228 +1,130 @@
 #!/usr/bin/env python3
-"""Validate a proposed panel before any role runs.
+"""Report every role eligible to sit on a panel for one change.
 
 Usage:
-    python3 panel.py --intent readiness|direction \
-        --surfaces contract,signals \
-        --role qa-sdet --role executive:margin
+    python3 panel.py --intent readiness --surfaces contract,signals
 
-The judgment is declared by the caller. This script only holds the caller
-to the consequences of that judgment:
+The caller declares what the diff touches. This script answers who may
+read it, and never who should. The response contract:
 
-  * `--intent`  classifies the question. It gates the generative posture and
-    the `identity` accountability, neither of which can be justified by the
-    diff alone.
-  * `--surfaces` names what the diff actually touches. An executive is seated
-    only when the diff contains the surface their accountability reads.
+  * stdout is one JSON object
+  * `practitioners` and `executives` hold every eligible role, never a cut
+    panel
+  * each entry carries `role` and `question`. `role` is the seat name, as
+    `slug` or `slug:accountability`. `question` is copied from the
+    frontmatter, so the caller can judge relevance without opening a
+    profile.
+  * exit 0 means the input was usable, whatever the size of the result
 
-Exit 0 prints the panel and the profiles to read. Exit 1 lists every
-violation.
-
-`--list` prints the roles by square and exits.
+The steps below are the whole design. Read them before changing anything.
 """
 
 import argparse
-import os
+import json
 import sys
 
 import roles as roles_mod
 
-# Panel rules live in roles.py, the one rulebook both scripts enforce.
-MAX_PANEL = roles_mod.MAX_PANEL
-MIN_PANEL = roles_mod.MIN_PANEL
-SINGLE_PANEL = roles_mod.SINGLE_PANEL
-MAX_GENERATIVE = roles_mod.MAX_GENERATIVE
-READINESS_SAFE_GENERATIVE = roles_mod.READINESS_SAFE_GENERATIVE
+# How to find the eligible roles. This script does not choose a panel. It
+# reports every role that may sit on one. The caller then cuts the list,
+# and seats at most five. That division is deliberate:
+#
+#   the script  answers what the frontmatter can decide. Mechanical, and
+#               the same answer every run.
+#   the caller  answers what only the diff can decide. Whether this change
+#               holds anything for a given eligible role.
+#
+# So no step below judges what the diff is about. Every step is
+# mechanical. Two worked examples run through the steps, and they are the
+# two cases in test_panel.py:
+#
+#   A  --intent readiness --surfaces contract,signals
+#   B  --intent readiness --surfaces words
+#
+# (1) Load every role and its frontmatter. Each role carries posture,
+#     horizon, vantage, surface, and question. An executive carries an
+#     accountability instead of a distinct square.
+#
+# (2) Keep the roles whose `surface` is in --surfaces. A role that reads an
+#     artifact the diff does not contain has nothing to cite. This is the
+#     only filter that uses the diff.
+#     A keeps developer-advocate, integration-partner, platform-devex,
+#     security, executive:compliance for `contract`, and
+#     data-platform-scout, revenue-operations-analyst,
+#     site-reliability-engineer, executive:margin for `signals`.
+#     B keeps ai-prompt-engineer, launch-editor, support,
+#     technical-writer, executive:brand.
+#
+# (3) Apply --intent to the posture. `intent` is not stored on a role. It
+#     gates which posture may sit. Under `readiness`, drop every generative
+#     role. Under `direction`, keep both.
+#     A drops data-platform-scout and revenue-operations-analyst.
+#     B drops launch-editor.
+#
+# (4) Split the survivors. A role with no accountability is a
+#     practitioner. A role with one is an executive.
+#     A: five practitioners, two executives.
+#     B: three practitioners, one executive.
+#
+# (5) Report every survivor as an object with two keys. `role` is the seat
+#     name, as `slug` or `slug:accountability`. `question` is the question
+#     from the frontmatter, copied word for word. The caller cuts roles by
+#     reading these questions, so a paraphrase would send the cut against
+#     the wrong standard.
+#
+# (6) Do not rank the survivors, and do not cut the list. A has seven
+#     eligible roles for at most five seats, and B has four. Both are
+#     correct answers. Cutting needs the diff, which this script never
+#     reads.
+#
+# (7) Print the JSON response and exit 0, whatever the size of the result.
+#     Exit 1 only when the input is unusable: an unknown surface, an
+#     unknown intent, or no eligible role at all. An eligible list too
+#     large to seat is the normal case, not a failure.
+#
+# The `identity` accountability stays the one exception. It reads no
+# surface, so step 2 never keeps it. Add it in step 4 when --intent is
+# `direction`, and never otherwise.
+#
+# The cut itself is not this script's work, and none of its rules live
+# here. The relevance test, the cap of five, the practitioner floor, one
+# seat per accountability, and the excluded pairs all belong in skill.md,
+# where the caller reads them.
 
 
-class Seat:
-    def __init__(self, slug, accountability, role):
-        self.slug = slug
-        self.accountability = accountability
-        self.role = role
-
-    @property
-    def name(self):
-        if self.accountability:
-            return f"{self.slug}:{self.accountability}"
-        return self.slug
-
-    @property
-    def spec(self):
-        if self.accountability:
-            return self.role.accountabilities[self.accountability]
-        return {"horizons": self.role.horizons, "surface": self.role.surface}
-
-    @property
-    def is_executive(self):
-        return bool(self.accountability)
-
-    @property
-    def profile(self):
-        return self.role.profiles.get(self.accountability)
+def entry(name, question):
+    """One eligible role, in the shape step 5 fixes."""
+    return {"role": name, "question": question}
 
 
-def seat_roles(specs, known, errors):
-    seats = []
-    for spec in specs:
-        slug, accountability = roles_mod.resolve(spec, known)
-        if not slug:
-            errors.append(f"--role {spec}: no profile matches")
+def eligible(known, intent, surfaces):
+    """Steps 2 to 4. Returns (practitioners, executives), each sorted.
+
+    The two filters are surface and posture, in that order. Nothing else
+    removes a role, because nothing else can be decided without the diff.
+    """
+    practitioners = []
+    executives = []
+    for slug, role in sorted(known.items()):
+        # Step 3. A generative role reads the diff for what should exist
+        # next, which is a direction question, never a ship question.
+        if intent == "readiness" and role.posture == "generative":
             continue
-        role = known[slug]
-        if role.is_open_set and not accountability:
-            names = ", ".join(sorted(role.accountabilities))
-            errors.append(f"--role {spec}: '{slug}' needs an accountability "
-                          f"({names}), as in {slug}:margin")
-            continue
-        if accountability and not role.is_open_set:
-            errors.append(f"--role {spec}: '{slug}' takes no accountability")
-            continue
-        if accountability and accountability not in role.accountabilities:
-            names = ", ".join(sorted(role.accountabilities))
-            errors.append(
-                f"--role {spec}: '{slug}' has no accountability "
-                f"'{accountability}'. Defined: {names}. To add one, create "
-                f"role-profiles/{slug}-{accountability}.md with frontmatter.")
-            continue
-        seats.append(Seat(slug, accountability, role))
-    return seats
-
-
-def check_panel(seats, intent, surfaces, single=False):
-    errors = []
-
-    names = [s.name for s in seats]
-    for name in set(names):
-        if names.count(name) > 1:
-            errors.append(f"{name} is seated more than once")
-
-    # --single serves the `--role=<name>` flag, where the user asked for one
-    # named reviewer. Coverage is not the goal, so the floor drops to 1.
-    floor = SINGLE_PANEL if single else MIN_PANEL
-    if not floor <= len(seats) <= MAX_PANEL:
-        was = "role is" if len(seats) == 1 else "roles are"
-        errors.append(f"a panel is {floor} to {MAX_PANEL} roles, "
-                      f"but {len(seats)} {was} seated")
-    if single and len(seats) > 1:
-        errors.append("--single seats exactly one role, but "
-                      f"{len(seats)} are named")
-
-    practitioners = [s for s in seats if not s.is_executive]
-    executives = [s for s in seats if s.is_executive]
-
-    # An all-executive panel cannot cite the diff, and the evidence rule
-    # would suppress its findings anyway. Under --single the user named the
-    # one seat, so the rule is a tautology they already accepted.
-    if executives and not practitioners and not single:
-        errors.append("no practitioner on the panel: at least one role must "
-                      "read the diff directly")
-
-    # Two practitioners matching on all four axes see the same thing.
-    squares = {}
-    for seat in practitioners:
-        squares.setdefault(seat.role.square(), []).append(seat.name)
-    for square, members in squares.items():
-        if len(members) > 1:
-            errors.append(f"redundant on all four axes "
-                          f"({'/'.join([square[0], '+'.join(square[1]),
-                                        square[2], square[3]])}): "
-                          f"{', '.join(sorted(members))}")
-
-    # Executives are separated by accountability, never by axes.
-    seen = {}
-    for seat in executives:
-        seen.setdefault(seat.accountability, []).append(seat.name)
-    for accountability, members in seen.items():
-        if len(members) > 1:
-            errors.append(f"accountability '{accountability}' is seated "
-                          f"{len(members)} times")
-
-    # Surface gating. The count of executives falls out of the diff.
-    for seat in executives:
-        surface = seat.spec["surface"]
-        if not surface:
-            if intent != "direction":
-                errors.append(
-                    f"{seat.name}: this accountability reads no surface in "
-                    f"the diff, so it needs --intent direction")
-        elif surfaces and surface not in surfaces:
-            errors.append(
-                f"{seat.name}: reads '{surface}', which --surfaces does not "
-                f"list ({', '.join(sorted(surfaces))})")
-        elif not surfaces:
-            errors.append(f"{seat.name}: --surfaces is required to seat "
-                          "an executive")
-
-    surfaceless = [s for s in executives if not s.spec["surface"]]
-    if len(surfaceless) > 1:
-        errors.append("at most one accountability without a surface: "
-                      + ", ".join(sorted(s.name for s in surfaceless)))
-
-    # Generative posture. Every one of these rules balances a generative role
-    # against the defensive panel around it, so none of them applies when the
-    # user asked for one named role and there is no panel to balance.
-    generative = [s for s in seats if s.role.posture == "generative"]
-    defensive = [s for s in seats if s.role.posture == "defensive"]
-    if not single:
-        if len(generative) > MAX_GENERATIVE:
-            errors.append(f"at most {MAX_GENERATIVE} generative roles, "
-                          f"but {len(generative)} are seated")
-        if generative and len(generative) > len(defensive):
-            errors.append(f"{len(generative)} generative outnumber "
-                          f"{len(defensive)} defensive: add a defensive role "
-                          f"or drop a generative one")
-        if intent == "readiness":
-            for seat in generative:
-                if seat.slug not in READINESS_SAFE_GENERATIVE:
-                    errors.append(f"{seat.name}: generative roles need "
-                                  "--intent direction")
-
-    # Declared exclusions the axes do not capture.
-    seated = {s.slug for s in seats}
-    for left, right in roles_mod.EXCLUSIVE_PAIRS:
-        if left in seated and right in seated:
-            errors.append(f"{left} and {right} never run on the same panel")
-
-    return errors
-
-
-def print_list(known):
-    for posture in ("defensive", "generative"):
-        print(posture.upper())
-        rows = [r for r in known.values()
-                if r.posture == posture and not r.is_open_set]
-        for vantage in ("internal", "external", "strategic"):
-            for horizon in ("now", "soon", "later"):
-                hits = [f"{r.slug}({r.surface})" for r in sorted(
-                    rows, key=lambda r: r.slug)
-                    if r.vantage == vantage and horizon in r.horizons]
-                if hits:
-                    print(f"  {horizon:6}/{vantage:9} " + "  ".join(hits))
-        print()
-    for role in known.values():
-        if role.is_open_set:
-            print(f"{role.slug.upper()} (seated by accountability)")
-            for name, spec in sorted(role.accountabilities.items()):
-                surface = spec["surface"] or "— no diff surface"
-                print(f"  {name:11} {'+'.join(spec['horizons']):11} {surface}")
-
-    # Two roles sharing a square can never sit on the same panel, so an
-    # author adding a role needs to see the clash here.
-    squares = {}
-    for role in known.values():
         if not role.is_open_set:
-            squares.setdefault(role.square(), []).append(role.slug)
-    clashes = {k: v for k, v in squares.items() if len(v) > 1}
-    print()
-    if clashes:
-        print("COLLISIONS (these roles can never share a panel)")
-        for square, members in clashes.items():
-            print(f"  {square[0]}/{'+'.join(square[1])}/{square[2]}/"
-                  f"{square[3]}: {', '.join(sorted(members))}")
-    else:
-        print("No collisions: every role differs from every other "
-              "on at least one axis.")
+            # Step 2 and step 4, for a role seated by its axes.
+            if role.surface in surfaces:
+                practitioners.append(entry(slug, role.question))
+            continue
+        for accountability, spec in sorted(role.accountabilities.items()):
+            name = f"{slug}:{accountability}"
+            if spec["surface"]:
+                if spec["surface"] in surfaces:
+                    executives.append(entry(name, spec["question"]))
+            elif intent == "direction":
+                # The identity exception. It reads no surface, so the diff
+                # can never justify it, and only a direction question can.
+                executives.append(entry(name, spec["question"]))
+    return practitioners, executives
 
 
 def main():
@@ -230,22 +132,14 @@ def main():
         stream.reconfigure(encoding="utf-8", errors="replace")
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--role", action="append", default=[],
-                        metavar="SLUG[:ACCOUNTABILITY]")
     parser.add_argument("--intent", choices=("readiness", "direction"),
                         default="readiness",
                         help="what the question asks for")
     parser.add_argument("--surfaces", default="",
                         help="comma-separated surfaces the diff touches")
-    parser.add_argument("--list", action="store_true",
-                        help="print the roles by square and exit")
-    parser.add_argument("--single", action="store_true",
-                        help="seat exactly one named role, for the "
-                             "--role=<name> flag. Drops the panel floor to 1 "
-                             "and skips the rules that balance one role "
-                             "against the rest of a panel.")
     args = parser.parse_args()
 
+    # Step 1.
     known = roles_mod.load_roles()
     broken = roles_mod.validate_definitions(known)
     if broken:
@@ -254,34 +148,34 @@ def main():
             print(f"  - {problem}", file=sys.stderr)
         return 2
 
-    if args.list:
-        print_list(known)
-        return 0
-
     surfaces = {s.strip() for s in args.surfaces.split(",") if s.strip()}
-    unknown = surfaces - set(roles_mod.SURFACES)
-    errors = [f"--surfaces: '{s}' is not a known surface" for s in
-              sorted(unknown)]
-
-    seats = seat_roles(args.role, known, errors)
-    if not errors or seats:
-        errors.extend(check_panel(seats, args.intent, surfaces,
-                                  single=args.single))
-
-    if errors:
-        print("Panel rejected. Correct these and run again:", file=sys.stderr)
-        for error in dict.fromkeys(errors):
-            print(f"  - {error}", file=sys.stderr)
+    unknown = sorted(surfaces - set(roles_mod.SURFACES))
+    if unknown or not surfaces:
+        print("Unusable input. Correct these and run again:", file=sys.stderr)
+        for surface in unknown:
+            print(f"  - --surfaces: '{surface}' is not a known surface",
+                  file=sys.stderr)
+        if not surfaces:
+            print("  - --surfaces: name at least one surface of the diff",
+                  file=sys.stderr)
         return 1
 
-    label = "Single role" if args.single else f"Panel accepted ({args.intent})"
-    print(f"{label}. Read these profiles:")
-    for seat in seats:
-        spec = seat.spec
-        surface = spec["surface"] or "no diff surface"
-        print(f"  {seat.name:32} {seat.role.posture:10} "
-              f"{'+'.join(spec['horizons']):11} {seat.role.vantage:10} "
-              f"{surface:10} {os.path.relpath(seat.profile)}")
+    # Steps 2 to 4.
+    practitioners, executives = eligible(known, args.intent, surfaces)
+
+    # Step 7. An empty result is unusable, because no panel can follow it.
+    if not practitioners and not executives:
+        print(f"No role reads {', '.join(sorted(surfaces))} under "
+              f"--intent {args.intent}.", file=sys.stderr)
+        return 1
+
+    # Steps 5 and 6. Every survivor, unranked and uncut.
+    print(json.dumps({
+        "intent": args.intent,
+        "surfaces": sorted(surfaces),
+        "practitioners": practitioners,
+        "executives": executives,
+    }, indent=2, ensure_ascii=False))
     return 0
 
 
