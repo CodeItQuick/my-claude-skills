@@ -1,24 +1,21 @@
 ---
 name: product-review
-description: Assemble a panel of role-based reviewers for a question about a pull request or diff. Run panel.py to list every eligible role, then cut it to at most 5 whose posture, vantage point, and time horizon cover the question without overlap. Then report a focused findings table.
+description: Assemble a panel of role-based reviewers for a question about a pull request or diff. Run panel.py to list every eligible role, cut it to the roles the change actually gives something to, run each one, and report a focused findings table.
 ---
 
 # Product Review
 
-Select a panel of professional reviewers for a question about a change. Each role in `role-profiles/` defines a perspective: what it looks for, and what it suppresses. `pr-analysis` finds code-level patterns. `product-review` asks a different question: is the change ready to ship? The panel answers from the perspective of the people who live with the consequences.
+Assemble a panel of role-based reviewers for a question about a change, and report what they find. `pr-analysis` finds code-level patterns. `product-review` asks whether the change is ready to ship.
 
 ---
 
 ## Panel selection
 
-A panel is 1 to 5 roles. Their questions do not overlap, but all bear on the concern of the user. Coverage beats volume: three roles at different vantage points produce better findings than six roles at similar angles.
+Name two things. Both are yours to judge.
 
-Each role carries four axes in its profile frontmatter:
+**The intent.** `readiness` asks whether the change can ship. `direction` asks where the change leads.
 
-- **Posture** — **defensive** reads the diff for what must not ship. **generative** reads it for what must exist next.
-- **Vantage** — **internal** sees the code. **external** sees the product from outside. **strategic** weighs the change against a company constraint.
-- **Horizon** — when the consequence lands: **now** at ship, **soon** in use and operation, **later** as foundation and direction.
-- **Surface** — the artifact the role reads. Two roles reading different artifacts cannot produce the same finding.
+**The surfaces the diff touches.** Each role reads one artifact, named here:
 
 | Surface | What the role reads |
 |---|---|
@@ -31,52 +28,13 @@ Each role carries four axes in its profile frontmatter:
 | `signals` | what the running system emits: logs, metrics, alerts, cost |
 | `structure` | module boundaries, dependencies, layering |
 
-### Choosing the panel
-
-The work splits in two. `panel.py` says who **may** sit. You say who **does**.
-
-- **The script** decides from the frontmatter alone. It is mechanical, and it returns the same answer every run.
-- **You** decide from the diff. The script never reads the diff, so it cannot know which eligible role this change actually gives something to.
-
-Decide two things first, which are yours to judge:
-
-1. **The intent.** `readiness` asks whether the change can ship. `direction` asks where the change leads.
-2. **The surfaces the diff touches.** Read the diff and name them.
-
-Declare both. The script answers with every eligible role:
+Pass both to the script. It returns every eligible role, as `practitioners` and `executives`, each with the `question` that role asks:
 
 ```bash
 python3 "<base-dir>/panel.py" --intent readiness --surfaces contract,signals
 ```
 
-```json
-{
-  "intent": "readiness",
-  "surfaces": ["contract", "signals"],
-  "practitioners": [
-    {"role": "security", "question": "Does this introduce an exploitable surface?"},
-    "... four more ..."
-  ],
-  "executives": [
-    {"role": "executive:compliance", "question": "Does this breach a commitment we have already made?"},
-    {"role": "executive:margin", "question": "What does this cost to run, and does it affect revenue correctly?"}
-  ]
-}
-```
-
-Seven eligible roles here. The panel will be smaller. Each entry carries the `question` of that role, so you can cut without opening a profile.
-
-`--intent readiness` drops every generative role, so choose `direction` when the question asks where the change leads.
-
-Then cut the list to the panel. Follow [`cutting.md`](cutting.md).
-
-### Executives
-
-Executives are not separated by the axes, because every executive reads the whole change. They differ in what they answer for. So `executive` is one role, named by accountability: `executive:margin` is the CFO seat, `executive:compliance` the General Counsel seat.
-
-The `executives` list holds every accountability the surfaces reach, so there is nothing to seat one at a time. The count falls out of the diff rather than a fixed cap. A rename touches `pitch` and offers one executive. A change to billing, the public API, and module boundaries touches three surfaces and offers three.
-
-To add a COO or a CRO, create `role-profiles/executive-<accountability>.md` with frontmatter. No code changes.
+Then cut that list to the panel. Follow [`cutting.md`](cutting.md).
 
 ---
 
@@ -123,7 +81,7 @@ If a subagent returns prose, a summary, or a wrapped array, discard the reply an
 
 ## Output format
 
-Pipe the findings to `emit.py` as JSONL, one finding per line. Use the base directory shown at the top of this skill as `<base-dir>`. Report the stdout of the script as the whole reply.
+Run `emit.py` with the question, one `--role name=reason` per seat, and the collected rows on stdin. Add `--format jsonl` when the user passed that flag.
 
 ```bash
 python3 "<base-dir>/emit.py" --question "..." --role security=reason --role executive:margin=reason <<'EOF'
@@ -131,13 +89,6 @@ python3 "<base-dir>/emit.py" --question "..." --role security=reason --role exec
 EOF
 ```
 
-The script validates every row and lists each violation. The row schema is in [`role-run.md`](role-run.md), which the subagents follow, so a rejection means a subagent broke its contract. Respawn that role. Never repair a row by hand, because the finding is then partly yours and attributed to the role.
+The script validates every row and rejects the run with a list of violations. Respawn the role that broke its contract. Never repair a row by hand.
 
-Two checks belong to you rather than to a subagent, because no single role can see them:
-
-- Every `role` is a seatable name and sits on the panel you cut.
-- The panel is 1 to `MAX_PANEL` roles, read from `roles.py`.
-
-The script sorts the rows, adds the no-findings row, and appends the run to `logs/YYYY-MM-DD.jsonl`. Add `--format jsonl` for a CI pipeline. A CI pipeline must treat `Opportunity` as informational. It must never fail a build.
-
-Do not add prose, role sections, summaries, or recommendations. The table is the entire output. The user will ask follow-up questions for detail on any row.
+Report its stdout as the whole reply. Add no prose, sections, summary, or recommendation. The table is the entire output.
