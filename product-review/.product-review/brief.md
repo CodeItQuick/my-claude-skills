@@ -4,22 +4,23 @@
 <!-- Scope: the product-review skill itself. Takes precedence over the -->
 <!-- repository-level brief at ../../.product-review/brief.md for changes in this subtree. -->
 
-- **Derived from commit:** `323a5db`
-- **Generated:** 2026-08-14
+- **Derived from commit:** `d501ec0`
+- **Generated:** 2026-08-15
 
 ## Derived
 
 Facts grounded in this repository. Every line cites at least one path.
 
-- **What it is:** A Claude Code skill that lists the roles eligible to review a diff, cuts them to a panel, runs each in a subagent, and reports one findings table (`skill.md`).
-- **Users and tenancy:** One operator and the harness. No accounts, auth, or tenancy. The 31 names in `role-profiles/` are lenses, not users.
+- **What it is:** A Claude Code skill that lists the roles eligible to review a scope, cuts them to a panel, runs each in a subagent, and reports one findings table (`skill.md`).
+- **What it reviews:** A project folder or one section of it, and a git range only for a question about one change. The material may be source, prompts, or documents (`role-run.md`).
+- **Users and tenancy:** One operator and the harness. No accounts or auth. The 31 names in `role-profiles/` are lenses, not users.
 - **Business model:** None. No billing, plan, quota, or entitlement code.
-- **Surfaces:** Prompts — `skill.md` (every run), `cutting.md` (panel selection), `role-run.md` (subagent only). 31 profiles plus `_template.md`, 34,700 words, one loaded per subagent. Modules — `roles.py`, `panel.py`, `emit.py`. Plus `config.json` and `logs/*`.
-- **Sensitive data:** No personal data, but `logs/*` retain verbatim questions and code excerpts from reviewed repositories. `.gitignore` excludes them.
-- **Delivery:** No CI, no build. `test_panel.py` holds two tests, run by hand. Edits apply on the next invocation.
-- **Maturity signals:** `panel.py` filters on surface and posture only. `emit.py` checks six finding rules and two panel rules. Every other panel rule is prose in `cutting.md`. `roles.resolve` and `Role.square` have no caller.
-- **Role model:** Four frontmatter axes — posture, horizon, vantage, surface. 25 practitioners, 7 generative. 6 executives, seated by accountability and eligible only when the diff carries their surface. `panel.py` returns each `question` for cutting.
-- **Observed usage:** 39 legacy runs in `logs/*.json` use inconsistent role names and cannot be aggregated. `logs/2026-08-14.jsonl` holds the first current-format runs.
+- **Surfaces:** Prompts — `skill.md` (1,030 words, every run), `cutting.md` (660, panel selection), `role-run.md` (910, subagent only). 31 profiles plus `_template.md`, 34,700 words, one per subagent. Modules — `roles.py`, `panel.py`, `emit.py`. Plus `config.json` and `logs/*`.
+- **Sensitive data:** No personal data, but `logs/*` retain verbatim questions and excerpts from reviewed repositories. `.gitignore` excludes them.
+- **Delivery:** No CI, no build. `test_panel.py` holds two tests, run by hand, covering `panel.py` only. Nothing tests the subagent contract.
+- **Maturity signals:** `panel.py` filters on surface and posture only. `emit.py` checks six finding rules and two panel rules. `MAX_PANEL` is 5. Every other panel rule is prose in `cutting.md`. `roles.resolve` and `Role.square` have no caller.
+- **Role model:** Four frontmatter axes — posture, horizon, vantage, surface. 25 practitioners, 7 generative. 6 executives, seated by accountability and eligible only when the scope carries their surface. `panel.py` returns each `question` for cutting.
+- **Observed usage:** 39 legacy runs in `logs/*.json` use inconsistent role names and cannot be aggregated. Three real runs in the current format returned 15 to 18 findings each.
 
 ## Inferred
 
@@ -30,6 +31,8 @@ Model knowledge, not observation. **Cannot support a finding.** Verify before re
 - **Likely competitive set:** Automated PR-review products, and review built into coding agents. Claims to confirm.
 - **Category direction:** Multi-perspective review, suppression over volume, prompts split into files that load on demand.
 
+
+
 > These claims decay quickly. Phrase any named-competitor claim as a claim to
 > confirm, never as established fact.
 
@@ -37,10 +40,10 @@ Model knowledge, not observation. **Cannot support a finding.** Verify before re
 
 Treat each as unknown, not absent. Do not invent them.
 
-- Whether past findings were acted on, disputed, or ignored
+- Whether past findings were acted on, disputed, or ignored — the logs record output, never outcome
 - Whether this is for personal use or to be shared
-- What kinds of repository it will be pointed at
-- The tolerable noise level per run
+- What kinds of project it will be pointed at
+- The tolerable noise level per run, now that no scope bounds how much a role can find
 - Whether the full roster is expected to be exercised
 
 ## Human notes
