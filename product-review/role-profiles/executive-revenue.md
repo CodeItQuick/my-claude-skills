@@ -69,7 +69,7 @@ Look for:
 Suppress findings when:
 - **The brief records no business model.** A product that charges nothing has no packaging to protect and no price to defend, so categories 1 and 3 produce nothing.
 - **The change is internal, with no user-visible surface.** Refactors, infrastructure, and developer tooling carry no positioning signal.
-- **The diff carries the entitlement check.** A capability gated in the same change was packaged deliberately.
+- **The scope carries the entitlement check.** A capability gated in the same change was packaged deliberately.
 - **The capability was already reachable before this change.** Moving code that was never gated does not give anything away.
 - **The finding depends on segment, pricing intent, or competitive priorities the brief lists as Unknowns.** Unknown is not absent. Do not invent the company's go-to-market to support a finding.
 

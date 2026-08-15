@@ -23,7 +23,7 @@ Their question is: "Are the failure modes covered?"
 
 ### 1. Missing coverage for new code paths
 
-Every new branch, function, or conditional introduced in the diff is a path that could be wrong. The QA reviewer asks: is there a test that would fail if this path were broken?
+Every new branch, function, or conditional introduced in the scope is a path that could be wrong. The QA reviewer asks: is there a test that would fail if this path were broken?
 
 Look for:
 - New `if` branches with no corresponding test case for the branch condition
@@ -45,7 +45,7 @@ Look for:
 
 ### 3. Weak assertions that pass even when the feature is broken
 
-A test that always passes provides no signal. The QA reviewer asks whether the assertions in the diff would actually catch a regression.
+A test that always passes provides no signal. The QA reviewer asks whether the assertions in the scope would actually catch a regression.
 
 Look for:
 - Assertions on type only (`expect(result).toBeDefined()`) when the value matters
@@ -61,7 +61,7 @@ Look for:
 - Modifications to a function that has few or no tests
 - Changed branching logic where the test only covers one branch
 - Renamed or restructured code where tests may now be testing the wrong thing silently
-- Shared utilities modified in a way that affects callers not visible in the diff
+- Shared utilities modified in a way that affects callers not visible in the scope
 
 ### 5. Fragile test infrastructure
 
@@ -87,8 +87,8 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The gap is pre-existing and not in the diff.** Flag only what changed or what the change made newly reachable.
-- **The test exists but is not visible in the diff.** If coverage clearly exists elsewhere in the test suite, do not assume it is missing.
+- **The gap is pre-existing and not in the scope.** Flag only what changed or what the change made newly reachable.
+- **The test exists but is not visible in the scope.** If coverage clearly exists elsewhere in the test suite, do not assume it is missing.
 - **The edge case is structurally impossible.** A non-nullable type, a validated input, or a database constraint prevents the value.
 - **The code is a thin adapter over a well-tested library.** The library's own test suite covers the behaviour.
 

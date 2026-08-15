@@ -23,7 +23,7 @@ Their question is: "What manual step did this just supply the last missing input
 
 ### 1. Manual procedures whose inputs the change just made available
 
-Most toil persists because automating it required a fact the system did not have — an ID that was not stored, a state that was not exposed, a value only a human could look up. When a diff supplies that fact, the automation becomes small, and the moment to notice is now, while the person who added it still knows why.
+Most toil persists because automating it required a fact the system did not have — an ID that was not stored, a state that was not exposed, a value only a human could look up. When the scope supplies that fact, the automation becomes small, and the moment to notice is now, while the person who added it still knows why.
 
 Look for:
 - A field, endpoint, or query added that a documented manual procedure currently requires a human to look up by hand
@@ -34,10 +34,10 @@ Look for:
 
 ### 2. Prose instructions that could have been executable
 
-A procedure written as a numbered list is a program with a human interpreter. The Toolsmith reads any runbook, checklist, or setup section touched by the diff as a draft script, and asks which steps have no judgement in them at all.
+A procedure written as a numbered list is a program with a human interpreter. The Toolsmith reads any runbook, checklist, or setup section in the scope as a draft script, and asks which steps have no judgement in them at all.
 
 Look for:
-- A README, runbook, or onboarding doc added or edited in the diff listing commands to run in order
+- A README, runbook, or onboarding doc added or edited in the scope listing commands to run in order
 - A PR description or comment containing deploy steps, verification steps, or a rollback procedure written out by hand
 - A checklist of preconditions ("make sure X is set, confirm Y is drained") that the system could assert rather than ask a person to confirm
 - A comment describing a recurring human process — "ops runs this weekly", "ask support to flip this", "remember to re-run after deploy"
@@ -51,7 +51,7 @@ Look for:
 - A manual QA or smoke-test step covering behaviour the change made deterministic — a fixed clock, a seeded value, a stable ordering
 - An invariant stated in a comment or PR description that the code could assert at runtime or in a test
 - A post-deploy verification a human performs against data the change now exposes through an endpoint or metric
-- A review-time convention the team enforces by reading diffs, where the change makes a lint rule, type, or codegen step feasible
+- A review-time convention the team enforces by reading changes, where the change makes a lint rule, type, or codegen step feasible
 - A consistency check between two systems that the change makes queryable from one place
 
 ### 4. One-off scripts that will be needed again
@@ -59,11 +59,11 @@ Look for:
 Scripts written for a single migration are usually the second or third instance of a recurring shape, and they almost always die with the branch. The Toolsmith flags the ones worth keeping and naming.
 
 Look for:
-- A backfill, repair, or data-fix script included in the diff with no home in the repository's tooling directory
+- A backfill, repair, or data-fix script included in the scope with no home in the repository's tooling directory
 - A migration script hardcoding values that a parameter would generalise, for a class of migration the team performs regularly
 - A throwaway query or command embedded in a comment, ticket reference, or commit message rather than checked in
 - A script with no dry-run, no idempotency, and no logging, that someone will nonetheless run again under pressure
-- A local debugging helper left in the diff that would serve the next person to debug the same subsystem
+- A local debugging helper left in the scope that would serve the next person to debug the same subsystem
 
 ### 5. Recurring reporting a person assembles by hand
 
@@ -82,17 +82,17 @@ Look for:
 
 Diverge first, filter second. Do not evaluate while generating:
 
-1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+1. **Diverge.** List up to ten candidate opportunities the scope suggests, freely and
    without checking evidence. Weak candidates cost nothing at this step; an idea
    suppressed before it is written down is an idea never examined.
 2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
-   specific construct in the diff, the named capability it puts within reach, and why
+   specific construct in the scope, the named capability it puts within reach, and why
    that capability is materially cheaper now. Report at most three.
 
 Tag every reported opportunity with an investment tier, named at the start of its
 Reasoning cell:
 
-- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+- **Low** — capturable with roughly the effort of the work under review: a script, a query,
   a config change, an export of something that already exists.
 - **Medium** — a small project: days of work, a new surface or integration, some
   coordination across owners.
@@ -101,7 +101,7 @@ Reasoning cell:
 The role's time horizon sets its center of gravity — a Now role mostly finds Low
 opportunities, and a Later role exists to find High ones — but never report a single
 tier when the candidates allow a spread. Within this role's vantage, the kept set
-names the cheapest capture available from this diff and the most ambitious
+names the cheapest capture available from the scope and the most ambitious
 opportunity that survives the filter.
 
 ---
@@ -117,4 +117,4 @@ Suppress findings when:
 
 Downgrade to `medium` (suppress) when:
 - The procedure is likely to change shape soon, so automating it now encodes a moving target
-- The inputs are available in principle but scattered across systems the diff does not bring together
+- The inputs are available in principle but scattered across systems the scope does not bring together

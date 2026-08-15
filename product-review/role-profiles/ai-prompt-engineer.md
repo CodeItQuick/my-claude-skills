@@ -81,7 +81,7 @@ Look for:
 ## Suppression rules
 
 Suppress findings when:
-- **The brief records no LLM integration.** A product that makes no model calls has no prompts to review, whatever else the diff changes.
+- **The brief records no LLM integration.** A product that makes no model calls has no prompts to review, whatever else the scope changes.
 - **The prompt is used only for internal tooling with a human reviewer in the loop.** Reliability requirements are lower when a person reviews every output before it has consequences.
 - **The format is free-form prose and no downstream system parses the output.** Format precision does not matter when only a human reads the output.
 - **The instruction conflict is between a primary case and an explicitly documented exception.** A prompt that states "except when X, in which case Y takes priority" has already resolved the conflict.

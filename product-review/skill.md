@@ -1,11 +1,11 @@
 ---
 name: product-review
-description: Assemble a panel of role-based reviewers for a question about a pull request or diff. Run panel.py to list every eligible role, cut it to the roles the change actually gives something to, run each one, and report a focused findings table.
+description: Assemble a panel of role-based reviewers for a question about a project, a section of one, or a pull request. Run panel.py to list every eligible role, cut it to the roles the scope actually gives something to, run each one, and report a focused findings table.
 ---
 
 # Product Review
 
-Assemble a panel of role-based reviewers for a question about a change, and report what they find. `pr-analysis` finds code-level patterns. `product-review` asks whether the change is ready to ship.
+Assemble a panel of role-based reviewers for a question about a project, a section of one, or a change, and report what they find. `pr-analysis` finds code-level patterns. `product-review` asks whether what is in scope is ready to ship.
 
 ---
 
@@ -13,9 +13,9 @@ Assemble a panel of role-based reviewers for a question about a change, and repo
 
 Name two things. Both are yours to judge.
 
-**The intent.** `readiness` asks whether the change can ship. `direction` asks where the change leads.
+**The intent.** `readiness` asks whether the change can ship. `direction` asks where the change leads. A question is one or the other, never both, and posture follows from that classification absolutely: a `readiness` response contains no generative role, whatever the surfaces.
 
-**The surfaces the diff touches.** Each role reads one artifact, named here:
+**The surfaces the scope carries.** Each role reads one artifact, named here:
 
 | Surface | What the role reads |
 |---|---|
@@ -40,7 +40,9 @@ Then cut that list to the panel. Follow [`cutting.md`](cutting.md).
 
 ## Flags
 
-- `--role=<name>` — run a single role. `<name>` is the exact seat name, as `slug` or `slug:accountability`. There are no aliases and no shorthand. Seat that role alone and skip the cut entirely. Still run `panel.py` for the declared surfaces, and check that the named role appears in the response. If it does not, report that to the user rather than substituting another role. Never add a second role to fill out a panel.
+- `--role=<name>` — run a single role. `<name>` is the exact seat name, as `slug` or `slug:accountability`. There are no aliases and no shorthand. Seat that role alone and skip the cut entirely. Still run `panel.py` for the declared surfaces, and check that the named role appears in the response. Never add a second role to fill out a panel, and never substitute another role. If the named role is absent, say which of the two causes applies:
+  - **It is generative and the intent is `readiness`.** The user asked a direction question. Tell them so, and offer to run it again with `--intent direction`.
+  - **Its surface is not among the surfaces you declared.** That is your call from step 2, not theirs. Look again in the scope for that surface. Declare it and run again if it is there, and tell the user the scope does not carry it if it is not.
 - `--format=<format>` — `report` (default, markdown table) or `jsonl` (one finding per line, for CI pipelines).
 - `--brief` — regenerate the product brief unconditionally, then continue with the review. See [`brief.md`](brief.md).
 
@@ -48,10 +50,10 @@ Then cut that list to the panel. Follow [`cutting.md`](cutting.md).
 
 ## Workflow
 
-You never read a role profile, and you never review the diff yourself. Each seated role runs in its own subagent. You choose the panel, spawn them, and report what they return.
+You never read a role profile, and you never review the scope yourself. Each seated role runs in its own subagent. You choose the panel, spawn them, and report what they return.
 
 1. **Load the product brief.** Read `.product-review/brief.md` in the reviewed repository. If the file does not exist, ask the user before you generate one. Then follow [`brief.md`](brief.md). If the recorded commit SHA is stale relative to `HEAD`, say so in the run. A run without a brief still works. The roles cannot fire the suppression rules that need product context, so the panel over-reports.
-2. **Name the diff.** Establish the range, such as `main...HEAD`. Run `git diff --stat <range>` and read enough of the change to name the surfaces it touches. Do not read the whole diff. The subagents do that. If no range is available, ask the user for the code to review.
+2. **Name the scope.** Establish the path or paths under review — usually a project folder, or one section of it. Use a git range such as `main...HEAD` only when the question is about one specific change. List the tree and read enough to name the surfaces present. Do not read the files themselves. The subagents do that. If the user named no target, ask what to review.
 3. **Select the roles.** Run `panel.py` per [Panel selection](#panel-selection), then cut the eligible list per [`cutting.md`](cutting.md).
 4. **Spawn one subagent per seated role,** all in one message so they run in parallel. See [Spawning the roles](#spawning-the-roles).
 5. **Collect the rows.** Each subagent returns JSONL, or nothing. Concatenate the lines in the order the subagents were spawned. Do not edit a row, and do not drop one because another role disagrees.
@@ -59,14 +61,14 @@ You never read a role profile, and you never review the diff yourself. Each seat
 
 ### Spawning the roles
 
-Give each subagent these five arguments and nothing else. It reads its own profile and its own diff.
+Give each subagent these five arguments and nothing else. It reads its own profile and its own scope.
 
 | Argument | Value |
 |---|---|
 | `role` | The seat name, as `slug` or `slug:accountability` |
 | `profile` | `<base-dir>/role-profiles/<file>.md` |
 | `question` | The question the user asked, verbatim |
-| `diff range` | The range from step 2, such as `main...HEAD` |
+| `scope` | The path or paths from step 2, or a git range when the question is about one change |
 | `brief` | The path to `.product-review/brief.md`, or `none` |
 
 Point each one at [`role-run.md`](role-run.md), which holds the evidence requirement, the suppression discipline, and the row schema. Do not restate those rules in the prompt you write.
@@ -75,7 +77,7 @@ Three rules on the spawn:
 
 - **One role per subagent.** Two roles in one context can see each other, and the panel then reports one opinion twice.
 - **Spawn them together.** They are independent, so they run at once.
-- **Pass the range, never the diff text.** Five copies of a diff through this context is the cost the split exists to avoid.
+- **Pass the scope, never the contents.** Five copies of a project through this context is the cost the split exists to avoid.
 
 If a subagent returns prose, a summary, or a wrapped array, discard the reply and spawn that role again. Do not repair the output by hand.
 

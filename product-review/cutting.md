@@ -10,8 +10,8 @@ you may not exceed, never a target to fill.
 
 ## The relevance test
 
-For each eligible role, name the artifact in the diff that its `question` can
-be asked of. If you cannot name one, cut the role.
+For each eligible role, name the artifact in the scope that its
+`question` can be asked of. If you cannot name one, cut the role.
 
 The response carries the `question` of every eligible role, so run this test
 without opening a profile.
@@ -20,10 +20,12 @@ without opening a profile.
 
 Apply these in order. Stop when no rule fires.
 
-1. **Never cut a role the user named.** If a named role is absent from the
-   eligible list, report that instead of substituting another role.
-2. **Cut every role whose question the diff does not answer.** State the
-   reason for each cut.
+1. **Never cut a role the user named.** A role absent from the response was
+   never eligible, which is not a cut — the surface filter or the posture gate
+   removed it before you saw the list. Report which one, per the `--role`
+   flag in skill.md, and never substitute another role.
+2. **Cut every role whose question the scope does not answer.** State
+   the reason for each cut.
 3. **Keep at least one practitioner per declared surface.** If relevance
    empties a surface, you declared the wrong surfaces. Say so rather than
    seating a role with nothing to read.
@@ -44,7 +46,7 @@ The script filters by surface and by posture. Nothing else. These four rules
 are yours to hold:
 
 - **At least one practitioner sits on every panel.** An all-executive panel
-  cannot cite the diff.
+  cannot cite the scope.
 - **`platform-capability-scout` and `toolsmith` never run together.** The
   audience of the Scout is code. The audience of the Toolsmith is a person.
 - **Seat each accountability once.** The response never repeats one, so this

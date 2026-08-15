@@ -78,10 +78,10 @@ Look for:
 
 ### 6. Dependency or supply chain risk
 
-New dependencies introduced in the diff are a trust decision.
+New dependencies introduced in the scope are a trust decision.
 
 Look for:
-- New `npm install`, `pip install`, or similar in the diff adding a package with no clear provenance
+- New `npm install`, `pip install`, or similar in the scope adding a package with no clear provenance
 - Dependencies pinned to a loose range (`^`, `~`, `*`) in security-sensitive contexts
 - Direct use of a transitive dependency that could be swapped without the author knowing
 

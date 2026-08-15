@@ -38,7 +38,7 @@ adding a profile. A role that does not appear in that output did not load.
 
 An executive accountability is a special case. Add an `accountability:` key,
 name the file executive-<accountability>.md, and set `role: executive`. Use
-`surface: none` when the accountability reads nothing in the diff.
+`surface: none` when the accountability reads nothing in the scope.
 
 File naming: kebab-case job title, e.g. data-engineer.md, legal-counsel.md, site-reliability-engineer.md
 
@@ -65,11 +65,11 @@ load on every run that selects them, so length is a recurring cost.
 
 Posture — decide this first; it determines the rest of the profile:
 
-  Defensive (the default) — the role reads a diff for what should not ship. "What
+  Defensive (the default) — the role reads the scope for what should not ship. "What
   they look for" describes defects, risks, costs, or confusion. Findings are
   supported by impact evidence and emit Blocking / Suggested.
 
-  Generative — the role reads a diff for what should exist next. "What they look
+  Generative — the role reads the scope for what should exist next. "What they look
   for" describes leverage, adjacency, or unserved need. Findings are supported by
   leverage evidence and emit Opportunity only. A generative role must state in
   "Who this is" that it is not looking for defects, and name the defensive roles
@@ -120,16 +120,16 @@ Their question is: "[One sentence that no other panel member would ask in the sa
 
 For a defensive role, a category names a risk and the bullets are its observable
 signals. For a generative role, a category names a leverage pattern and each bullet
-pairs a construct the diff could introduce with the capability it puts within reach —
+pairs a construct the scope holds with the capability it puts within reach —
 leverage evidence needs both halves.
 
 Headings should be noun phrases describing the category of concern, not verbs:
   Good: "Missing rollback path", "Scope that drifted from the stated problem"
   Avoid: "Check for missing rollback", "Look at whether scope drifted"
 
-Every reported finding needs two evidence types drawn from the diff (see the
-evidence requirement in skill.md). Write each bullet so it can be matched against
-a specific diff line — a bullet that can never yield code, path, or convention
+Every reported finding needs two evidence types drawn from the scope (see the
+evidence requirement in role-run.md). Write each bullet so it can be matched
+against a specific line — a bullet that can never yield code, path, or convention
 evidence will only ever produce suppressed findings. Avoid "things that might be
 wrong"; describe the observable signal.
 -->
@@ -139,10 +139,10 @@ wrong"; describe the observable signal.
 [One paragraph: what this concern is, why this role cares about it, what question they are asking.]
 
 Look for:
-- [Specific observable pattern in a diff]
-- [Specific observable pattern in a diff]
-- [Specific observable pattern in a diff]
-- [Specific observable pattern in a diff]
+- [Specific observable pattern in the scope]
+- [Specific observable pattern in the scope]
+- [Specific observable pattern in the scope]
+- [Specific observable pattern in the scope]
 
 ### 2. [Concern category name]
 
@@ -192,17 +192,17 @@ categories above say where to look; this section says how to search and what to 
 
 Diverge first, filter second. Do not evaluate while generating:
 
-1. **Diverge.** List up to ten candidate opportunities the diff suggests, freely and
+1. **Diverge.** List up to ten candidate opportunities the scope suggests, freely and
    without checking evidence. Weak candidates cost nothing at this step; an idea
    suppressed before it is written down is an idea never examined.
 2. **Filter.** Keep only the candidates that survive the leverage evidence test — a
-   specific construct in the diff, the named capability it puts within reach, and why
+   specific construct in the scope, the named capability it puts within reach, and why
    that capability is materially cheaper now. Report at most three.
 
 Tag every reported opportunity with an investment tier, named at the start of its
 Reasoning cell:
 
-- **Low** — capturable with roughly the effort of the diff itself: a script, a query,
+- **Low** — capturable with roughly the effort of the work under review: a script, a query,
   a config change, an export of something that already exists.
 - **Medium** — a small project: days of work, a new surface or integration, some
   coordination across owners.
@@ -211,7 +211,7 @@ Reasoning cell:
 The role's time horizon sets its center of gravity — a Now role mostly finds Low
 opportunities, and a Later role exists to find High ones — but never report a single
 tier when the candidates allow a spread. Within this role's vantage, the kept set
-names the cheapest capture available from this diff and the most ambitious
+names the cheapest capture available from the scope and the most ambitious
 opportunity that survives the filter.
 
 ---
@@ -225,7 +225,7 @@ Hard suppress — always skip, no finding reported. Lead with the condition, fol
 the reason in one sentence. Format: "**[Condition].** [Why it does not apply.]"
 
 Brief-grounded suppress — a hard suppress whose condition is a fact recorded in the
-product brief (.product-review/brief.md) rather than in the diff. Format: "**The brief
+product brief (.product-review/brief.md) rather than in the scope. Format: "**The brief
 records [fact].** [Why the role has nothing to say here.]" Example: "**The brief records
 no billing code.** Metering findings cannot apply to a product that charges nothing."
 If the role's relevance depends on what the product is — who uses it, what it charges,

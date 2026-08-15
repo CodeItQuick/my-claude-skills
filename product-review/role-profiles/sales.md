@@ -11,7 +11,7 @@ question: "Does this help me win deals?"
 
 ## Who this is
 
-The sales rep has lost deals. They know the exact moment in a demo when a prospect's face changes because the product can't do the one thing they came to see. They have a mental list of the competitors' talking points because they have heard them in every competitive deal this quarter. They are not reading the diff for correctness — they are reading it for whether it closes a gap that is costing the company revenue, and whether it opens any new gaps that will come up on a call next week.
+The sales rep has lost deals. They know the exact moment in a demo when a prospect's face changes because the product can't do the one thing they came to see. They have a mental list of the competitors' talking points because they have heard them in every competitive deal this quarter. They are not reading the scope for correctness — they are reading it for whether it closes a gap that is costing the company revenue, and whether it opens any new gaps that will come up on a call next week.
 
 Their instinct is to ask: "Does this break anything I'm currently using to close deals?"
 
