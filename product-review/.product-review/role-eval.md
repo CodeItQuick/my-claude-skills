@@ -42,7 +42,8 @@ profile against itself.
    findings table. Label them A and B.
 5. **Pair the findings.** Match an A finding to a B finding when both name the
    same artifact and the same defect. Wording will differ. Do not pair two
-   findings that merely cite the same file.
+   findings that merely cite the same file. Count the pairs — the number goes
+   in the scorecard.
 6. **Build the difference table** and stop. Every unpaired finding is a
    difference. A paired finding is not, however differently it is worded.
    Wait for the ratings before writing anything else.
@@ -122,6 +123,9 @@ difference rates as unimportant or duplicate on both sides.
 - **Question:** <verbatim>
 - **Scope:** <path or range>
 - **Blind held:** yes / no
+- **Rows returned:** candidate <n>, baseline <n>
+- **Paired findings:** <n> — both sides named the same defect
+- **Overlap:** <n> of <total rows across both sides>
 
 | Rating | Candidate only | Baseline only |
 |---|---|---|
@@ -130,12 +134,35 @@ difference rates as unimportant or duplicate on both sides.
 | incorrect or speculative | | |
 | duplicate of another finding | | |
 
+List each pair in one line, so a later reader can see what both profiles
+already agreed on.
+
 **Decision:** adopt / reject / no effect
 
 **Reason:** one sentence.
 
 **What the edit was:** one sentence, so a later reader can tell what was tested.
 ```
+
+## Reading the pair count
+
+The pair count says how much of the two profiles' output is the same. Read it
+before the ratings, because it sets how much weight the ratings carry.
+
+- **High overlap.** Most findings paired. The edit is incremental — it changed
+  the edges of what the role sees, not its centre. A small difference in
+  useful findings is a real signal, because the two profiles agree on
+  everything else.
+- **Low overlap.** Few findings paired. The two profiles are looking at
+  different things. The edit was substantial, and the comparison is weaker,
+  because more of the difference could be run-to-run variance rather than the
+  edit.
+- **No overlap at all.** Suspect the setup before the profile. Check that both
+  variants really ran against the same question and scope.
+
+An edit that raises useful findings while keeping overlap high is the best
+result available from this procedure. It means the role kept what it was
+already good at.
 
 Keep every scorecard. A rejected edit is worth as much as an adopted one — it
 records something the profile does not need, and stops the same idea being
