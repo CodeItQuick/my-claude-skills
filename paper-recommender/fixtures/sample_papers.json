@@ -1,0 +1,68 @@
+[
+  {
+    "title": "Sleep-dependent memory consolidation in humans: a meta-analysis",
+    "abstract": "We pooled 42 studies examining overnight retention of declarative material. Sleep after learning produced a moderate improvement in recall relative to equivalent periods of wakefulness, with slow-wave sleep duration the strongest single predictor of the effect.",
+    "doi": "10.1000/sleep.meta.2021",
+    "year": 2021,
+    "journal": "Sleep Research Reviews",
+    "citations": 412,
+    "study_type": "meta-analysis",
+    "sample_size": 2840,
+    "authors": ["Ramirez P", "Oduya K"]
+  },
+  {
+    "title": "Targeted memory reactivation during slow-wave sleep improves recall",
+    "abstract": "Participants learned word-location pairs paired with auditory cues. Replaying a subset of those cues during slow-wave sleep selectively improved recall for the cued pairs, providing causal evidence that reactivation during sleep strengthens memory traces.",
+    "doi": "10.1000/tmr.2019",
+    "year": 2019,
+    "journal": "Journal of Cognitive Neuroscience",
+    "citations": 233,
+    "study_type": "randomized controlled trial",
+    "sample_size": 68,
+    "authors": ["Chen L", "Whitfield-Gabrieli S"]
+  },
+  {
+    "title": "One night of total sleep deprivation impairs hippocampal encoding",
+    "abstract": "Using fMRI, we show that a single night without sleep reduces hippocampal activation during encoding of novel scenes and predicts poorer next-day recognition performance.",
+    "doi": "10.1000/deprivation.2017",
+    "year": 2017,
+    "journal": "Nature Neuroscience",
+    "citations": 890,
+    "study_type": "experimental",
+    "sample_size": 39,
+    "authors": ["Walker M"]
+  },
+  {
+    "title": "Aerobic exercise and executive function in older adults",
+    "abstract": "A six-month walking intervention in adults aged 65 and over produced modest gains on tests of executive function and increased anterior hippocampal volume relative to a stretching control group.",
+    "doi": "10.1000/exercise.2018",
+    "year": 2018,
+    "journal": "Journal of Aging Research",
+    "citations": 507,
+    "study_type": "randomized controlled trial",
+    "sample_size": 174,
+    "authors": ["Erickson K"]
+  },
+  {
+    "title": "Thermal bleaching thresholds in Indo-Pacific coral reef systems",
+    "abstract": "Survey data across 300 reef sites indicate that bleaching onset occurs consistently at 1.2 degrees above the local maximum monthly mean, with recovery contingent on the interval between successive thermal stress events.",
+    "doi": "10.1000/coral.2022",
+    "year": 2022,
+    "journal": "Marine Ecology",
+    "citations": 96,
+    "study_type": "observational",
+    "sample_size": 300,
+    "authors": ["Nakamura H"]
+  },
+  {
+    "title": "Sparse attention mechanisms for long-context sequence models",
+    "abstract": "We introduce a sparse attention pattern that reduces the quadratic cost of self-attention while preserving performance on long-document benchmarks, enabling context windows an order of magnitude larger at fixed compute.",
+    "doi": "10.1000/sparse.2023",
+    "year": 2023,
+    "journal": "Proceedings of Machine Learning Research",
+    "citations": 1544,
+    "study_type": "computational",
+    "sample_size": 0,
+    "authors": ["Beltagy I"]
+  }
+]
