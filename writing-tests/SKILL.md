@@ -441,13 +441,19 @@ moving into a helper; some are vacuous passes that have never tested anything.
 
 ### 2. Classify each hit
 
-Driving or deciding. Deciding hits are defects and get fixed. Driving hits move
-into a named helper, and the helper gets no `expect` that varies by iteration.
-A regex cannot tell the two apart: heuristic smell detectors misclassify over
-70% of instances (software_testing-59, moderate). The classification is the
-work, not the count.
+**A failure is always a defect.** The script decides it, so it needs no
+judgment. Control flow inside a test still needs a class, because the class
+names the fix. Every other failure has one fix. For example, a fixed sleep
+becomes a wait for a condition, and a clock read becomes fake timers or a
+mock. A fixed sleep moved into a helper is still a fixed sleep.
 
-Each judged section has its deciding question in a file in `references/`. This
+**Control flow is driving or deciding.** Deciding hits are defects and get
+fixed. Driving hits move into a named helper, and the helper gets no `expect`
+that varies by iteration. A regex cannot tell the two apart: heuristic smell
+detectors misclassify over 70% of instances (software_testing-59, moderate).
+The classification is the work, not the count.
+
+**Warnings and info need judgment.** Each judged section has its deciding question in a file in `references/`. This
 command prints the file for each section key:
 
 ```bash
