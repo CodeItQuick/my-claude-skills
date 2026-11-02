@@ -67,7 +67,7 @@ fixing the tests that a count finds (file them in the project's backlog).
 |---|---|
 | Which question decides each hit? | Is this test honestly written? |
 | Writes `references/*.md` | Reads `references/*.md` before a new test |
-| Counts and classifies hits | Reports hits |
+| Classifies all the hits of one section, across history | Classifies the hits in one file |
 | `scripts/validate-heuristics.mjs` | `$HOME/.claude/skills/writing-tests/scripts/validate-tests.mjs` |
 
 A heuristic whose proxy is right on most hits is a validator section. Hand it

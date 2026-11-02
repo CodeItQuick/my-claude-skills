@@ -66,7 +66,7 @@ test.
 |---|---|
 | Is this test honestly written? | Which question decides each hit? |
 | Reads `references/*.md` before a new test | Writes `references/*.md` |
-| Reports hits | Counts and classifies hits |
+| Classifies the hits in one file | Classifies all the hits of one section, across history |
 | `scripts/validate-tests.mjs` | `$HOME/.claude/skills/writing-test-heuristics/scripts/validate-heuristics.mjs` |
 
 ## Scope
@@ -186,7 +186,9 @@ The validator reports at three levels:
   whole contract. `expect(list.every(…)).toBe(true)` and `Array.isArray(…)`
   collapse a value to a boolean, so a failure reports `false` and hides it.
   Chai counts the same: `.to.eq(true)`, `.to.equal(false)` and `.to.be.true`.
-  Warning. `expect(list.filter(…)).toEqual([])` shows the value.
+  Warning. `expect(list.filter(…)).toEqual([])` shows the value. A `has(key)`
+  whose boolean is the API under test, as in a cache, is not collapsed: the
+  boolean is the value.
 - **The expected value is a literal.** Write `toBe(10)`, not `toBe(MAX_CART_ITEMS)`.
   A SCREAMING_CASE name imported from the code under test, and read as the
   expected value of `toBe`, `toEqual`, `toStrictEqual`, `toMatchObject`,
@@ -216,9 +218,12 @@ The validator reports at three levels:
   two files can share a body word for word and check different modules
   through their imports. code_quality-48 (moderate).
 - **Restore every fake, spy and stub in an `afterEach` or `afterAll`.**
-  `useFakeTimers` needs `useRealTimers`, `spyOn` needs `restoreAllMocks` or
-  `mockRestore`, `stubGlobal` needs `unstubAllGlobals`, and `stubEnv` needs
-  `unstubAllEnvs`. `Math.random = …` needs the original assigned back. A
+  `useFakeTimers` needs `useRealTimers`, and `spyOn` needs `restoreAllMocks`
+  or `mockRestore`. In Vitest, `stubGlobal` needs `unstubAllGlobals` and
+  `stubEnv` needs `unstubAllEnvs`. In Jest, `replaceProperty` needs
+  `restoreAllMocks` or the returned `restore()`. In sinon, a stub, spy, replace
+  or fake clock needs `restore()`. `Math.random = …` needs the original
+  assigned back. A
   restore at the end of a test body does not count: a failed assertion before
   it skips it, and every later test inherits the fake. software_testing-15 and
   -83 (strong). The check follows a spec's relative imports one level, static
@@ -238,8 +243,10 @@ The validator reports at three levels:
   visible to the validator. `toPass` counts as a web-first matcher.
 - **No `console` output inside a test.** A logged probe looks like a check.
   Assert the value or delete the line. Warning.
-- **No `process.env` inside a test body.** Stub it with `vi.stubEnv`, and
-  unstub it in `afterEach`. Warning. software_testing-83 (strong).
+- **No `process.env` inside a test body.** Stub it with `vi.stubEnv` in
+  Vitest, `jest.replaceProperty(process, 'env', …)` in Jest, or
+  `sinon.replace(process, 'env', …)`. Restore it in an after-hook. Warning.
+  software_testing-83 (strong).
 - **No real network call inside a test.** `fetch`, `axios` or `http.get` to an
   `http(s)://` URL fails when the host is down. Stub it or use `msw`. Warning,
   and not in Playwright files. software_testing-83 (strong).
@@ -250,8 +257,8 @@ The validator reports at three levels:
   on flakiness (software_testing-84, moderate), and long tests are the
   flakiest (-19, moderate). The limit sits just above the 99th percentile of
   one measured suite. Warning.
-- **Info only:** a `vi.mock` of a relative or `@/` path couples the test to
-  domain code (software_testing-33 and -34, moderate). A `let` reassigned
+- **Info only:** a `vi.mock` or `jest.mock` of a relative or `@/` path couples
+  the test to domain code (software_testing-33 and -34, moderate). A `let` reassigned
   inside a test carries the highest fault hazard among JavaScript smells
   (frontend-16, moderate). A `for (let …)` loop counter does not count.
 
@@ -275,9 +282,13 @@ ambient inputs (software_testing-83), and control the one that varies:
 
 | Input | Control it with |
 |---|---|
-| The clock | `vi.useFakeTimers().setSystemTime(…)`, and `vi.useRealTimers()` in `afterEach` |
+| The clock | Fake timers with a set time: `vi.useFakeTimers().setSystemTime(…)` or `jest.useFakeTimers().setSystemTime(…)`, and `useRealTimers()` in `afterEach`. If the code awaits a timer, advance it with `advanceTimersByTimeAsync(…)`. A plain `await` never resolves. |
 | A random draw | A source built in the test, so the result is known. Or pick an input where every draw meets the precondition, for example a catalog where every product has a price. |
 | The environment | Save and restore in `beforeEach`/`afterEach`, from one module in `support/` |
+
+A test that times a call with the real clock checks how slow the call is, not
+what the code does. If the claim is "the second call does not compute again",
+replace the slow dependency with a mock and assert its call count.
 
 **Loop containing expect** — one test pretending to be many.
 
@@ -343,7 +354,9 @@ House style, not an invariant: no graded claim covers test titles.
 
 ## Where helpers live
 
-Each test root has one `support/` folder. Read it before you write a helper.
+Keep the helpers of each test root in one `support/` folder. If there is no
+such folder, make it with the first helper that a second spec needs. If there
+is one, read it before you write a helper.
 Otherwise a constant such as a base URL gets copied after a support module
 already exports it.
 
@@ -378,9 +391,16 @@ the report.
 
 ## Running one file
 
-Run the file alone, with a command that exits. A bare `vitest` watches and
-does not exit, so use `vitest run`. The project file gives the command for
-each package.
+Run the file alone, with a command that exits:
+
+| Runner | Command |
+|---|---|
+| Vitest | `npx vitest run <file>`. A bare `vitest` watches and does not exit. |
+| Jest | `npx jest <file>` |
+| Mocha | `npx mocha <file>` |
+| Playwright | `npx playwright test <file>` |
+
+If the project file exists, it gives the command for each package.
 
 If the tests load built output, build first, or the suite tests the old code.
 
@@ -425,8 +445,24 @@ Driving or deciding. Deciding hits are defects and get fixed. Driving hits move
 into a named helper, and the helper gets no `expect` that varies by iteration.
 A regex cannot tell the two apart: heuristic smell detectors misclassify over
 70% of instances (software_testing-59, moderate). The classification is the
-work, not the count. For a hit in a helper, the question that decides it is in
-`references/control-flow-in-a-helper.md`.
+work, not the count.
+
+Each judged section has its deciding question in a file in `references/`. This
+command prints the file for each section key:
+
+```bash
+node $HOME/.claude/skills/writing-test-heuristics/scripts/validate-heuristics.mjs
+```
+
+A section with "none yet" has no written question. Classify its hits as
+driving or deciding.
+
+**The code under test is in the test file.** Sometimes the `if` or the loop
+is the behavior under test, because the production module does not hold that
+logic. Then the hit is neither driving nor deciding. The test checks its own
+code, so it proves nothing about the module. Report it as a defect: the logic
+belongs in the production code, and the test calls it there. A move into a
+helper fixes nothing.
 
 ### 3. Stop
 

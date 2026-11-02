@@ -9,6 +9,8 @@ one, the assert is dead: rewrite it. If the test controls every input, assert
 the exact value. If an input comes from a random draw or the clock, control
 that input first, as "Fixing the shapes" in `SKILL.md` says. Then check the
 title: does an assert in the test check the property that the title names?
+A collapsed boolean from a `has(key)` that is itself the API under test is a
+Contract hit: the boolean is the whole promise.
 
 **Example:** a test held this assert:
 
