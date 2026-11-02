@@ -55,6 +55,25 @@ describe('5. A wait for a time, not for a condition', () => {
             });
         `, passes(1, { helperSleep: ['spec.test.ts:3: waitForTimeout() in a test-file helper (helper starts line 1)'] }));
 
+        check('warns on setTimeout in a Mocha hook, which delays every test in the block', spec`
+            beforeEach(function (done) {
+                setTimeout(() => done(), delay);
+            });
+            it('says hello', function () {
+                assert.equal(helloWorld(), 'Hello World');
+            });
+        `, passes(1, { helperSleep: ['spec.test.ts:2: setTimeout() in a test-file hook (hook starts line 1)'] }));
+
+        check('passes a setTimeout in a hook when the file fakes the timers', spec`
+            beforeEach(() => vi.useFakeTimers());
+            afterEach(() => vi.useRealTimers());
+            beforeEach(() => { setTimeout(tick, 100); });
+            it('ticks', () => {
+                vi.advanceTimersByTime(100);
+                expect(tick).toHaveBeenCalledTimes(1);
+            });
+        `, passes(1));
+
         check('passes when the helper waits for the condition', spec`
             async function openReview(page) {
                 await page.getByRole('button', { name: 'Review' }).click();

@@ -186,13 +186,19 @@ The validator reports at three levels:
   whole contract. `expect(list.every(…)).toBe(true)` and `Array.isArray(…)`
   collapse a value to a boolean, so a failure reports `false` and hides it.
   Chai counts the same: `.to.eq(true)`, `.to.equal(false)` and `.to.be.true`.
+  So does the assert style of chai and `node:assert`, under any name that ends
+  in `assert` or `Assert`: `assert.isOk`, `assert.exists`, `assert.isNotNull`,
+  `ok(x)`, a type check such as `assert.isArray`, and
+  `assert.isTrue(list.includes(x))`.
   Warning. `expect(list.filter(…)).toEqual([])` shows the value. A `has(key)`
   whose boolean is the API under test, as in a cache, is not collapsed: the
   boolean is the value.
 - **The expected value is a literal.** Write `toBe(10)`, not `toBe(MAX_CART_ITEMS)`.
   A SCREAMING_CASE name imported from the code under test, and read as the
   expected value of `toBe`, `toEqual`, `toStrictEqual`, `toMatchObject`,
-  `toHaveLength`, `toContain` or chai `eq`, fails. If that constant is wrong,
+  `toHaveLength`, `toContain` or chai `eq`, fails. So does one read as the
+  second argument of `assert.equal`, `strictEqual`, `deepEqual` or
+  `lengthOf`. If that constant is wrong,
   the test still passes. A module-level `const` that only names a number,
   string or boolean, read as the expected value, is a warning: it hides the
   value from the reader. Put the reason in a comment beside the literal. Three
@@ -207,13 +213,19 @@ The validator reports at three levels:
   unless the file uses fake timers. Wait for a condition instead.
   software_testing-14 (strong). In a test-file helper, ambient state and a
   fixed sleep are warnings.
-- **Control flow in a hook is a warning,** as in a helper. An `if` whose whole
-  statement is one `delete`, the usual `process.env` restore, is exempt.
+- **A hook is read as a helper.** Control flow, ambient state and a fixed
+  sleep in a `before`, `beforeEach`, `after` or `afterEach` callback are
+  warnings. Each one runs before or after every test in its block. An `if`
+  whose whole statement is one `delete`, the usual `process.env` restore, is
+  exempt. A hook that is the same in many specs is not a copy failure: a
+  one-line restore belongs in each spec. If the repeated hook holds setup
+  logic, move the logic into `support/`, and call it from each hook.
 - **Every test asserts.** A test body with no `expect`, `assert`, `should` or
   helper named `expect…`/`assert…` fails. software_testing-97 (strong).
-- **Compare with a matcher, not inside the assertion.** `expect(a === b).toBe(true)`
-  and `assert(a < b)` fail, because a failure reports `false` and hides both
-  values. software_testing-100 (moderate).
+- **Compare with a matcher, not inside the assertion.** `expect(a === b).toBe(true)`,
+  `assert(a < b)`, `assert.isTrue(a === b)` and `assert.equal(a < b, true)`
+  fail, because a failure reports `false` and hides both values.
+  software_testing-100 (moderate).
 - **One test body is not written twice in one file.** The check is per file:
   two files can share a body word for word and check different modules
   through their imports. code_quality-48 (moderate).
@@ -402,7 +414,11 @@ Run the file alone, with a command that exits:
 
 If the project file exists, it gives the command for each package.
 
-If the tests load built output, build first, or the suite tests the old code.
+Some suites run their built output. The test script names a folder such as
+`dist/`, or the source specs import paths that exist only after a build. For
+those suites, build first, then run the built file, for example
+`npx tsc && npx mocha <out dir>/test/<file>.js`. Otherwise the suite tests the old
+code, or it does not start.
 
 ## Process
 
@@ -438,6 +454,10 @@ node $HOME/.claude/skills/writing-tests/scripts/validate-tests.mjs <file>
 
 Read every hit before changing anything. Some are driving loops that only need
 moving into a helper; some are vacuous passes that have never tested anything.
+
+A file with no hits has none of the validator's shapes. It can still hold an
+assert that cannot fail, or a title that its asserts do not check. Read the
+file against the Invariants too.
 
 ### 2. Classify each hit
 

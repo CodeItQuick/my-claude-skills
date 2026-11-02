@@ -469,4 +469,72 @@ describe('2. An assertion that checks too little', () => {
             'spec.test.ts:3: DEV_ORIGIN names a literal; write the literal as the expected value',
         ] }));
     });
+
+    // A suite that asserts with chai `assert` or `node:assert` has no `expect`
+    // chain, so each check above needs its assert-style form.
+    describe('the assert style of chai and node:assert', () => {
+        check('warns on assert.isOk, which passes for any truthy value', spec`
+            it('stores a session', () => {
+                assert.isOk(store.get('abc'));
+            });
+        `, passes(1, { weak: ['spec.test.ts:2: assert ok/exists'] }));
+
+        check('warns on ok from node:assert under another name', spec`
+            it('stores a session', () => {
+                nodeAssert.ok(store.get('abc'));
+            });
+        `, passes(1, { weak: ['spec.test.ts:2: assert ok/exists'] }));
+
+        check('warns on assert.isArray, which checks only the type', spec`
+            it('lists the close units', () => {
+                assert.isArray(zergling.closeUnits);
+            });
+        `, passes(1, { weak: ['spec.test.ts:2: assert type check'] }));
+
+        check('warns on includes inside assert.isTrue', spec`
+            it('logs the correct answer', () => {
+                assert.isTrue(messages.includes('correct'));
+            });
+        `, passes(1, { weak: ['spec.test.ts:2: assert.isTrue(x.includes(…)) collapses to a boolean; compare the value with a matcher so a failure shows it'] }));
+
+        check('warns on some compared with true by assert.equal', spec`
+            it('logs the correct answer', () => {
+                assert.equal(messages.some(message => message.includes('correct')), true);
+            });
+        `, passes(1, { weak: ['spec.test.ts:2: assert.equal(x.some(…)) collapses to a boolean; compare the value with a matcher so a failure shows it'] }));
+
+        check('fails on === inside assert.isTrue', spec`
+            it('scores three', () => {
+                assert.isTrue(score === 3);
+            });
+        `, fails(1, { folded: ['spec.test.ts:2: comparison inside the assertion; compare with a matcher so a failure shows both values'] }));
+
+        check('fails on < compared with true by assert.equal', spec`
+            it('stays under the cap', () => {
+                assert.equal(score < cap, true);
+            });
+        `, fails(1, { folded: ['spec.test.ts:2: comparison inside the assertion; compare with a matcher so a failure shows both values'] }));
+
+        check('fails on < inside ok from node:assert, and does not also call it weak', spec`
+            it('stays under the cap', () => {
+                nodeAssert.ok(score < cap);
+            });
+        `, fails(1, { folded: ['spec.test.ts:2: comparison inside the assertion; compare with a matcher so a failure shows both values'] }));
+
+        check('fails when assert.equal expects a constant from the code under test', spec`
+            import { MAX_UNITS } from '../src/units.js';
+            it('caps the units', () => {
+                assert.equal(count(), MAX_UNITS);
+            });
+        `, fails(1, { importedExpected: [
+            'spec.test.ts:3: MAX_UNITS is imported from ../src/units.js, the code under test; write the expected value as a literal',
+        ] }));
+
+        check('passes an exact assert.equal, and a boolean that the code under test returns', spec`
+            it('reads a palindrome', () => {
+                assert.equal(reverse('abc'), 'cba');
+                assert.isTrue(isPalindrome('abba'));
+            });
+        `, passes(1));
+    });
 });

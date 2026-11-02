@@ -62,6 +62,10 @@ const WEAK_ASSERTIONS = [
     { pattern: /\.to\.(?:be\.)?(?:ok|exist)\b/g, name: 'chai ok/exist' },
     { pattern: /\.not\.toBe(?:Null|Undefined)\(\)/g, name: 'not.toBeNull()/not.toBeUndefined()' },
     { pattern: /(?<!\.length\)\s*)\.toBe(?:GreaterThan|LessThan)(?:OrEqual)?\(\s*0\s*\)/g, name: 'sign-only check against 0' },
+    // chai `assert` and `node:assert`, under any name that ends in `assert` or `Assert`.
+    // An argument that compares is a folded comparison, a failure, so it is not also weak.
+    { pattern: /\b\w*[Aa]ssert\s*\.\s*(?:isOk|exists|isDefined|isNotNull|isNotUndefined|ok)\s*\((?![^()]*(?:===?|!==?|<=?|>=?))/g, name: 'assert ok/exists' },
+    { pattern: /\b\w*[Aa]ssert\s*\.\s*(?:isArray|isObject|isString|isNumber|isBoolean|isFunction|typeOf)\s*\(/g, name: 'assert type check' },
 ];
 
 /**
@@ -115,8 +119,8 @@ const callOf = name => new RegExp(`(?<![.\\w$])${name}\\s*\\(`, 'g');
 /** An `if` whose whole statement is one `delete`: an after-hook putting back a value that was unset. */
 const RESTORING_DELETE = /^if\s*\([^()]*\)\s*(?:delete\b[^;{}\n]*|\{\s*delete\b[^;{}]*;?\s*\})/;
 
-/** Any call that asserts: `expect`, `assert`, chai `should`, or a helper named for one. */
-const ASSERTS = /\b(?:expect|assert)\w*\s*[.(]|\.should\b/;
+/** Any call that asserts: `expect`, `assert`, chai `should`, a helper named for one, or `node:assert` imported as `nodeAssert`. */
+const ASSERTS = /\b(?:expect|assert)\w*\s*[.(]|\b\w+Assert\s*[.(]|\.should\b/;
 
 /**
  * Blanks comments and string bodies so keywords inside them do not match.
@@ -257,23 +261,52 @@ const COMPARISON = /===?|!==?|<=?|>=?/;
 // suite asserts only in the second form, so the Vitest half alone misses it.
 const BOOLEAN_MATCHER = /^\s*\.\s*(?:not\s*\.\s*)?(?:(?:toBe|toEqual|toStrictEqual)\s*\(\s*(?:true|false)\s*\)|(?:toBeTruthy|toBeFalsy)\s*\(\s*\))|^\s*\.\s*to\s*\.\s*(?:not\s*\.\s*)?(?:(?:be\s*\.\s*)?(?:eq|equal|equals|eql)\s*\(\s*(?:true|false)\s*\)|be\s*\.\s*(?:true|false)\b)/;
 
+/** The arguments in `text`, split at each comma at bracket depth zero. */
+function argumentsOf(text) {
+    const parts = [''];
+    let depth = 0;
+    for (const char of text) {
+        if ('([{'.includes(char)) depth++;
+        else if (')]}'.includes(char)) depth--;
+        if (depth === 0 && char === ',') parts.push('');
+        else parts[parts.length - 1] += char;
+    }
+    return parts;
+}
+
+/** `expect(`, and chai or `node:assert` under any name that ends in `assert` or `Assert`. */
+const ASSERT_CALL = /\b(expect|\w*[Aa]ssert(?:\s*\.\s*(?:ok|isOk|isNotOk|isTrue|isFalse|equal|strictEqual|deepEqual|deepStrictEqual))?)\s*\(/g;
+
+/**
+ * Each assert whose subject is a boolean: `expect(…)` with a boolean matcher,
+ * `assert(…)`, `ok`, `isTrue` or `isFalse`, and an `equal` against `true` or
+ * `false`. Each one gives its callee, its `(` and its arguments.
+ */
+function booleanAsserts(source, span) {
+    const found = [];
+    for (const match of source.slice(span.start, span.end).matchAll(ASSERT_CALL)) {
+        const callee = match[1].replace(/\s+/g, '');
+        const open = span.start + match.index + match[0].length - 1;
+        const close = closingParen(source, open);
+        if (close === -1) continue;
+        const args = source.slice(open + 1, close);
+        const boolean = callee === 'expect' ? BOOLEAN_MATCHER.test(source.slice(close + 1))
+            : /[Ee]qual$/.test(callee) ? /^\s*(?:true|false)\s*$/.test(argumentsOf(args)[1] ?? '')
+            : true;
+        if (boolean) found.push({ callee, open, args });
+    }
+    return found;
+}
+
 /**
  * `expect(a === b).toBe(true)` and `assert(a === b)`: the comparison runs
  * before the matcher sees it, so a failure reports `false` and hides both
  * values (software_testing-100: an assert observes less state than it can).
  */
 function foldedComparisons(source, span) {
-    const found = [];
-    for (const match of source.slice(span.start, span.end).matchAll(/\b(expect|assert(?:\s*\.\s*ok)?)\s*\(/g)) {
-        const open = span.start + match.index + match[0].length - 1;
-        const close = closingParen(source, open);
-        if (close === -1) continue;
-        const argument = topLevel(source.slice(open + 1, close)).replace(/=>/g, '');
-        if (!COMPARISON.test(argument)) continue;
-        if (match[1] === 'expect' && !BOOLEAN_MATCHER.test(source.slice(close + 1))) continue;
-        found.push(lineOf(source, open));
-    }
-    return found;
+    return booleanAsserts(source, span)
+        .filter(({ args }) => COMPARISON.test(topLevel(args).replace(/=>/g, '')))
+        .map(({ open }) => lineOf(source, open));
 }
 
 /**
@@ -299,18 +332,13 @@ const COLLAPSING_CALL = /^!?(?:[\w$.\s]|\(\)|\[\])*\.\s*(every|some|has|includes
  * `expect(items.every(…)).toBe(true)`: the call collapses the value into a
  * boolean before the matcher sees it, so a failure reports `false` and hides
  * which element broke it (software_testing-100). A call over several lines
- * counts. Returns the line and the name of each call.
+ * counts. Returns the line, the assert and the name of each call.
  */
 function collapsedBooleans(source, span) {
-    const found = [];
-    for (const match of source.slice(span.start, span.end).matchAll(/\bexpect\s*\(/g)) {
-        const open = span.start + match.index + match[0].length - 1;
-        const close = closingParen(source, open);
-        if (close === -1 || !BOOLEAN_MATCHER.test(source.slice(close + 1))) continue;
-        const call = withoutNested(source.slice(open + 1, close)).match(COLLAPSING_CALL);
-        if (call) found.push({ line: lineOf(source, open), name: call[1] ? `x.${call[1]}` : 'Array.isArray' });
-    }
-    return found;
+    return booleanAsserts(source, span).flatMap(({ callee, open, args }) => {
+        const call = withoutNested(args).match(COLLAPSING_CALL);
+        return call ? [{ line: lineOf(source, open), callee, name: call[1] ? `x.${call[1]}` : 'Array.isArray' }] : [];
+    });
 }
 
 /**
@@ -346,8 +374,10 @@ function literalConsts(source, clean) {
         .map(match => match[1]));
 }
 
-/** The matchers whose argument is the expected value, Vitest and chai alike. */
-const EXPECTED_ARGUMENT = /\.\s*(?:toBe|toEqual|toStrictEqual|toMatchObject|toHaveLength|toContain|toContainEqual|eq|equal|equals|eql)\s*\(/g;
+/** The matchers whose argument is the expected value, Vitest and chai alike. Not `assert.equal(`, below. */
+const EXPECTED_ARGUMENT = /(?<!\b\w*[Aa]ssert\s*)\.\s*(?:toBe|toEqual|toStrictEqual|toMatchObject|toHaveLength|toContain|toContainEqual|eq|equal|equals|eql)\s*\(/g;
+/** chai `assert` and `node:assert` take the expected value as the second argument. */
+const ASSERT_EXPECTED = /\b\w*[Aa]ssert\s*\.\s*(?:equal|strictEqual|deepEqual|deepStrictEqual|lengthOf)\s*\(/g;
 /** A bare name, or a property or index read off one: `LIMIT`, `LABELS.patience`, `LABELS['patience']`. */
 const NAME_READ = /^\s*([A-Za-z_$][\w$]*)(?:\s*\.\s*[\w$]+|\s*\[\s*\])*\s*$/;
 
@@ -360,11 +390,16 @@ const NAME_READ = /^\s*([A-Za-z_$][\w$]*)(?:\s*\.\s*[\w$]+|\s*\[\s*\])*\s*$/;
  */
 function namedExpectations(source, clean, span, imported, literals) {
     const found = { imported: [], named: [] };
-    for (const match of clean.slice(span.start, span.end).matchAll(EXPECTED_ARGUMENT)) {
+    const body = clean.slice(span.start, span.end);
+    const calls = [
+        ...[...body.matchAll(EXPECTED_ARGUMENT)].map(match => ({ match, expected: args => topLevel(args) })),
+        ...[...body.matchAll(ASSERT_EXPECTED)].map(match => ({ match, expected: args => argumentsOf(args)[1] ?? '' })),
+    ];
+    for (const { match, expected } of calls) {
         const open = span.start + match.index + match[0].length - 1;
         const close = closingParen(clean, open);
         if (close === -1) continue;
-        const name = topLevel(clean.slice(open + 1, close)).match(NAME_READ)?.[1];
+        const name = expected(clean.slice(open + 1, close)).match(NAME_READ)?.[1];
         const line = lineOf(clean, open);
         if (imported.has(name)) found.imported.push({ line, name, from: imported.get(name) });
         else if (literals.has(name)) found.named.push({ line, name });
@@ -484,8 +519,8 @@ export function checkFile(path, source, readImport = () => null) {
                 weak.push(`${path}:${lineOf(clean, span.start + match.index)}: ${name}`);
             }
         }
-        for (const { line, name } of collapsedBooleans(clean, span)) {
-            weak.push(`${path}:${line}: expect(${name}(…)) collapses to a boolean; compare the value with a matcher so a failure shows it`);
+        for (const { line, callee, name } of collapsedBooleans(clean, span)) {
+            weak.push(`${path}:${line}: ${callee}(${name}(…)) collapses to a boolean; compare the value with a matcher so a failure shows it`);
         }
         for (const { name, line } of uncontrolledIn(span, AMBIENT)) ambient.push(`${path}:${line}: ${name} inside a test body, and the file does not control it`);
         for (const { name, line } of uncontrolledIn(span, SLEEPS)) sleeps.push(`${path}:${line}: ${name} inside a test body`);
@@ -550,6 +585,9 @@ export function checkFile(path, source, readImport = () => null) {
             if (RESTORING_DELETE.test(clean.slice(hit.at))) continue;
             hookFlow.push(`${path}:${hit.line}: ${hit.name} in a test-file hook (hook starts line ${span.line})`);
         }
+        // A clock read or a fixed sleep in a hook runs before every test in its block.
+        for (const { name, line } of uncontrolledIn(span, AMBIENT)) helperAmbient.push(`${path}:${line}: ${name} in a test-file hook, and the file does not control it (hook starts line ${span.line})`);
+        for (const { name, line } of uncontrolledIn(span, SLEEPS)) helperSleeps.push(`${path}:${line}: ${name} in a test-file hook (hook starts line ${span.line})`);
     }
 
     return { failures, warnings, hookFlow, helperAmbient, helperSleeps, weak, namedLiterals, ambient, sleeps, unasserted, folded, importedExpected, bodies, leaks, ...flakeAndReadingFindings(path, source, clean, tests) };
@@ -914,8 +952,8 @@ export function main(argv) {
     report('Info — variable reassigned inside a test', info ? found('reassigned') : []);
     report('Warnings — control flow in a helper', warnings);
     report('Warnings — control flow in a hook', found('hookFlow'));
-    report('Warnings — ambient state in a helper', found('helperAmbient'));
-    report('Warnings — fixed sleep in a helper', found('helperSleeps'));
+    report('Warnings — ambient state in a helper or hook', found('helperAmbient'));
+    report('Warnings — fixed sleep in a helper or hook', found('helperSleeps'));
     report('Warnings — one helper name, different bodies', sameNames);
     report('Warnings — weak assertion inside a test', weak);
     report('Warnings — local name for a literal as the expected value', found('namedLiterals'));

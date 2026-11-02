@@ -94,6 +94,14 @@ describe('3. An input that the test does not control', () => {
                 expect(store.cleanup()).toEqual([]);
             });
         `, passes(1));
+
+        check('warns on Date.now() in a hook, which sets up every test in the block', spec`
+            let startedAt;
+            beforeEach(() => { startedAt = Date.now(); });
+            it('keeps a fresh session', () => {
+                expect(store.cleanup(startedAt)).toEqual([]);
+            });
+        `, passes(1, { helperAmbient: ['spec.test.ts:2: Date.now() in a test-file hook, and the file does not control it (hook starts line 2)'] }));
     });
 
     describe('the random draw', () => {
