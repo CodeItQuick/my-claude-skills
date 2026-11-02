@@ -128,8 +128,9 @@ families, from `01-assertion-does-not-run.test.mjs` to
 Each rule has several failing variants, each with its reason, and the fixes
 that pass. Read the family file for a worked example of a rule. The shared
 helpers are in `scripts/e2e/validator-cli.mjs`. The validator's own tests run
-with `node --test "$HOME/.claude/skills/writing-tests/scripts/**/*.test.mjs"` and
-must pass its own checks.
+with `cd $HOME/.claude/skills/writing-tests && node --test "scripts/**/*.test.mjs"`,
+and must pass its own checks. Run the glob from the skill folder: Node finds
+no test when the glob starts with a Git Bash path such as `/c/Users`.
 
 The validator reports at three levels:
 

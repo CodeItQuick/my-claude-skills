@@ -446,7 +446,7 @@ export function checkFile(path, source, readImport = () => null) {
     /** Each AMBIENT or SLEEPS hit in `span` that the file does not control. */
     const uncontrolledIn = (span, checks) => checks.flatMap(({ pattern, name, exempt }) => {
         if (controlled(exempt)) return [];
-        // Confirmed on the raw source: blanking turns `new Date('2026-11-01')` into `new Date(   )`.
+        // Confirmed on the raw source: blanking turns `new Date('1999-12-31')` into `new Date(   )`.
         const raw = new RegExp(pattern.source, 'y');
         return [...clean.slice(span.start, span.end).matchAll(pattern)]
             .map(match => span.start + match.index)
