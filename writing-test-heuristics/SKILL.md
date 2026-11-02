@@ -7,7 +7,7 @@ description: Use when adding a heuristic to the writing-tests skill's references
 
 ## Overview
 
-The validator in `writing-tests` reports 15 judged sections: 13 warnings and 2
+The validator in `writing-tests` reports 16 judged sections: 14 warnings and 2
 info. A judged section finds candidates, and a person decides each one. The
 script cannot tell a driving loop from a deciding loop, or a guard assert from
 a second behavior. That decision is the heuristic.
@@ -75,7 +75,7 @@ to `writing-tests`. The `collapsed` part of `weak` was right on 27 of 30.
 
 ## Scope
 
-**In:** the 15 judged sections, and a rule of thumb that no graded claim
+**In:** the 16 judged sections, and a rule of thumb that no graded claim
 backs.
 
 **Out permanently:** the 12 failure sections. The script decides each hit, so

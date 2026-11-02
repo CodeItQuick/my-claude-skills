@@ -470,6 +470,47 @@ describe('2. An assertion that checks too little', () => {
         ] }));
     });
 
+    describe('an expected value that the test computes', () => {
+        const COMPUTED = expression => `spec.test.ts:2: the expected value is computed (${expression}); write the literal that it gives, unless it relates two values that the test read`;
+
+        check('warns on a formula copied from the code under test', spec`
+            it('totals a discounted order with tax', () => {
+                expect(total(order)).toBe(amount * (1 - discount) * 1.08);
+            });
+        `, passes(1, { computed: [COMPUTED('amount * (1 - discount) * 1.08')] }));
+
+        check('warns on arithmetic over a parameter row in assert style', spec`
+            it('adds the tax', () => {
+                assert.equal(totalCost, 5 * multiplier);
+            });
+        `, passes(1, { computed: [COMPUTED('5 * multiplier')] }));
+
+        check('warns on arithmetic inside a call, which is not a name', spec`
+            it('awards half the question MMR', () => {
+                expect(gain).to.eq(Math.round(worth * 0.5));
+            });
+        `, passes(1, { computed: [COMPUTED('Math.round(worth * 0.5)')] }));
+
+        check('warns on a delta between two reads too, which a reader keeps', spec`
+            it('counts down the questions left', () => {
+                expect(second.remaining).toBe(first.remaining - 10);
+            });
+        `, passes(1, { computed: [COMPUTED('first.remaining - 10')] }));
+
+        check('passes the literal, with the formula in a comment', spec`
+            it('totals a discounted order with tax', () => {
+                expect(total(order)).toBe(97.2); // 100 * (1 - 0.1) * 1.08
+            });
+        `, passes(1));
+
+        check('passes a negative literal and an exponent', spec`
+            it('reads the bounds', () => {
+                expect(lowest(scores)).toBe(-1);
+                expect(epsilon()).toBe(1e-3);
+            });
+        `, passes(1));
+    });
+
     // A suite that asserts with chai `assert` or `node:assert` has no `expect`
     // chain, so each check above needs its assert-style form.
     describe('the assert style of chai and node:assert', () => {

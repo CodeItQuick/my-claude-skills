@@ -387,25 +387,34 @@ const NAME_READ = /^\s*([A-Za-z_$][\w$]*)(?:\s*\.\s*[\w$]+|\s*\[\s*\])*\s*$/;
  * and the test read the same value. One bound to a local literal only hides
  * the value from the reader. A name passed as an input, or an object that the
  * test built and reads back, is not an expected value here and is not read.
+ * An expected value built with arithmetic over a name is a warning: a copied
+ * formula passes when it and the code are wrong in the same way, and a delta
+ * between two reads is fine. Only a reader can tell the two apart.
  */
 function namedExpectations(source, clean, span, imported, literals) {
-    const found = { imported: [], named: [] };
+    const found = { imported: [], named: [], computed: [] };
     const body = clean.slice(span.start, span.end);
     const calls = [
-        ...[...body.matchAll(EXPECTED_ARGUMENT)].map(match => ({ match, expected: args => topLevel(args) })),
-        ...[...body.matchAll(ASSERT_EXPECTED)].map(match => ({ match, expected: args => argumentsOf(args)[1] ?? '' })),
+        ...[...body.matchAll(EXPECTED_ARGUMENT)].map(match => ({ match, position: 0 })),
+        ...[...body.matchAll(ASSERT_EXPECTED)].map(match => ({ match, position: 1 })),
     ];
-    for (const { match, expected } of calls) {
+    for (const { match, position } of calls) {
         const open = span.start + match.index + match[0].length - 1;
         const close = closingParen(clean, open);
         if (close === -1) continue;
-        const name = expected(clean.slice(open + 1, close)).match(NAME_READ)?.[1];
+        const expected = argumentsOf(clean.slice(open + 1, close))[position] ?? '';
+        // Keep the brackets, so that a call such as `Math.round(…)` is not read as a name.
+        const name = withoutNested(expected).match(NAME_READ)?.[1];
         const line = lineOf(clean, open);
         if (imported.has(name)) found.imported.push({ line, name, from: imported.get(name) });
         else if (literals.has(name)) found.named.push({ line, name });
+        else if (!name && ARITHMETIC.test(expected)) found.computed.push({ line, expression: expected.replace(/\s+/g, ' ').trim() });
     }
     return found;
 }
+
+/** An operator with a name on one side: `amount * 1.08`, `5 * multiplier`, `first.remaining - 10`. Not `-1` or `1e-3`. */
+const ARITHMETIC = /(?<![\w$.])[A-Za-z_$][\w$.]*\s*[-+*/%]\s*[\w$(.]|[\w$).]\s*[-+*/%]\s*(?:\(\s*)*[A-Za-z_$]/;
 
 /**
  * Whitespace reduced to what changes the meaning: a space between two words
@@ -475,6 +484,7 @@ export function checkFile(path, source, readImport = () => null) {
     const helperSleeps = [];
     const importedExpected = [];
     const namedLiterals = [];
+    const computedExpected = [];
     const productionNames = productionValues(source, clean);
     const localLiterals = literalConsts(source, clean);
     const controlled = kind => kind && CONTROLS[kind].test(clean);
@@ -535,6 +545,9 @@ export function checkFile(path, source, readImport = () => null) {
         for (const { line, name } of expectations.named) {
             namedLiterals.push(`${path}:${line}: ${name} names a literal; write the literal as the expected value`);
         }
+        for (const { line, expression } of expectations.computed) {
+            computedExpected.push(`${path}:${line}: the expected value is computed (${expression}); write the literal that it gives, unless it relates two values that the test read`);
+        }
         bodies.push({ at: `${path}:${span.line}`, body: normalisedBody(source, span) });
     }
 
@@ -590,7 +603,7 @@ export function checkFile(path, source, readImport = () => null) {
         for (const { name, line } of uncontrolledIn(span, SLEEPS)) helperSleeps.push(`${path}:${line}: ${name} in a test-file hook (hook starts line ${span.line})`);
     }
 
-    return { failures, warnings, hookFlow, helperAmbient, helperSleeps, weak, namedLiterals, ambient, sleeps, unasserted, folded, importedExpected, bodies, leaks, ...flakeAndReadingFindings(path, source, clean, tests) };
+    return { failures, warnings, hookFlow, helperAmbient, helperSleeps, weak, namedLiterals, computedExpected, ambient, sleeps, unasserted, folded, importedExpected, bodies, leaks, ...flakeAndReadingFindings(path, source, clean, tests) };
 }
 
 /** Playwright matchers that retry until they pass, so each must be awaited. */
@@ -957,6 +970,7 @@ export function main(argv) {
     report('Warnings — one helper name, different bodies', sameNames);
     report('Warnings — weak assertion inside a test', weak);
     report('Warnings — local name for a literal as the expected value', found('namedLiterals'));
+    report('Warnings — expected value computed with arithmetic', found('computedExpected'));
     report('Warnings — process.env inside a test', found('environment'));
     report('Warnings — real network call inside a test', found('network'));
     report('Warnings — one-time read held in a variable, then asserted', found('held'));

@@ -53,6 +53,7 @@ const SECTIONS = [
     ['sameName', 'Warnings — one helper name, different bodies'],
     ['weak', 'Warnings — weak assertion inside a test'],
     ['namedLiteral', 'Warnings — local name for a literal as the expected value'],
+    ['computed', 'Warnings — expected value computed with arithmetic'],
     ['environment', 'Warnings — process.env inside a test'],
     ['network', 'Warnings — real network call inside a test'],
     ['held', 'Warnings — one-time read held in a variable, then asserted'],

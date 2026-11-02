@@ -205,6 +205,18 @@ The validator reports at three levels:
   uses of a name stay legal: an input (`RIGHT_ON_A_ZERO_DRAW`), an object the
   test saved and reads back, and a camelCase import checked by identity
   (`toBe(defaultShippingRule)`).
+- **The expected value is not a formula.** An expected value built with
+  arithmetic over a name, such as `toBe(amount * (1 - discount) * 1.08)`, is a
+  warning. To decide each one, ask: does the expression copy the formula of
+  the code under test? If yes, write the literal that it gives, with the
+  formula in a comment. A copy passes when it and the code are wrong in the
+  same way. If the expression relates two values that the test read, such as
+  `toBe(first.remaining - 10)`, keep it. In three suites, 29 of 35 hits copied
+  a formula.
+- **Prefer `strictEqual` to `equal` in assert style.** chai `assert.equal` and
+  `node:assert` `equal` compare with `==`, so `0` matches `"0"`. No check
+  counts this: in one suite of 291 `assert.equal` calls, a strict run changed
+  no result.
 - **No ambient state inside a test.** `Date.now()`, `new Date()` and
   `Math.random()` fail unless the file controls them: fake timers for the
   clock, a spy on `Math.random` for the draw. software_testing-83 (strong),
@@ -321,7 +333,17 @@ expect(total).toBe(hasDiscount ? 90 : 100);   // reimplements the code under tes
 ```
 
 Two tests, each with a literal. A test that computes its expectation passes when
-the computation and the code are wrong in the same way.
+the computation and the code are wrong in the same way. A formula in a
+parameter row is the same shape: give each row its expected literal.
+
+```js
+for (const [amount, discount] of rows) it(`totals ${amount}`, () => {
+    assert.equal(total(amount, discount), amount * (1 - discount) * 1.08);   // the formula again
+});
+for (const [amount, discount, expected] of rows) it(`totals ${amount}`, () => {
+    assert.strictEqual(total(amount, discount), expected);   // 97.2 in the row for 100 and 0.1
+});
+```
 
 **try/catch for a throw.**
 
@@ -487,7 +509,8 @@ A section with "none yet" has no written question. For control flow, classify
 each hit as driving or deciding. For a sleep, ask what it waits for. If it
 waits for a state, replace it with a wait for that state. If it waits for
 nothing, delete it. For a clock or random read, ask whether its value reaches
-an assert. If it does, control the input.
+an assert. If it does, control the input. For a computed expected value, use
+the question in "The expected value is not a formula".
 
 **The code under test is in the test file.** Sometimes the `if` or the loop
 is the behavior under test, because the production module does not hold that
