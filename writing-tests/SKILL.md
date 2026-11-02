@@ -207,12 +207,9 @@ The validator reports at three levels:
   (`toBe(defaultShippingRule)`).
 - **The expected value is not a formula.** An expected value built with
   arithmetic over a name, such as `toBe(amount * (1 - discount) * 1.08)`, is a
-  warning. To decide each one, ask: does the expression copy the formula of
-  the code under test? If yes, write the literal that it gives, with the
-  formula in a comment. A copy passes when it and the code are wrong in the
-  same way. If the expression relates two values that the test read, such as
-  `toBe(first.remaining - 10)`, keep it. In three suites, 29 of 35 hits copied
-  a formula.
+  warning. A copy passes when it and the code are wrong in the same way. In
+  three suites, 29 of 35 hits copied a formula. The question that decides
+  each hit is in `references/expected-value-is-not-a-formula.md`.
 - **Prefer `strictEqual` to `equal` in assert style.** chai `assert.equal` and
   `node:assert` `equal` compare with `==`, so `0` matches `"0"`. No check
   counts this: in one suite of 291 `assert.equal` calls, a strict run changed
@@ -509,8 +506,7 @@ A section with "none yet" has no written question. For control flow, classify
 each hit as driving or deciding. For a sleep, ask what it waits for. If it
 waits for a state, replace it with a wait for that state. If it waits for
 nothing, delete it. For a clock or random read, ask whether its value reaches
-an assert. If it does, control the input. For a computed expected value, use
-the question in "The expected value is not a formula".
+an assert. If it does, control the input.
 
 **The code under test is in the test file.** Sometimes the `if` or the loop
 is the behavior under test, because the production module does not hold that
