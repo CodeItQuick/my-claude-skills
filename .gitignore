@@ -4,3 +4,4 @@
 __pycache__/
 *.pyc
 .memsearch/.index.pid
+.memsearch/.index-state.json
