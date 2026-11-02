@@ -20,7 +20,7 @@ Facts grounded in this repository. Every line cites at least one path.
 - **Delivery:** No CI, no build. `test_panel.py` holds two tests, run by hand, covering `panel.py` only. Nothing tests the subagent contract.
 - **Maturity signals:** `panel.py` filters on surface and posture only. `emit.py` checks six finding rules and two panel rules. `MAX_PANEL` is 5. Every other panel rule is prose in `cutting.md`. `roles.resolve` and `Role.square` have no caller.
 - **Role model:** Four frontmatter axes — posture, horizon, vantage, surface. 25 practitioners, 7 generative. 6 executives, seated by accountability and eligible only when the scope carries their surface. `panel.py` returns each `question` for cutting.
-- **Observed usage:** 39 legacy runs in `logs/*.json` use inconsistent role names and cannot be aggregated. Three real runs in the current format returned 15 to 18 findings each.
+- **Observed usage:** 46 logged runs in `logs/` all use slug role names and aggregate across the full history. Three real runs in the current format returned 15 to 18 findings each.
 
 ## Inferred
 
