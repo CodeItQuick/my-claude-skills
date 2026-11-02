@@ -366,6 +366,8 @@ House style, not an invariant: no graded claim covers test titles.
 
 ## Where helpers live
 
+A test root is a folder that the project's config lists, or else the top
+folder that holds the specs, such as `test/`.
 Keep the helpers of each test root in one `support/` folder. If there is no
 such folder, make it with the first helper that a second spec needs. If there
 is one, read it before you write a helper.
@@ -416,9 +418,10 @@ If the project file exists, it gives the command for each package.
 
 Some suites run their built output. The test script names a folder such as
 `dist/`, or the source specs import paths that exist only after a build. For
-those suites, build first, then run the built file, for example
-`npx tsc && npx mocha <out dir>/test/<file>.js`. Otherwise the suite tests the old
-code, or it does not start.
+those suites, build first. Then run the built copy of the spec, at the same
+path under the output folder. For example, `test/a/b.spec.ts` becomes
+`npx tsc && npx mocha <out dir>/test/a/b.spec.js`. Otherwise the suite tests
+the old code, or it does not start.
 
 ## Process
 
@@ -480,8 +483,11 @@ command prints the file for each section key:
 node $HOME/.claude/skills/writing-test-heuristics/scripts/validate-heuristics.mjs
 ```
 
-A section with "none yet" has no written question. Classify its hits as
-driving or deciding.
+A section with "none yet" has no written question. For control flow, classify
+each hit as driving or deciding. For a sleep, ask what it waits for. If it
+waits for a state, replace it with a wait for that state. If it waits for
+nothing, delete it. For a clock or random read, ask whether its value reaches
+an assert. If it does, control the input.
 
 **The code under test is in the test file.** Sometimes the `if` or the loop
 is the behavior under test, because the production module does not hold that
